@@ -13,6 +13,10 @@ multiple harnesses (e.g. [pi](https://github.com/badlogic/pi-coding-agent) and
   evolution and backlog.
 - **[skill-review](skills/skill-review/SKILL.md)** — Reviews agent skills for effectiveness,
   structure, and context management.
+- **[list-tools](skills/list-tools/SKILL.md)** — Lists the tools currently available to the
+  agent as a compact table grouped by source (builtin, extension, MCP, custom).
+- **[list-skills](skills/list-skills/SKILL.md)** — Lists the skills currently available to the
+  agent as a compact table grouped by scope (global vs project) and location.
 
 ## Installing skills
 
