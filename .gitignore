@@ -1,0 +1,3 @@
+# Personal skills, notes, and agent directives that shouldn't be committed
+# or contributed upstream. See README.md "Personal skills" section.
+/local/
