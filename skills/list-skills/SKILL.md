@@ -13,17 +13,25 @@ Do not read any skill's full `SKILL.md` body for this — you only need the fron
 
 1. **Identify the harness** you're running in (pi, Claude Code, other) from environment clues — which config directories exist (`~/.pi`, `~/.claude`), how the session was launched, etc. If unsure, check both sets of locations below rather than guessing wrong.
 
-2. **Enumerate skill locations for that harness**, in this order, noting each as `global` or `project`:
+2. **Enumerate skill locations for that harness**, in this order, noting each scope with its icon:
+
+   | Icon | Scope |
+   |------|-------|
+   | 🌐 | `global` |
+   | 📁 | `project` |
+   | 📦 | `package` |
+   | ⌨️ | `cli` |
+   | 🧩 | `plugin` |
 
    **pi:**
-   - Global: `~/.pi/agent/skills/`, `~/.agents/skills/`
-   - Project: `.pi/skills/`, `.agents/skills/` — check the current directory and walk up through ancestors to the git repo root (or filesystem root if not in a repo)
-   - Also note (without necessarily enumerating fully) any package-provided skills (`pi.skills` in `package.json`) or skills added via `settings.json`/`--skill` if you have evidence of them — mark these `package`/`cli` scope rather than guessing global vs project
+   - 🌐 `global`: `~/.pi/agent/skills/`, `~/.agents/skills/`
+   - 📁 `project`: `.pi/skills/`, `.agents/skills/` — check the current directory and walk up through ancestors to the git repo root (or filesystem root if not in a repo)
+   - Also note (without necessarily enumerating fully) any package-provided skills (`pi.skills` in `package.json`, 📦 `package`) or skills added via `settings.json`/`--skill` (⌨️ `cli`) if you have evidence of them — use those scopes rather than guessing global vs project
 
    **Claude Code:**
-   - Global: `~/.claude/skills/`
-   - Project: `.claude/skills/` in the current directory and ancestors
-   - Plugin/marketplace-provided skills: note their presence if visible, but it's fine to mark them `plugin` scope without fully resolving their origin
+   - 🌐 `global`: `~/.claude/skills/`
+   - 📁 `project`: `.claude/skills/` in the current directory and ancestors
+   - 🧩 `plugin`: marketplace/plugin-provided skills — note their presence if visible, but it's fine to use this scope without fully resolving their origin
 
    If you're unsure which harness you're in, check both sets of paths.
 
@@ -33,14 +41,14 @@ Do not read any skill's full `SKILL.md` body for this — you only need the fron
 
 5. **Flag name collisions.** If the same skill `name` appears in more than one location (e.g. both global and project), list both rows and note the collision — don't silently pick one or guess which wins.
 
-6. **Render one markdown table**, skills grouped by scope (global first, then project, then other):
+6. **Render one markdown table**, skills grouped by scope (global first, then project, then other), with the Scope column showing the icon plus the word (icon alone is ambiguous to a screen reader or a renderer that drops emoji):
 
    ```markdown
    | Skill | Scope | Location | Description |
    |-------|-------|----------|--------------|
-   | tdd | global | ~/.pi/agent/skills/tdd | Strict TDD via THINK-RED-GREEN-REFACTOR cycles |
-   | skill-review | global | ~/.pi/agent/skills/skill-review | Reviews skills for effectiveness and structure |
-   | api-conventions | project | .pi/skills/api-conventions | House rules for this repo's REST API layer |
+   | tdd | 🌐 global | ~/.pi/agent/skills/tdd | Strict TDD via THINK-RED-GREEN-REFACTOR cycles |
+   | skill-review | 🌐 global | ~/.pi/agent/skills/skill-review | Reviews skills for effectiveness and structure |
+   | api-conventions | 📁 project | .pi/skills/api-conventions | House rules for this repo's REST API layer |
    ```
 
    Truncate each description to roughly 12 words — enough to know what it's for, not the full frontmatter text.
