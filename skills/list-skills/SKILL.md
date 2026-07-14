@@ -17,6 +17,7 @@ Do not read any skill's full `SKILL.md` body for this — you only need the fron
 
    | Icon | Scope |
    |------|-------|
+   | ⚙️ | `builtin` |
    | 🌐 | `global` |
    | 📁 | `project` |
    | 📦 | `package` |
@@ -29,6 +30,7 @@ Do not read any skill's full `SKILL.md` body for this — you only need the fron
    - Also note (without necessarily enumerating fully) any package-provided skills (`pi.skills` in `package.json`, 📦 `package`) or skills added via `settings.json`/`--skill` (⌨️ `cli`) if you have evidence of them — use those scopes rather than guessing global vs project
 
    **Claude Code:**
+   - ⚙️ `builtin`: skills shipped with Claude Code itself, not installed by the user or project
    - 🌐 `global`: `~/.claude/skills/`
    - 📁 `project`: `.claude/skills/` in the current directory and ancestors
    - 🧩 `plugin`: marketplace/plugin-provided skills — note their presence if visible, but it's fine to use this scope without fully resolving their origin
