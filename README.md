@@ -17,6 +17,8 @@ multiple harnesses (e.g. [pi](https://github.com/badlogic/pi-coding-agent) and
   agent as a compact table grouped by source (builtin, extension, MCP, custom).
 - **[list-skills](skills/list-skills/SKILL.md)** — Lists the skills currently available to the
   agent as a compact table grouped by scope (global vs project) and location.
+- **[grill-me](skills/grill-me/SKILL.md)** — Interviews the user relentlessly about a plan or
+  idea, branch by branch, until reaching shared understanding, then summarizes it.
 
 ## Installing skills
 
