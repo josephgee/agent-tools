@@ -79,31 +79,6 @@ be picked up — some versions only discover skills bundled inside plugins/marke
 plain skills directory isn't recognized, packaging these skills as a minimal Claude Code plugin
 is a possible future option, but isn't set up in this repo today.
 
-## Personal skills (not shared upstream)
-
-To keep personal skills, drafts, or other agent directives in your clone without risking an
-accidental commit or PR, put them in `local/` at the repo root. It's gitignored, so anything
-there stays local to your machine no matter what.
-
-`local/` follows the same layout as `skills/` — one directory per skill, each with its own
-`SKILL.md`:
-
-```
-local/
-└── my-personal-skill/
-    └── SKILL.md
-```
-
-Install from it exactly like any other skill (see "Installing skills" above), just point the
-symlink at `local/` instead of `skills/`:
-
-```bash
-ln -s ~/workspace/agent-tools/local/my-personal-skill ~/.pi/agent/skills/my-personal-skill
-```
-
-This directory is for content that belongs in *your* clone only. If a skill turns out to be
-generally useful, move it into `skills/` and contribute it upstream instead.
-
 ## Adding a new skill
 
 Create a new directory under `skills/` with a `SKILL.md`:
