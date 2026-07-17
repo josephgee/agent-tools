@@ -63,6 +63,10 @@ Items discovered during cycles that need future attention. Every item must reach
 - **Cycle**: N
 - **Active test**: <test name or description — required when phase is RED or GREEN>
 - **Notes**: <anything needed to resume mid-cycle, if applicable>
+
+## Driver Status
+- **Status**: <in-progress | needs-user-input | feature-complete>
+- **Reason**: <required when Status is needs-user-input — one sentence, the specific decision needed. Blank otherwise.>
 ```
 
 ---
@@ -78,3 +82,4 @@ Items discovered during cycles that need future attention. Every item must reach
 - **Backlog** uses four states: `[ ]` open, `[x]` resolved (with how), `[-]` dismissed (with reason), `[>]` deferred (with reason and destination). Every item must reach a closed state before the feature is declared complete.
 - Dismissed items require a real reason — "dismissed: not needed" is not a reason.
 - Deferred items must be explicitly surfaced to the user and acknowledged before the feature is declared complete. The user must know what real work is being moved out.
+- **Driver Status** defaults to `in-progress` and is kept current at every phase transition, the same as Current Position. It only changes to `needs-user-input` (a decision point was reached that requires the user, with a one-sentence `Reason`) or `feature-complete` (all three completion conditions in the skill's Progress section are met). It matters most when cycles are executed by a delegated subagent (see the skill's "Delegated Execution" section) — a driver loop reads it to decide whether to keep going, stop and surface something, or wrap up — but keep it accurate regardless of execution mode, so switching modes mid-session works without reconstructing state.
