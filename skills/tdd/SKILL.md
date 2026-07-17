@@ -27,6 +27,7 @@ See [state-format.md](state-format.md) for the format when creating the file.
 - At the start of RED — record the active test and current phase before writing any code
 - At each phase transition — update current phase
 - After completing REFACTOR — append cycle log entry, update criteria statuses, update design hypothesis, update plan (check off the completed behavior; minor resequencing is fine here — significant changes belong in THINK), update backlog
+- Driver Status — keep current at every phase transition (default `in-progress`); update immediately when escalating (`needs-user-input`, with a one-sentence `Reason`) or when declaring the feature complete (`feature-complete`). See [Delegated Execution](#delegated-execution-subagent-mode).
 
 ---
 
@@ -173,11 +174,13 @@ After improving the code, assess: what did this cycle teach you about the design
 
 **Design pressure check** (one minute — smell detector, not architecture review):
 Did this cycle introduce or intensify any of:
-- A new branch by type, source, provider, mode, or role?
-- A class or function now has two reasons to change?
-- Test setup got harder because concerns are mixed?
+- A new branch by type, source, provider, mode, or role? (*Switch Statements*)
+- A class or function now has two reasons to change? (*Divergent Change*)
+- Test setup got harder because concerns are mixed? (*Feature Envy* / *Inappropriate Intimacy*)
 
-If none: note "no design pressure" and move on. If any: either refactor now (smallest change that reduces pressure, while staying green) or log it in the backlog with a clear reason to revisit. No abstractions for pattern-matching or hypothetical futures — only when pressure is visible in the current code.
+If none: note "no design pressure" and move on. If any: either refactor now (smallest change that reduces pressure, while staying green) or log it in the backlog with a clear reason to revisit — name the smell in the backlog entry, it makes the entry more concrete and easier to act on later. No abstractions for pattern-matching or hypothetical futures — only when pressure is visible in the current code.
+
+These three are deliberately narrow — the smells that most often show up within a single cycle's diff. If you sense pressure but none of the three fits, or want the precise term for a backlog entry, check [references/design-smells.md](references/design-smells.md) for the fuller catalog (Fowler's smells, Martin's symptoms of rot). Don't scan that whole file mid-cycle — it belongs to the final review pass below, not the one-minute check.
 
 **Capture backlog items:**
 Review everything noticed during this cycle that wasn't acted on — edge cases not yet covered, refactors worth considering later, work that emerged as necessary. Add each to the backlog in the state file. This is the main moment for backlog capture: be deliberate about it, not incidental.
@@ -204,7 +207,7 @@ As cycles accumulate, your understanding deepens. There are three levels of resp
 
 **Incremental refinement** (handled in REFACTOR): Small continuous improvements — renaming, restructuring, moving things. The tests protect you.
 
-**Hypothesis revision** (handled between cycles): When several cycles reveal that the design direction needs structural change — not just cleanup — pause before the next THINK. State the revised hypothesis explicitly. A hypothesis revision almost always requires revisiting the plan — some planned items may no longer apply, new ones may be needed. Present the revised hypothesis and the revised plan together to the user: what changed, what was learned that drove it, and what the new direction and sequence are. Get acknowledgment on both before restructuring. Then restructure the implementation to match the revised hypothesis. Tests that still describe valid behavior are kept; implementation can change freely. Confirm all tests pass, update the state file hypothesis and plan, then begin the next THINK.
+**Hypothesis revision** (handled between cycles): When several cycles reveal that the design direction needs structural change — not just cleanup — pause before the next THINK. A recurring backlog entry naming the same smell (see [references/design-smells.md](references/design-smells.md)) across multiple cycles is a concrete version of this trigger — recurrence, not any single instance, is what elevates it from a local refactor to a hypothesis revision. State the revised hypothesis explicitly. A hypothesis revision almost always requires revisiting the plan — some planned items may no longer apply, new ones may be needed. Present the revised hypothesis and the revised plan together to the user: what changed, what was learned that drove it, and what the new direction and sequence are. Get acknowledgment on both before restructuring. Then restructure the implementation to match the revised hypothesis. Tests that still describe valid behavior are kept; implementation can change freely. Confirm all tests pass, update the state file hypothesis and plan, then begin the next THINK.
 
 **Acceptance criteria correction**: Implementation occasionally reveals that a criterion is misspecified — untestable as written, contradicts another, or reflects a misunderstanding of the feature. Do not silently adjust tests to accommodate this. Surface it to the user immediately, discuss whether to correct, narrow, or remove the criterion, and update the state file. Corrected criteria require user sign-off before continuing.
 
@@ -244,7 +247,7 @@ Declare the feature complete only when all three conditions are met:
 
 1. **Acceptance criteria**: every criterion has passing test coverage
 2. **Learnings**: every backlog item is resolved, dismissed, or deferred
-3. **Code is clean**: conduct a dedicated final review of the full codebase — duplication, naming, structure, dead weight. This is a separate end-of-feature pass, not a repeat of per-cycle REFACTOR. Individual cycles clean up locally; this pass looks at the whole. New findings go to the backlog and must be resolved before declaring done.
+3. **Code is clean**: conduct a dedicated final review of the full codebase — duplication, naming, structure, dead weight. This is a separate end-of-feature pass, not a repeat of per-cycle REFACTOR. Individual cycles clean up locally; this pass looks at the whole. Systematically check the codebase against [references/design-smells.md](references/design-smells.md) — the per-cycle check only screens for three fast triggers, so this is the first point where the fuller catalog gets applied. New findings go to the backlog and must be resolved before declaring done.
 
 Before declaring complete, do a final backlog review. For each open item, make a conscious decision:
 - **Resolve it**: address it now, which may mean new cycles
@@ -252,6 +255,41 @@ Before declaring complete, do a final backlog review. For each open item, make a
 - **Defer it**: acknowledge it is real work but consciously move it out of this feature — state where it is going (a follow-up story, a known backlog, a specific future decision point) and surface it explicitly to the user; get acknowledgment before proceeding
 
 An item left open without one of these decisions is not done — it is forgotten.
+
+---
+
+## Delegated Execution (Subagent Mode)
+
+Everything above describes running the Cycle directly, in the same session as Preflight. If your environment gives you a way to delegate a task to an isolated agent and get its result back before proceeding (for example, pi's `subagent` tool, Claude Code's `Task` tool, or an equivalent in whatever harness you're running in), you can instead delegate each Cycle to a fresh subagent, keeping this session's own context small no matter how many cycles the feature takes. Check your available tools for such a mechanism before offering this mode — do not assume a specific tool name; different harnesses expose this capability differently.
+
+**What stays local, what gets delegated:**
+- **Preflight** (feature definition, acceptance criteria, design hypothesis, plan, alignment gate) always runs in this session. It requires live back-and-forth with the user; a delegated subagent process cannot ask questions and wait for an answer.
+- **Cleanup** (final squash, state file deletion) also stays local — it involves git-history decisions the user should make directly.
+- **The Cycle** (THINK, RED, GREEN, REFACTOR) is the delegation unit. One subagent invocation runs exactly one complete cycle end to end, then stops.
+
+**Escalation contract.** A delegated cycle cannot pause mid-way to ask the user something — there is no one on the other end of that process. Wherever this skill says to "surface to the user," "ask the user," or "get sign-off" (see the callouts throughout this skill that use that language — dropping a plan item, hypothesis revision, criteria correction, a deferred backlog item, and major resequencing are the recurring cases, but treat the instruction, not this list, as authoritative), a delegated cycle must instead:
+1. Write the situation into the state-file field that already owns it: a hypothesis or criteria question goes into Design Hypothesis (append to History) or a note in Current Position; an edge case, hesitation, or deferred item goes into Backlog. Include enough detail for a human to decide without needing to reconstruct context.
+2. Set `## Driver Status` to `needs-user-input` with a one-sentence `Reason`.
+3. Stop — do not guess at the answer, and do not proceed past the decision point.
+
+If, at the start of a cycle, all acceptance criteria are already satisfied and the backlog is empty, treat that cycle as the final Progress review pass (see Progress) rather than a new test-driven behavior. If it finds nothing further, set Status to `feature-complete`. If it finds something, resolve what fits within the cycle, log the rest to the backlog, and set Status to `in-progress`.
+
+At the end of every delegated cycle, whatever the outcome, end the final output with exactly one line:
+- `STATUS: in-progress` — cycle completed normally, more work remains
+- `STATUS: needs-user-input — <reason>` — stopped early, a human decision is needed
+- `STATUS: feature-complete` — all acceptance criteria satisfied, backlog resolved, and the final code-clean review is done
+
+**Driving the loop.** This session acts as the driver: after Preflight and the initial commit, repeatedly invoke your environment's delegation mechanism (one cycle per call) with a task along these lines:
+
+> Run exactly one TDD cycle (THINK → RED → GREEN → REFACTOR) following `<path this session read SKILL.md from — substitute the actual path>`. The state file is `tdd-state.md` in the project root. Read the state file first, then this skill's "Test Strategy", "The Cycle", "Phase Discipline", "Progress", and "Delegated Execution" sections before starting. You are a delegated subagent — no user is present; follow the escalation contract exactly. End your output with the STATUS line described in "Delegated Execution".
+
+After each call:
+- Read the returned STATUS line. If it's missing, malformed, or not the exact final line, don't guess at intent — treat it as `needs-user-input` and read the state file directly to find out what happened. The STATUS line is a convenience; the state file is the record.
+- `in-progress`: briefly report progress to the user per the Progress section, then invoke again for the next cycle. Check in with the user at whatever cadence feels right — every cycle, every few cycles, or only on request — this is a judgment call, not a fixed rule.
+- `needs-user-input`: stop looping. Surface the Reason and the relevant state-file detail to the user, resolve it together (which may mean writing a decision into the state file yourself), then resume the loop.
+- `feature-complete`: stop looping and proceed to Cleanup as normal.
+
+This mode is optional, and the two modes can be mixed within one session (e.g., delegate routine cycles, pull a tricky one back in-session to work directly). The state file and discipline are identical either way — only who executes each cycle differs.
 
 ---
 
