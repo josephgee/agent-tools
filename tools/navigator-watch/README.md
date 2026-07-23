@@ -43,6 +43,8 @@ touching the terminal; Claude Code hooks let the agent talk back by voice.
 
 - **cmux** macOS app (`brew install --cask cmux`), running your Claude Code session in a surface,
   with its `cmux` CLI on PATH (automatic inside cmux terminals; otherwise symlink per cmux docs).
+- **jq** (`brew install jq`) — used to auto-detect the surface running Claude Code, so you don't
+  hand-configure a surface id per pane/session (see below).
 - **node** (any Node 18+) — used only by the Path C transcript extractor.
 - **git** — Path A computes diffs with it.
 - **fswatch** — `brew install fswatch` — Path A file watching.
@@ -63,14 +65,15 @@ you're learning in** — a different directory entirely. Two things follow from 
 
   ```bash
   cd ~/work/thing                                  # your project, not agent-tools
-  ~/workspace/agent-tools/tools/navigator-watch/watch.sh --surface 3
+  ~/workspace/agent-tools/tools/navigator-watch/watch.sh
   ```
 
   Running it from inside `tools/navigator-watch/` itself, or passing `--dir` pointed at the wrong
-  place, would watch this repo instead of your project.
-- **`speak.sh`** doesn't care about your working directory at all (it only needs `--surface`), so
-  it has no equivalent gotcha — run it from anywhere, or trigger it via the Hammerspoon hotkey
-  binding, which already invokes it by absolute path.
+  place, would watch this repo instead of your project. (Surface is auto-detected — see "Finding
+  the surface" below — so you don't normally need `--surface` either.)
+- **`speak.sh`** doesn't care about your working directory at all, so it has no equivalent
+  gotcha — run it from anywhere, or trigger it via the Hammerspoon hotkey binding, which already
+  invokes it by absolute path.
 - **Claude Code hooks** (`hooks/on-stop.sh`, `hooks/on-busy.sh`) are configured with absolute
   paths in your Claude Code settings (see Path C below) and run wherever Claude Code invokes
   them — nothing to think about here.
@@ -87,19 +90,27 @@ Then the pattern above becomes just:
 
 ```bash
 cd ~/work/thing
-navigator-watch --surface 3
+navigator-watch
 ```
 
-## Finding the surface id
+## Finding the surface (usually automatic)
 
-Every command needs the cmux surface id of the pane running Claude Code:
+Both `watch.sh` and `speak.sh` **auto-detect** the surface running Claude Code — you don't
+normally need to know or pass a surface id at all, and Hammerspoon needs no per-pane
+configuration. Detection ([`lib/resolve-surface.sh`](lib/resolve-surface.sh)) asks cmux for the
+currently focused workspace (`cmux current-workspace`), then finds the surface in it whose
+`initial_command` (the resume script cmux launches an agent pane with) or `title` mentions
+"claude", and passes its `ref` (e.g. `surface:7`) as `--surface`.
+
+This is verified against a real `cmux list-panels --json` sample but not run end-to-end against
+a live cmux socket yet, and it fails loudly rather than guessing if it finds zero or multiple
+candidates — it'll print the raw `cmux` JSON so you (or I) can adjust the matching if your setup
+differs. If it doesn't work, or if you have multiple Claude Code surfaces open and want a
+specific one, pass `--surface <id>` explicitly (ids look like `surface:7`, not a bare number):
 
 ```bash
-cmux list-panels --json
+cmux list-panels --json   # find the ref yourself, e.g. "surface:7"
 ```
-
-Note the id of the surface running `claude`. (`cmux current-workspace` and `cmux list-panels`
-help orient you.)
 
 ## Path A — file watcher
 
@@ -109,11 +120,12 @@ from](#where-you-run-this-from) above):
 
 ```bash
 cd ~/work/thing   # the project you're learning in — not this agent-tools checkout
-~/workspace/agent-tools/tools/navigator-watch/watch.sh --surface 3
-# or, if symlinked onto PATH: navigator-watch --surface 3
+~/workspace/agent-tools/tools/navigator-watch/watch.sh
+# or, if symlinked onto PATH: navigator-watch
 ```
 
-`--dir <path>` overrides the working directory explicitly if you'd rather not `cd` first.
+Surface is auto-detected (see above); pass `--surface <id>` to override. `--dir <path>` overrides
+the working directory if you'd rather not `cd` first.
 
 Options: `--debounce <secs>` (quiet period after last save, default 3), `--idle <secs>` (idle
 poll interval, default 2), `--max-lines <n>` (threshold for calling a diff "large" in the
@@ -135,12 +147,13 @@ The point of this path is talking to the navigator **without switching focus awa
 IDE** — Claude Code's built-in `/voice` needs its pane focused, so it doesn't cover this case.
 (If you're ever fine focusing the Claude Code pane, `/voice` is simpler and needs none of this.)
 
-`speak.sh` records, transcribes, and sends:
+`speak.sh` records, transcribes, and sends. Surface is auto-detected (see above); pass
+`--surface <id>` to override:
 
 ```bash
-./speak.sh --surface 4 toggle    # tap once to start, again to stop + send
-./speak.sh --surface 4 start     # or explicit start / stop for push-to-talk
-./speak.sh --surface 4 stop
+./speak.sh toggle    # tap once to start, again to stop + send
+./speak.sh start     # or explicit start / stop for push-to-talk
+./speak.sh stop
 ```
 
 For whisper.cpp you must point at a model file, via `--model` or `$NAVIGATOR_WHISPER_MODEL`:
@@ -154,10 +167,10 @@ export NAVIGATOR_WHISPER_MODEL=~/models/ggml-base.en.bin
 ### Hotkey binding (Hammerspoon)
 
 See [`hammerspoon/init.lua`](hammerspoon/init.lua). Copy the binding into `~/.hammerspoon/init.lua`
-(edit `SURFACE`), then reload Hammerspoon. It offers a toggle style (tap to start/stop) and a
-push-to-talk style (hold to record). Because it's a global hotkey, it fires while you're focused
-in WebStorm. Since Hammerspoon runs outside cmux, the binding sets `CMUX_SOCKET_MODE=allowAll` so
-`speak.sh` can reach the socket.
+(no per-pane editing needed — surface is auto-detected), then reload Hammerspoon. It offers a
+toggle style (tap to start/stop) and a push-to-talk style (hold to record). Because it's a global
+hotkey, it fires while you're focused in WebStorm. Since Hammerspoon runs outside cmux, the
+binding sets `CMUX_SOCKET_MODE=allowAll` so `speak.sh` can reach the socket.
 
 ## Path C — agent speaks back (Claude Code hooks)
 

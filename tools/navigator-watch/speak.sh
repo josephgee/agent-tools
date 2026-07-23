@@ -28,7 +28,9 @@
 #   - a transcriber: `whisper-cpp`/`whisper-cli`, `mlx_whisper`, or `whisper`
 #
 # Config via env or flags:
-#   --surface <id>     cmux surface id (see: cmux list-panels --json)  (required)
+#   --surface <id>     cmux surface id. If omitted, auto-detected as the
+#                      surface running claude in the currently focused cmux
+#                      workspace (see lib/resolve-surface.sh).
 #   --model <path>     whisper model path/name          (whisper.cpp needs a path)
 #
 # Example:
@@ -36,7 +38,10 @@
 
 set -euo pipefail
 
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CMUX="${CMUX_BIN:-cmux}"
+# shellcheck source=lib/resolve-surface.sh
+source "$HERE/lib/resolve-surface.sh"
 
 SURFACE=""
 MODEL="${NAVIGATOR_WHISPER_MODEL:-}"
@@ -56,6 +61,14 @@ while [[ $# -gt 0 ]]; do
 done
 
 command -v "$CMUX" >/dev/null || { echo "error: cmux CLI not found on PATH" >&2; exit 2; }
+
+# Surface is only needed at send time (stop), not at recording start — resolve
+# lazily so `start` never fails due to a detection hiccup; `stop` still needs it.
+resolve_surface_if_needed() {
+  [[ -n "$SURFACE" ]] && return 0
+  SURFACE="$(resolve_surface)" || return 1
+  echo "navigator-watch: auto-detected surface $SURFACE" >&2
+}
 
 is_recording() { [[ -f "$PIDF" ]] && kill -0 "$(cat "$PIDF")" 2>/dev/null; }
 
@@ -98,7 +111,7 @@ stop_rec() {
   sleep 0.4
   rm -f "$PIDF"
 
-  [[ -n "$SURFACE" ]] || { echo "error: --surface required to send" >&2; exit 2; }
+  resolve_surface_if_needed || exit 2
   local text
   text="$(transcribe | sed 's/^ *//; s/ *$//')"
   [[ -z "$text" ]] && { echo "empty transcript, nothing sent" >&2; return 0; }

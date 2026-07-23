@@ -15,7 +15,9 @@
 # Requirements: bash, git, fswatch, and the `cmux` CLI on PATH.
 #
 # Config via flags:
-#   --surface <id>     target cmux surface id (find via `cmux list-panels --json`) [required]
+#   --surface <id>     target cmux surface id. If omitted, auto-detected as the
+#                      surface running claude in the currently focused cmux
+#                      workspace (see lib/resolve-surface.sh).
 #   --dir <path>       git project to watch                         (default: cwd)
 #   --debounce <secs>  quiet period after last change before flush  (default: 3)
 #   --idle <secs>      poll interval while waiting for idle          (default: 2)
@@ -26,7 +28,10 @@
 
 set -euo pipefail
 
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CMUX="${CMUX_BIN:-cmux}"
+# shellcheck source=lib/resolve-surface.sh
+source "$HERE/lib/resolve-surface.sh"
 STATE_DIR="${NAVIGATOR_STATE_DIR:-$HOME/.cache/navigator-watch}"
 mkdir -p "$STATE_DIR"
 DIFF_FILE="$STATE_DIR/last-diff.patch"
@@ -48,7 +53,10 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-[[ -n "$SURFACE" ]] || { echo "error: --surface is required (see: cmux list-panels --json)" >&2; exit 2; }
+if [[ -z "$SURFACE" ]]; then
+  SURFACE="$(resolve_surface)" || exit 2
+  echo "navigator-watch: auto-detected surface $SURFACE" >&2
+fi
 command -v fswatch >/dev/null || { echo "error: fswatch not found (brew install fswatch)" >&2; exit 2; }
 command -v git >/dev/null || { echo "error: git not found" >&2; exit 2; }
 command -v "$CMUX" >/dev/null || { echo "error: cmux CLI not found on PATH" >&2; exit 2; }

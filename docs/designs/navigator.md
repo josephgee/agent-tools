@@ -287,6 +287,35 @@ cmux's own Node-wrapped distribution) if `cmux-tui <verb>` CLI coverage proves i
 `fswatch` for file events; local Whisper (whisper.cpp or mlx-whisper) for STT; Hammerspoon for
 the global hotkey. No new build system — installed via existing brew/npm.
 
+## Surface auto-detection (removing per-pane hand-tooling)
+
+Originally both `watch.sh` and a hardcoded `SURFACE` in the Hammerspoon config required manually
+looking up and entering the cmux surface id per project/pane — flagged as "gross" by the user
+since it meant hand-configuring two places (Hammerspoon + the watcher invocation) every session.
+
+Fixed with auto-detection (`lib/resolve-surface.sh`): resolve the currently focused cmux
+workspace via `cmux current-workspace`, then find the surface in it whose `initial_command` or
+`title` mentions "claude", using its `ref` as `--surface`. `--surface` becomes optional
+everywhere; the Hammerspoon config no longer has a per-pane field to edit at all.
+
+Confirmed against a real `cmux list-panels --json` sample (not a live socket call, but real
+output the user captured) that:
+- The root shape is `{"surfaces": [...], "workspace_ref": ..., "window_ref": ...}`.
+- Identifiers are refs like `"surface:7"` / `"workspace:4"` under the key `ref`, not a bare
+  numeric `id` (initial design guessed several candidate key names defensively; `ref` wasn't
+  among the first guesses and was added once confirmed).
+- `title` reflects whatever's currently running in the pane's foreground and drifts (e.g. a
+  Claude Code pane's title read `"vim README.md"` after the user ran `vim` in it) — unreliable
+  alone. `initial_command` is stable (sourced from the `cmux-agent-resume/claude-<uuid>.zsh`
+  resume script cmux launches an agent pane with), so matching prioritizes it, with `title` as a
+  secondary signal. Deliberately not a blanket recursive string search across all fields, since
+  paths like `requested_working_directory` could contain "claude" as an unrelated path segment
+  and false-positive.
+
+Still not run against a live cmux socket end-to-end — the resolver fails loudly with raw JSON on
+zero/multiple matches rather than guessing, specifically so a mismatch is diagnosable on first
+real use rather than silently wrong.
+
 ## Usage model clarification
 
 `watch.sh` is invoked from the *project being learned*, not from this `agent-tools` checkout —
