@@ -86,6 +86,11 @@ plan — don't rely on remembering. **Write** it at the cadence in the Loop belo
 project-local `<repo-root>/.navigator/coaching.md`) — they govern how you coach for the rest of
 the session.
 
+**Then check for the watcher.** This skill can optionally use a bundled file-watch script at
+`scripts/wait-for-change.sh` (relative to this skill's own directory). Check for it there and
+confirm it's executable. If found, note that watched-change updates are available for the loop
+below. If not found, coach from narrated/pasted changes instead, as if it weren't there.
+
 **Then resolve the memory path** (see Session artifact above) and **enumerate existing efforts**
 by listing the folders under `<memory>/navigator/`. Each subfolder is a past or in-progress
 effort. If `<memory>/navigator/` doesn't exist yet, there are no prior efforts — treat it as a
@@ -115,8 +120,11 @@ to start driving.
 
 ## The loop
 
-While the human drives, you observe and coach. Changes to the code may arrive as messages
-describing what changed (from a file watcher) or the human may narrate/ask directly. Either way:
+If the watcher was found at startup, call it (with a bounded `--timeout`, e.g. 90s) after each
+reaction, and treat its output as the next change to react to — loop this for the session. A
+timeout with no change just means: call it again, or sit idle for the human's next message. If
+no watcher is available, changes arrive as narration or pasted diffs from the human instead —
+the reaction guidance below applies the same either way:
 
 - **React with judgment, not reflex — and calibrate to which of these you're in, not just
   whether it matches the plan:**
