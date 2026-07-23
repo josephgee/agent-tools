@@ -35,7 +35,17 @@
 
 set -euo pipefail
 
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Resolve our own real directory, following symlinks, so hooks/,
+# hammerspoon/init.lua, etc. are found relative to the real script even if
+# this is ever invoked via a symlink.
+_src="${BASH_SOURCE[0]}"
+while [ -h "$_src" ]; do
+  _dir="$(cd -P "$(dirname "$_src")" >/dev/null 2>&1 && pwd)"
+  _src="$(readlink "$_src")"
+  [[ "$_src" != /* ]] && _src="$_dir/$_src"
+done
+HERE="$(cd -P "$(dirname "$_src")" >/dev/null 2>&1 && pwd)"
+unset _src _dir
 
 PROJECT_DIR="$PWD"
 CLAUDE_SETTINGS="$HOME/.claude/settings.json"

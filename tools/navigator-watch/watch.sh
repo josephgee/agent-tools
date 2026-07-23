@@ -28,7 +28,17 @@
 
 set -euo pipefail
 
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Resolve our own real directory, following symlinks (e.g. if invoked via the
+# PATH symlink setup.sh creates: /usr/local/bin/navigator-watch -> watch.sh) so
+# lib/resolve-surface.sh is found relative to the real script, not the symlink.
+_src="${BASH_SOURCE[0]}"
+while [ -h "$_src" ]; do
+  _dir="$(cd -P "$(dirname "$_src")" >/dev/null 2>&1 && pwd)"
+  _src="$(readlink "$_src")"
+  [[ "$_src" != /* ]] && _src="$_dir/$_src"
+done
+HERE="$(cd -P "$(dirname "$_src")" >/dev/null 2>&1 && pwd)"
+unset _src _dir
 CMUX="${CMUX_BIN:-cmux}"
 # shellcheck source=lib/resolve-surface.sh
 source "$HERE/lib/resolve-surface.sh"

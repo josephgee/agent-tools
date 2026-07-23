@@ -408,6 +408,27 @@ All fixes re-verified against the original happy-path test (still correct, still
 plus the specific failure scenarios above, using a real `jq` binary against fabricated
 environments (fake `$HOME`, read-only directories, truncated JSON).
 
+### Correction: `${BASH_SOURCE[0]}` breaks when invoked through the PATH symlink
+
+User observation: `watch.sh` (and the same pattern in `speak.sh`, `refresh-surface.sh`,
+`setup.sh`) computed its own directory as
+`cd "$(dirname "${BASH_SOURCE[0]}")" && pwd`, which resolves to wherever the script was
+*invoked from* — for a direct call that's the real directory, but invoked through the PATH
+symlink `setup.sh` itself creates (`/usr/local/bin/navigator-watch -> watch.sh`),
+`${BASH_SOURCE[0]}` is the symlink's own path, so `HERE` resolved to `/usr/local/bin` and
+`lib/resolve-surface.sh` couldn't be found. Confirmed with a minimal repro before touching the
+real scripts.
+
+Fixed in all four scripts with the standard symlink-chain-resolving loop (follows `readlink`
+repeatedly, handling both absolute and relative symlink targets, until it reaches a real file).
+Verified against direct invocation, a single symlink, a chained symlink (symlink to a symlink),
+and a relative-target symlink — all four resolve to the real directory. Also verified end-to-end
+by actually symlinking `watch.sh` the way `setup.sh` does and invoking it through that symlink.
+
+(One earlier attempt to apply this fix via a shell/perl one-liner corrupted all four files by
+letting the outer shell expand variables meant for the replacement text — caught immediately via
+`git checkout` before it was ever tested or committed, redone properly with direct file edits.)
+
 ## Open items / deferred decisions
 
 - Tool-level hardening of the never-edit-code rule (permission config), deferred until/unless
