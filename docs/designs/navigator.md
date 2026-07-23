@@ -211,6 +211,26 @@ Detailed coaching style/guidelines (how much to explain, when to interject, what
 questions to ask) are deliberately left to the skill file itself, tunable per the user's
 preference at the time — not fully specified in this design doc.
 
+## Coaching directives (human-authored input)
+
+Separate from the session artifact (agent-maintained *state*), the human can author standing
+*directives* for how they want to be coached ("push me on async," "don't re-explain basics,"
+"make me write the types by hand"). Two optional scopes, read at startup and treated as always-on
+constraints second only to the never-write-code rule:
+
+- **Global**: `~/.claude/navigator/coaching.md` — machine-wide, outside any repo (no gitignore
+  needed).
+- **Project-local**: `<repo-root>/.navigator/coaching.md` — per-repo; project-local
+  augments/overrides global on conflict.
+
+Project-local directives live *in* the repo (so they're editable right in the IDE) but are kept
+out of git via the **global gitignore trick**: ignore `.navigator/` once in git's
+`core.excludesFile` (`~/.config/git/ignore`), so it applies to every repo on the machine and
+never requires a per-project `.gitignore` edit or risks being committed — which resolves the
+public-repo friction that drove the artifact out of the repo in the first place. The agent only
+*reads* these files (and may scaffold an empty template on request); it never writes coaching
+content into them. Details/templates: `skills/navigator/references/coaching-directives.md`.
+
 ## Coaching restraint (deferred to skill prompt, not architecture)
 
 Explicitly flagged during design: agent "soliloquies" need limiting so the human can interject.
