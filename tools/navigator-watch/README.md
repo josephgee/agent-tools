@@ -5,9 +5,14 @@ editor of choice — e.g. WebStorm), and an agent running in Claude Code acts as
 navigator that coaches you by voice. This tool moves information between your work and the agent;
 the agent's *behavior* is governed by the [`navigator` skill](../../skills/navigator/SKILL.md).
 
-It's built for **Claude Code running inside [cmux](https://github.com/manaflow-ai/cmux)** on
-macOS. cmux exposes a JSON-lines control socket that lets us inject text into the agent's pane
-without you touching the terminal; Claude Code hooks let the agent talk back by voice.
+It's built for **Claude Code running inside the [cmux](https://cmux.com) macOS app** (the
+Ghostty-based terminal by manaflow — `cmux --version` ≈ 0.64+, *not* the npm `cmux-tui`). cmux
+ships a `cmux` CLI / Unix socket that lets us inject text into the agent's surface without you
+touching the terminal; Claude Code hooks let the agent talk back by voice.
+
+> cmux's socket has access modes (Settings UI). Default is **"cmux processes only"** — anything
+> launched from inside a cmux terminal (like `watch.sh`) can connect. Processes started *outside*
+> cmux (like a Hammerspoon-launched `speak.sh`) need `CMUX_SOCKET_MODE=allowAll`.
 
 ## The three paths
 
@@ -16,7 +21,8 @@ without you touching the terminal; Claude Code hooks let the agent talk back by 
    you edit  ──▶ │ watch.sh   file changes → debounce → (idle?) │ ─▶ cmux `send` ─▶ agent pane
    in WebStorm   └─────────────────────────────────────────────┘        (Path A)
 
-   you speak  ──▶ hotkey (Hammerspoon) ─▶ speak.sh: record → whisper → cmux `send` ─▶ agent pane
+   you speak  ──▶ Claude Code `/voice` (built-in dictation)  ── OR ──
+              ──▶ hotkey (Hammerspoon) ─▶ speak.sh: record → whisper → cmux `send` ─▶ agent pane
                                                                                        (Path B)
 
    agent replies ─▶ Claude Code `Stop` hook ─▶ on-stop.sh: extract last message → TTS (`say`)
@@ -26,18 +32,19 @@ without you touching the terminal; Claude Code hooks let the agent talk back by 
 - **Path A — file changes → agent.** `watch.sh` watches your git project, debounces bursts of
   saves, waits until the agent is idle, then injects a single size-capped `git diff` so the
   navigator can react. Never interrupts the agent mid-turn.
-- **Path B — your voice → agent.** A global hotkey triggers `speak.sh`, which records a clip,
-  transcribes it locally with Whisper, and sends the text straight into the agent's pane. Sent
-  immediately (Claude Code queues it if the agent is mid-turn; hit Escape yourself to hard
-  -interrupt).
+- **Path B — your voice → agent.** Claude Code's built-in **`/voice`** dictation is the simplest
+  option (use it if it fits). `speak.sh` is the alternative for talking *without focusing the
+  Claude Code pane*: a global hotkey records a clip, transcribes locally with Whisper, and sends
+  the text into the agent's surface immediately (Claude Code queues it if mid-turn; hit Escape to
+  hard-interrupt).
 - **Path C — agent → your ears.** A Claude Code `Stop` hook (`on-stop.sh`) reads the agent's last
   message and speaks it via TTS, so you never have to look at the terminal.
 
 ## Prerequisites
 
-- **cmux** (`npm i -g cmux` or `npx cmux`), running your Claude Code session in a pane.
-- **node** (ships with cmux's toolchain; any Node 18+ works) — used by `cmux.js` and the
-  transcript extractor.
+- **cmux** macOS app (`brew install --cask cmux`), running your Claude Code session in a surface,
+  with its `cmux` CLI on PATH (automatic inside cmux terminals; otherwise symlink per cmux docs).
+- **node** (any Node 18+) — used only by the Path C transcript extractor.
 - **git** — Path A computes diffs with it.
 - **fswatch** — `brew install fswatch` — Path A file watching.
 - **A recorder** — `brew install sox` (gives `rec`) or `ffmpeg` — Path B.
@@ -46,39 +53,44 @@ without you touching the terminal; Claude Code hooks let the agent talk back by 
 - **Hammerspoon** (`brew install --cask hammerspoon`) — Path B global hotkey.
 - **macOS `say`** (built in) — Path C TTS. Swappable, see below.
 
-## Finding the surface (pane) id
+## Finding the surface id
 
 Every command needs the cmux surface id of the pane running Claude Code:
 
 ```bash
-node cmux.js --session main list
+cmux list-panels --json
 ```
 
-Look for the PTY surface running `claude` and note its numeric id. `identify` confirms the socket
-and protocol version:
-
-```bash
-node cmux.js --session main identify
-```
-
-If your session isn't `main`, pass `--session <name>` (or `--socket <path>` for a non-default
-socket location).
+Note the id of the surface running `claude`. (`cmux current-workspace` and `cmux list-panels`
+help orient you.)
 
 ## Path A — file watcher
 
+Run it from *inside* a cmux pane (so the socket is reachable in the default access mode):
+
 ```bash
-./watch.sh --surface 4 --dir ~/work/thing
+./watch.sh --surface 3 --dir ~/work/thing
 ```
 
-Options: `--session`, `--socket`, `--debounce <secs>` (quiet period after last save, default 3),
-`--idle <secs>` (idle poll interval, default 2), `--max-lines <n>` (diffs bigger than this are
-summarized instead of sent in full, default 50). Only one watcher runs per project at a time
-(enforced with a PID lock in `$TMPDIR/navigator-watch`).
+Options: `--debounce <secs>` (quiet period after last save, default 3), `--idle <secs>` (idle
+poll interval, default 2), `--max-lines <n>` (threshold for calling a diff "large" in the
+message, default 50). Only one watcher runs per project at a time (PID lock in
+`$TMPDIR/navigator-watch`).
 
-Idle detection prefers the hook flag files (see Path C); if the hooks aren't installed it falls
-back to diffing `read-screen` snapshots of the pane.
+Instead of pasting a multi-line diff into the prompt, the watcher writes the full diff to
+`$NAVIGATOR_STATE_DIR/last-diff.patch` and sends a **one-line** message naming the changed files
+and that path — the agent reads the file on demand. This avoids multi-line submit issues and
+keeps the prompt/context small.
 
-## Path B — voice hotkey
+Idle detection uses the Claude Code hook flag files (see Path C). Without the hooks installed the
+watcher can't detect idle and flushes after the debounce (with a warning) — installing the hooks
+is recommended.
+
+## Path B — voice
+
+**Prefer Claude Code's built-in `/voice`** (type `/voice` in the Claude Code pane) if it fits your
+workflow — it needs none of the tooling below. Use `speak.sh` only if you want to talk *without*
+focusing the Claude Code pane (e.g. from WebStorm).
 
 `speak.sh` records, transcribes, and sends:
 
@@ -99,9 +111,10 @@ export NAVIGATOR_WHISPER_MODEL=~/models/ggml-base.en.bin
 ### Hotkey binding (Hammerspoon)
 
 See [`hammerspoon/init.lua`](hammerspoon/init.lua). Copy the binding into `~/.hammerspoon/init.lua`
-(edit `SURFACE`/`SESSION`), then reload Hammerspoon. It offers a toggle style (tap to start/stop)
-and a push-to-talk style (hold to record). Because it's a global hotkey, it fires while you're
-focused in WebStorm.
+(edit `SURFACE`), then reload Hammerspoon. It offers a toggle style (tap to start/stop) and a
+push-to-talk style (hold to record). Because it's a global hotkey, it fires while you're focused
+in WebStorm. Since Hammerspoon runs outside cmux, the binding sets `CMUX_SOCKET_MODE=allowAll` so
+`speak.sh` can reach the socket.
 
 ## Path C — agent speaks back (Claude Code hooks)
 
@@ -137,5 +150,6 @@ value in the environment for both the watcher and Claude Code's hooks.
 - One active effort/watcher per project at a time.
 - The agent never edits code — that's enforced softly by the `navigator` skill's instructions,
   not by this tool. Tool-level hardening (permission config) is a possible later step.
-- Idle detection and diff caps use simple heuristics; tune the flags from real use.
-- Tested against cmux control-socket protocol v9.
+- Idle detection relies on the Path C hooks; heuristics/thresholds want tuning from real use.
+- Built for the cmux macOS app's `cmux` CLI (`cmux send` / `send-key` / `list-panels`). Not the
+  npm `cmux-tui`. Not yet run end-to-end on the target Mac.

@@ -52,7 +52,18 @@ responds turn-by-turn to input arriving in its session. So anything resembling "
 in the background and decide when to speak" has to be an external process that turns raw events
 into a turn-worthy chat message, with the skill governing judgment about *what to do with it*.
 
-## The delivery mechanism: cmux control socket
+## Correction: which "cmux"
+
+This was initially designed against the npm `cmux-tui` package (JSON-lines control socket,
+protocol v9). The user's actual tool is the **cmux macOS app** (cmux.com, `cmux --version` ~0.64),
+a Ghostty-based terminal by the same authors but a different program. It exposes a `cmux` CLI and
+a Unix socket (`/tmp/cmux.sock`, JSON-RPC `{method,params}`), with access modes (default "cmux
+processes only"). The implementation was switched to drive the **`cmux` CLI directly** (`cmux
+send` / `cmux send-key` / `cmux list-panels`), and the custom socket client (`cmux.js`) was
+deleted. The sections below describing the cmux-tui JSON socket are retained only as historical
+context; the CLI is the real transport.
+
+## The delivery mechanism (historical: cmux-tui control socket)
 
 cmux (`npx cmux`, a tmux-like multiplexer backed by libghostty-vt) exposes a JSON-lines control
 socket per session at `$TMPDIR/cmux-tui-<uid>/<session>.sock` (protocol v9). Relevant commands,
@@ -108,6 +119,16 @@ for getting text *into* the running session (A and B); Claude Code hooks drive a
   this path. If the human wants a hard interrupt, that's a manual Escape press, not something the
   tool decides.
 - The global hotkey (Hammerspoon) fires while focused in WebStorm, so no terminal focus needed.
+- **Update:** Claude Code now ships a built-in `/voice` dictation command, which largely
+  supersedes this whole path. `/voice` is triggered inside the Claude Code pane (needs that pane
+  focused), so `speak.sh` is kept only for the narrower "talk without leaving the IDE" case.
+  Because Hammerspoon launches outside cmux, `speak.sh` needs `CMUX_SOCKET_MODE=allowAll` to
+  reach the socket.
+- **Multi-line/paste caveat:** the cmux app CLI has no documented bracketed-paste flag, so Path A
+  no longer injects multi-line diffs. It writes the full diff to a file
+  (`$NAVIGATOR_STATE_DIR/last-diff.patch`) and sends a single-line message naming the files and
+  that path; the agent reads the file on demand. This dodges premature-submit issues and also
+  keeps context small. Path B sends single-line transcripts only.
 
 ### Path C — agent-initiated output (agent → voice)
 

@@ -1,9 +1,19 @@
 #!/usr/bin/env bash
-# navigator-watch: Path B — voice → immediate injection into a cmux pane.
+# navigator-watch: Path B — voice → immediate injection into a cmux surface.
+#
+# NOTE: Claude Code now ships a built-in `/voice` dictation command. If that
+# covers your needs, you may not need this script at all. Path B's niche is
+# talking WITHOUT focusing the Claude Code pane (e.g. while in your IDE): a
+# global hotkey triggers this, transcribes locally, and injects the text via
+# the cmux CLI. Prefer /voice unless you specifically want hands-free-from-IDE.
 #
 # Records audio, transcribes it locally, and sends the transcript straight into
-# the target cmux pane (no idle-waiting — Claude Code's own input queueing
+# the target cmux surface (no idle-waiting — Claude Code's own input queueing
 # handles "agent is mid-turn"; hit Escape yourself for a hard interrupt).
+#
+# Uses the cmux macOS app CLI. Launched from Hammerspoon (outside cmux), the
+# socket is only reachable if cmux's access mode is allowAll
+# (CMUX_SOCKET_MODE=allowAll), or if you launch it through a cmux process.
 #
 # Two modes:
 #   start   begin recording to a temp wav, write recorder PID to a state file
@@ -12,14 +22,12 @@
 #
 # Bind these to a hotkey via Hammerspoon (see hammerspoon/init.lua).
 #
-# Requirements: bash, node (cmux.js), and:
+# Requirements: bash, the `cmux` CLI on PATH, and:
 #   - a recorder: `sox` (rec) or `ffmpeg`
 #   - a transcriber: `whisper-cpp`/`whisper-cli`, `mlx_whisper`, or `whisper`
 #
 # Config via env or flags:
-#   --surface <id>     cmux surface id                  (required)
-#   --session <name>   cmux session name                (default: main)
-#   --socket <path>    explicit cmux socket path        (default: derived)
+#   --surface <id>     cmux surface id (see: cmux list-panels --json)  (required)
 #   --model <path>     whisper model path/name          (whisper.cpp needs a path)
 #
 # Example:
@@ -27,12 +35,9 @@
 
 set -euo pipefail
 
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CMUX="node $HERE/cmux.js"
+CMUX="${CMUX_BIN:-cmux}"
 
 SURFACE=""
-SESSION="main"
-SOCKET=""
 MODEL="${NAVIGATOR_WHISPER_MODEL:-}"
 STATE_DIR="${TMPDIR:-/tmp}/navigator-speak"
 WAV="$STATE_DIR/rec.wav"
@@ -43,16 +48,13 @@ MODE=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --surface) SURFACE="$2"; shift 2;;
-    --session) SESSION="$2"; shift 2;;
-    --socket) SOCKET="$2"; shift 2;;
     --model) MODEL="$2"; shift 2;;
     start|stop|toggle) MODE="$1"; shift;;
     *) echo "unknown arg: $1" >&2; exit 2;;
   esac
 done
 
-cmux_args=(--session "$SESSION")
-[[ -n "$SOCKET" ]] && cmux_args+=(--socket "$SOCKET")
+command -v "$CMUX" >/dev/null || { echo "error: cmux CLI not found on PATH" >&2; exit 2; }
 
 is_recording() { [[ -f "$PIDF" ]] && kill -0 "$(cat "$PIDF")" 2>/dev/null; }
 
@@ -99,9 +101,9 @@ stop_rec() {
   local text
   text="$(transcribe | sed 's/^ *//; s/ *$//')"
   [[ -z "$text" ]] && { echo "empty transcript, nothing sent" >&2; return 0; }
-  # Paste (multi-line safe), then submit with a separate Enter.
-  $CMUX "${cmux_args[@]}" send --surface "$SURFACE" --paste --text "$text"
-  $CMUX "${cmux_args[@]}" send-key --surface "$SURFACE" --keys enter
+  # Transcript is collapsed to a single line above, so a plain send + Enter is safe.
+  "$CMUX" send --surface "$SURFACE" "$text"
+  "$CMUX" send-key --surface "$SURFACE" enter
   echo "sent: $text" >&2
 }
 
