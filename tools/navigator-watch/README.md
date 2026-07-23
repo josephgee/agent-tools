@@ -129,12 +129,15 @@ window's panels. So live auto-detection only works from inside a cmux pane, and 
 The split:
 
 - **`watch.sh`** runs from inside the target cmux pane (see "Where you run this from"), so its
-  auto-detection is legitimate. It resolves the surface running claude — asking `cmux
-  current-workspace` for the pane's own window, then matching a surface in it whose
-  `resume_binding.kind` is `"claude"` (the primary, reliable signal — confirmed against a real
-  session; `title` reflects the live task/status line, not literally "claude", so it's only a
-  fallback for surfaces without a `resume_binding`), using its `ref` (e.g. `surface:5`) — and
-  **caches** the result to `$NAVIGATOR_STATE_DIR/surface` as a side effect of starting.
+  auto-detection is legitimate. It first tries a metadata heuristic (`resume_binding.kind` or
+  `title`/`initial_command` mentioning "claude") — if that confidently finds exactly one
+  surface, no prompt, done. **This metadata has proven unreliable in real use** (`resume_binding`
+  in particular turned out to be transient — present on a surface one moment, `null` on the same
+  surface shortly after — and `title` reflects the live task line, not literally "claude"), so
+  whenever the heuristic doesn't confidently find exactly one match, it falls back to printing a
+  numbered list of every surface in the workspace and asking you to pick. Either way, the result
+  (its `ref`, e.g. `surface:5`) is **cached** to `$NAVIGATOR_STATE_DIR/surface` as a side effect
+  of starting.
 - **`speak.sh`** reads that cache instead of trying to live-resolve. If there's no cache yet
   (e.g. you want voice without running the file watcher), run
   [`refresh-surface.sh`](refresh-surface.sh) once from inside the target pane to prime it:

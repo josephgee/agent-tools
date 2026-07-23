@@ -448,6 +448,32 @@ user's actual captured JSON, through the real `resolve_surface` function (not ju
 filter) with a stubbed `cmux` — correctly resolves and caches `surface:5`, the surface the user
 confirmed was actually running Claude Code.
 
+### Correction: `resume_binding` is transient, not stable — added a human-confirmed fallback
+
+A second real-world run, moments after the first, showed the *same* `surface:5` with
+`resume_binding: null` — the field that had just been confirmed as the reliable signal. This
+means `resume_binding` is populated only transiently (likely around some resume/auto-approval
+event), not a persistent identity marker. Two heuristics (`initial_command`/`title`, then
+`resume_binding.kind`) had now each failed for structural reasons in real use, not just
+wrong-guessing — suggesting no available metadata field is reliably "this is Claude Code" at all
+times.
+
+Rather than look for a third heuristic, added a **human-confirmed fallback**: when the metadata
+heuristic doesn't confidently find exactly one match, `resolve_surface` now lists every surface
+in the workspace (numbered, with ref/agent-kind/title) and prompts for a selection, instead of
+only dumping raw JSON and requiring the human to hunt for `--surface` manually. Heuristic
+matching is kept as a fast path (skips the prompt when it does confidently find one surface) but
+is no longer the only path.
+
+While testing the picker, found and fixed a real display/selection bug: the row data was joined
+with `@tsv` (real tabs), but bash's `read` treats tab as "IFS whitespace" and always collapses
+runs of it regardless of what `IFS` is set to — so an empty field (e.g. no `resume_binding.kind`)
+adjacent to a tab silently vanished and shifted every field after it, corrupting the displayed
+title. Fixed by joining fields with `\x1f` (unit separator) instead, which isn't subject to that
+collapsing behavior. Verified: the display bug, the fix, the fast path (unchanged), a valid
+selection, an invalid selection, and a blank/cancelled selection (falls through to the raw-JSON
+dump) — all tested directly against the user's real captured data with a stubbed `cmux`.
+
 ## Open items / deferred decisions
 
 - Tool-level hardening of the never-edit-code rule (permission config), deferred until/unless

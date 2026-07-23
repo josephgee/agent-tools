@@ -3,13 +3,12 @@
 # watch.sh/speak.sh don't need a hardcoded --surface (and Hammerspoon doesn't
 # need per-pane editing).
 #
-# Strategy: find the workspace the cmux app currently has focused, then find
-# a surface in it whose visible text (title/command/whatever field cmux uses)
-# contains "claude". This is schema-agnostic on purpose — the exact JSON shape
-# of `cmux current-workspace --json` / `cmux list-panels --json` isn't
-# independently verified against a live cmux instance, only against its docs
-# prose. If it can't find exactly one match, it fails loudly with the raw JSON
-# instead of guessing, so you can tell what actually came back.
+# Strategy: find the workspace the cmux app currently has focused, then try to
+# spot the surface running Claude Code via metadata heuristics (see below).
+# Metadata alone has proven unreliable in practice (see the correction note
+# on `resume_binding` below), so when the heuristic doesn't confidently find
+# exactly one match, it falls back to asking the human to pick from a
+# numbered list of the real surfaces — never silently guesses wrong.
 #
 # IMPORTANT: "current workspace"/"current pane" resolution is scoped to the
 # pane/window the `cmux` CLI is invoked FROM (confirmed: running `cmux
@@ -33,21 +32,24 @@
 #                               non-zero (with a stderr message) if there is
 #                               no cache yet.
 
-# Primary signal: `resume_binding.kind` — a structured, exact field cmux sets
-# on agent-launched surfaces (confirmed against a real cmux session: the
-# Claude Code surface had `resume_binding: {"kind": "claude", "name": "Claude
-# Code", ...}`; other surfaces had `resume_binding: null`). This is much more
-# reliable than text matching — `initial_command` was null on a real session
-# (not always populated), and `title` reflects the live task/status line
-# (e.g. "✣ Clarify email list source in EmailSelectWithContactDetails"), not
-# literally "claude".
+# Heuristic signals tried, in order, before giving up and asking a human:
+# `resume_binding.kind` (a structured field cmux sets on agent-launched
+# surfaces) and `initial_command`/`title` containing "claude".
 #
-# Fallback signal: `initial_command`/`title` containing "claude" (kept for
-# surfaces without a resume_binding, e.g. a claude process started by hand
-# rather than through cmux's agent-launch mechanism). Deliberately NOT a
-# blanket recursive string search across all fields: fields like
-# requested_working_directory could contain "claude" as a path component and
-# false-positive.
+# CORRECTION: `resume_binding` was initially thought to be a stable identity
+# marker (seen as `{"kind": "claude", ...}` on the Claude Code surface), but
+# a second real-world capture showed the *same* surface with `resume_binding:
+# null` moments later — it's transient (populated only around some
+# resume/auto-approval event, not a persistent property), so it can't be
+# trusted alone. `initial_command` has also been observed `null` on a real
+# session (not always populated), and `title` reflects the live task/status
+# line (e.g. "✣ Clarify email list source in EmailSelectWithContactDetails"),
+# not literally "claude". None of these are blanket recursive string
+# searches across all fields (which risks false positives, e.g.
+# requested_working_directory containing "claude" as a path component) — but
+# given all of them are known to be unreliable individually, they're treated
+# as a fast-path heuristic only, not the source of truth. See
+# `_navwatch_prompt_pick` for the human-confirmed fallback.
 #
 # Identifiers are refs like "surface:7", under the key `ref` (confirmed
 # against a real `cmux list-panels --json` response).
@@ -101,22 +103,29 @@ resolve_surface() {
   ids="$(printf '%s' "$panels_json" | _navwatch_jq_find_claude_id 2>/dev/null || true)"
   n="$(printf '%s\n' "$ids" | grep -c . || true)"
 
+  local chosen=""
   if [[ "$n" -eq 1 ]]; then
-    printf '%s\n' "$ids"
+    chosen="$ids"
+  else
+    # Heuristic metadata (resume_binding.kind, title, initial_command) has
+    # proven unreliable in practice — resume_binding in particular is
+    # transient (seen populated, then null moments later on the same
+    # surface). Rather than guess again, ask a human: list every surface in
+    # the workspace and let them pick. Falls through to the raw-JSON dump
+    # below only if no selection is made (e.g. non-interactive/no stdin).
+    chosen="$(_navwatch_prompt_pick "$panels_json" "$n")" || chosen=""
+  fi
+
+  if [[ -n "$chosen" ]]; then
+    printf '%s\n' "$chosen"
     if [[ "$want_cache" -eq 1 ]]; then
       mkdir -p "$(_navwatch_state_dir)"
-      printf '%s\n' "$ids" > "$(_navwatch_surface_cache_file)"
+      printf '%s\n' "$chosen" > "$(_navwatch_surface_cache_file)"
     fi
     return 0
   fi
 
   {
-    if [[ "$n" -eq 0 ]]; then
-      echo "navigator-watch: couldn't auto-detect a surface running claude."
-    else
-      echo "navigator-watch: found multiple candidate surfaces, can't pick automatically:"
-      echo "$ids" | sed 's/^/  candidate id: /'
-    fi
     echo "Pass --surface explicitly (find it with: cmux list-panels --json)."
     echo "Raw 'cmux current-workspace --json':"
     printf '%s\n' "$ws_json"
@@ -124,4 +133,60 @@ resolve_surface() {
     printf '%s\n' "$panels_json"
   } >&2
   return 1
+}
+
+# Ask the human to pick, when heuristic matching found zero or multiple
+# candidates. Lists every surface in the workspace (not just heuristic
+# matches), so a total heuristic miss is still recoverable without leaving
+# the terminal. Prints the menu/prompt to stderr; prints only the chosen ref
+# to stdout on success. Returns non-zero (no stdout) if no selection is made
+# (blank input, invalid choice, or no stdin to read from).
+_navwatch_prompt_pick() {
+  local panels_json="$1" n="$2"
+
+  if [[ "$n" -eq 0 ]]; then
+    echo "navigator-watch: couldn't confidently auto-detect the Claude Code surface." >&2
+  else
+    echo "navigator-watch: found multiple candidates, can't pick automatically." >&2
+  fi
+
+  # NOTE: fields are joined with \x1f (unit separator), not a tab/@tsv. Tab is
+  # "IFS whitespace" to bash's `read`, which always collapses runs of it
+  # regardless of what IFS is set to — an empty field (e.g. no resume_binding)
+  # next to a tab would silently vanish and shift every field after it.
+  local rows
+  rows="$(printf '%s' "$panels_json" | jq -r '
+    (if type=="array" then .
+     else (.panels? // .surfaces? // .items? // .workspaces? // []) end)
+    | to_entries[]
+    | [(.key+1|tostring), (.value.ref // .value.id // "?"), (.value.resume_binding.kind // ""), (.value.title // "")]
+    | join("\u001f")
+  ' 2>/dev/null)"
+
+  if [[ -z "$rows" ]]; then
+    echo "navigator-watch: no surfaces found to choose from either." >&2
+    return 1
+  fi
+
+  echo "Pick the surface running Claude Code:" >&2
+  local -a refs=()
+  while IFS=$'\x1f' read -r idx ref kind title; do
+    refs[idx]="$ref"
+    if [[ -n "$kind" ]]; then
+      printf '  %s) %s  [agent: %s]  %s\n' "$idx" "$ref" "$kind" "$title" >&2
+    else
+      printf '  %s) %s  %s\n' "$idx" "$ref" "$title" >&2
+    fi
+  done <<< "$rows"
+
+  printf 'Enter number (blank to cancel): ' >&2
+  local choice
+  read -r choice
+
+  if [[ -z "$choice" || -z "${refs[$choice]:-}" ]]; then
+    echo "navigator-watch: no valid selection made." >&2
+    return 1
+  fi
+
+  printf '%s\n' "${refs[$choice]}"
 }
