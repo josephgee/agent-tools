@@ -11,10 +11,27 @@
 # prose. If it can't find exactly one match, it fails loudly with the raw JSON
 # instead of guessing, so you can tell what actually came back.
 #
-# Usage: source this file, then call `resolve_surface` (prints the id on
-# stdout, or prints a diagnostic to stderr and returns non-zero).
-
-command -v jq >/dev/null || { echo "error: jq not found (brew install jq) — needed for surface auto-detect" >&2; return 1 2>/dev/null || exit 1; }
+# IMPORTANT: "current workspace"/"current pane" resolution is scoped to the
+# pane/window the `cmux` CLI is invoked FROM (confirmed: running `cmux
+# list-panels --json` from inside a pane shows only that window's panels, not
+# every open window) — i.e. it's ancestry-based, not "whichever workspace has
+# UI focus." That means live resolution only works when called from inside a
+# cmux pane. A process launched ancestry-free (e.g. by Hammerspoon) has
+# nothing to scope to and can't reliably live-resolve.
+#
+# So: resolve live only where ancestry exists (watch.sh, run from inside the
+# target cmux pane), and CACHE the result to a file. Anything ancestry-free
+# (speak.sh via Hammerspoon) reads the cache instead of re-resolving.
+#
+# Usage:
+#   resolve_surface            prints the id on stdout (live cmux query),
+#                               or prints a diagnostic to stderr and returns
+#                               non-zero. Only reliable from inside a cmux pane.
+#   resolve_surface --cache    same, and also writes the result to
+#                               $NAVIGATOR_STATE_DIR/surface on success.
+#   read_cached_surface        prints the cached id on stdout, or returns
+#                               non-zero (with a stderr message) if there is
+#                               no cache yet.
 
 # Match on `initial_command` (set once at pane creation, e.g. a
 # cmux-agent-resume/claude-<uuid>.zsh resume script — stable) and `title`
@@ -34,7 +51,26 @@ _navwatch_jq_find_claude_id() {
   '
 }
 
+_navwatch_state_dir() { echo "${NAVIGATOR_STATE_DIR:-$HOME/.cache/navigator-watch}"; }
+_navwatch_surface_cache_file() { echo "$(_navwatch_state_dir)/surface"; }
+
+read_cached_surface() {
+  local f; f="$(_navwatch_surface_cache_file)"
+  if [[ -s "$f" ]]; then
+    cat "$f"
+    return 0
+  fi
+  echo "navigator-watch: no cached surface at $f yet. Run watch.sh (or refresh-surface.sh) from inside the target cmux pane first." >&2
+  return 1
+}
+
 resolve_surface() {
+  command -v jq >/dev/null || {
+    echo "error: jq not found (brew install jq) — needed for live surface auto-detect (not for reading a cache)" >&2
+    return 1
+  }
+  local want_cache=0
+  [[ "${1:-}" == "--cache" ]] && want_cache=1
   local ws_json ws_id panels_json ids n
 
   ws_json="$("${CMUX:-cmux}" current-workspace --json 2>/dev/null)" || {
@@ -54,6 +90,10 @@ resolve_surface() {
 
   if [[ "$n" -eq 1 ]]; then
     printf '%s\n' "$ids"
+    if [[ "$want_cache" -eq 1 ]]; then
+      mkdir -p "$(_navwatch_state_dir)"
+      printf '%s\n' "$ids" > "$(_navwatch_surface_cache_file)"
+    fi
     return 0
   fi
 

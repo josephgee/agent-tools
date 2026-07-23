@@ -53,9 +53,15 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# Resolved here (from inside the target cmux pane, where ancestry-based
+# resolution actually works) and cached, so speak.sh — launched ancestry-free
+# by Hammerspoon — can pick it up without trying to live-resolve itself.
 if [[ -z "$SURFACE" ]]; then
-  SURFACE="$(resolve_surface)" || exit 2
-  echo "navigator-watch: auto-detected surface $SURFACE" >&2
+  SURFACE="$(resolve_surface --cache)" || exit 2
+  echo "navigator-watch: auto-detected surface $SURFACE (cached for speak.sh)" >&2
+else
+  mkdir -p "${NAVIGATOR_STATE_DIR:-$HOME/.cache/navigator-watch}"
+  printf '%s\n' "$SURFACE" > "${NAVIGATOR_STATE_DIR:-$HOME/.cache/navigator-watch}/surface"
 fi
 command -v fswatch >/dev/null || { echo "error: fswatch not found (brew install fswatch)" >&2; exit 2; }
 command -v git >/dev/null || { echo "error: git not found" >&2; exit 2; }

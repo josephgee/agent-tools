@@ -64,9 +64,24 @@ command -v "$CMUX" >/dev/null || { echo "error: cmux CLI not found on PATH" >&2;
 
 # Surface is only needed at send time (stop), not at recording start — resolve
 # lazily so `start` never fails due to a detection hiccup; `stop` still needs it.
+#
+# speak.sh is normally launched ancestry-free (by Hammerspoon), so it CANNOT
+# reliably live-resolve via cmux ("current workspace" is scoped to the caller's
+# own pane/window, and there is none here). Instead it reads the cache that
+# watch.sh writes when it starts, from inside the target pane. Live resolution
+# is only attempted as a fallback for the unusual case of running speak.sh
+# directly from inside a cmux pane yourself.
 resolve_surface_if_needed() {
   [[ -n "$SURFACE" ]] && return 0
-  SURFACE="$(resolve_surface)" || return 1
+  if SURFACE="$(read_cached_surface 2>/dev/null)" && [[ -n "$SURFACE" ]]; then
+    echo "navigator-watch: using cached surface $SURFACE (from watch.sh)" >&2
+    return 0
+  fi
+  echo "navigator-watch: no cached surface; trying live resolution (only works if this pane has cmux ancestry)" >&2
+  SURFACE="$(resolve_surface)" || {
+    echo "navigator-watch: run watch.sh (or refresh-surface.sh) from inside the target cmux pane first, or pass --surface." >&2
+    return 1
+  }
   echo "navigator-watch: auto-detected surface $SURFACE" >&2
 }
 

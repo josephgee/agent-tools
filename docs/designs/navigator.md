@@ -316,6 +316,37 @@ Still not run against a live cmux socket end-to-end — the resolver fails loudl
 zero/multiple matches rather than guessing, specifically so a mismatch is diagnosable on first
 real use rather than silently wrong.
 
+### Correction: "current workspace" is ancestry-scoped, not UI-focus-scoped
+
+User observation: the `cmux` CLI is available from inside any pane, and running `cmux
+list-panels --json` from inside a pane shows only that window's panels, not every open window.
+This means "current workspace/pane" resolution is scoped to **whichever pane/window the caller
+was invoked from** (ancestry-based) — not "whichever workspace currently has UI focus in the
+app," which is what the original design assumed. That assumption was necessary for `speak.sh`
+(launched by Hammerspoon, with no ancestry link to any cmux pane) to auto-detect anything, and
+it's very likely wrong.
+
+Fix: don't attempt ancestry-free resolution at all. Resolve live only where ancestry genuinely
+exists (`watch.sh`, run from inside the target cmux pane) and **cache** the result to
+`$NAVIGATOR_STATE_DIR/surface`. `speak.sh` reads that cache instead of re-resolving. A standalone
+`refresh-surface.sh` primes the cache for voice-only use when the watcher isn't running. This
+keeps the "no per-pane hand-tooling" property for the common case (starting `watch.sh` for a
+project also primes voice) while not depending on an unverified (and now doubted) assumption
+about cmux's UI-focus semantics.
+
+### Correction: the access-mode env var doesn't do what it looked like
+
+The original Hammerspoon binding set `CMUX_SOCKET_MODE=allowAll` in the small subprocess it
+launches `speak.sh` in, on the theory that this would let that ancestry-free process bypass the
+default "cmux processes only" access check. Re-reading cmux's access-mode doc more carefully:
+allowAll is listed as an *environment override* alongside "Settings UI" as ways to configure the
+mode — i.e. a setting of the cmux app (the server) itself, not something a connecting client
+opts into per-invocation. A client setting this in its own environment almost certainly has no
+effect on the server's access decision. Fixed by removing that from the Hammerspoon script and
+documenting the real requirement: switch cmux's access mode to allowAll persistently via its own
+Settings UI (or via whatever mechanism sets environment for the cmux app process itself, e.g.
+`launchctl setenv`, since GUI apps don't inherit shell exports).
+
 ## Usage model clarification
 
 `watch.sh` is invoked from the *project being learned*, not from this `agent-tools` checkout —

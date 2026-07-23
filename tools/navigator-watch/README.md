@@ -12,7 +12,18 @@ touching the terminal; Claude Code hooks let the agent talk back by voice.
 
 > cmux's socket has access modes (Settings UI). Default is **"cmux processes only"** — anything
 > launched from inside a cmux terminal (like `watch.sh`) can connect. Processes started *outside*
-> cmux (like a Hammerspoon-launched `speak.sh`) need `CMUX_SOCKET_MODE=allowAll`.
+> cmux (like a Hammerspoon-launched `speak.sh`) need the access mode changed to **allowAll**,
+> **persistently, for the cmux app itself**, via its Settings UI — this is not something a client
+> can opt into per-invocation (e.g. setting `CMUX_SOCKET_MODE=allowAll` in your own shell/script
+> before calling `cmux` has no effect; access mode is the server's decision). allowAll means any
+> local process can reach the socket, not just ones cmux spawned — an intentional trade-off for
+> this hands-free-from-IDE path.
+>
+> Also: cmux's "current workspace/pane" resolution is scoped to **whichever pane/window the CLI
+> is invoked from** (confirmed: `cmux list-panels --json` run from inside a pane only shows that
+> window's panels) — it is not "whichever workspace has UI focus." That means live auto-detection
+> of the target surface only works from inside a cmux pane. See "Finding the surface" below for
+> how `speak.sh` (launched ancestry-free by Hammerspoon) works around that.
 
 ## The three paths
 
@@ -93,24 +104,35 @@ cd ~/work/thing
 navigator-watch
 ```
 
-## Finding the surface (usually automatic)
+## Finding the surface (auto-detect + cache)
 
-Both `watch.sh` and `speak.sh` **auto-detect** the surface running Claude Code — you don't
-normally need to know or pass a surface id at all, and Hammerspoon needs no per-pane
-configuration. Detection ([`lib/resolve-surface.sh`](lib/resolve-surface.sh)) asks cmux for the
-currently focused workspace (`cmux current-workspace`), then finds the surface in it whose
-`initial_command` (the resume script cmux launches an agent pane with) or `title` mentions
-"claude", and passes its `ref` (e.g. `surface:7`) as `--surface`.
+`cmux`'s "current workspace/pane" resolution is scoped to whichever pane you invoke the CLI
+*from* — confirmed by running `cmux list-panels --json` inside a pane and seeing only that
+window's panels. So live auto-detection only works from inside a cmux pane, and `speak.sh`
+(launched by Hammerspoon, with no ancestry link to any cmux pane) can't rely on it.
 
-This is verified against a real `cmux list-panels --json` sample but not run end-to-end against
-a live cmux socket yet, and it fails loudly rather than guessing if it finds zero or multiple
-candidates — it'll print the raw `cmux` JSON so you (or I) can adjust the matching if your setup
-differs. If it doesn't work, or if you have multiple Claude Code surfaces open and want a
-specific one, pass `--surface <id>` explicitly (ids look like `surface:7`, not a bare number):
+The split:
 
-```bash
-cmux list-panels --json   # find the ref yourself, e.g. "surface:7"
-```
+- **`watch.sh`** runs from inside the target cmux pane (see "Where you run this from"), so its
+  auto-detection is legitimate. It resolves the surface running claude — asking `cmux
+  current-workspace` for the pane's own window, then matching a surface in it whose
+  `initial_command` (the resume script cmux launches an agent pane with) or `title` mentions
+  "claude", using its `ref` (e.g. `surface:7`) — and **caches** the result to
+  `$NAVIGATOR_STATE_DIR/surface` as a side effect of starting.
+- **`speak.sh`** reads that cache instead of trying to live-resolve. If there's no cache yet
+  (e.g. you want voice without running the file watcher), run
+  [`refresh-surface.sh`](refresh-surface.sh) once from inside the target pane to prime it:
+
+  ```bash
+  ~/workspace/agent-tools/tools/navigator-watch/refresh-surface.sh
+  ```
+
+Either path also accepts an explicit `--surface <id>` (ids look like `surface:7`, not a bare
+number; find one yourself with `cmux list-panels --json`) to skip auto-detection entirely.
+
+The matching logic is verified against a real `cmux list-panels --json` sample but not run
+end-to-end against a live cmux socket yet, and it fails loudly with the raw JSON rather than
+guessing if it finds zero or multiple candidates.
 
 ## Path A — file watcher
 
@@ -167,10 +189,13 @@ export NAVIGATOR_WHISPER_MODEL=~/models/ggml-base.en.bin
 ### Hotkey binding (Hammerspoon)
 
 See [`hammerspoon/init.lua`](hammerspoon/init.lua). Copy the binding into `~/.hammerspoon/init.lua`
-(no per-pane editing needed — surface is auto-detected), then reload Hammerspoon. It offers a
-toggle style (tap to start/stop) and a push-to-talk style (hold to record). Because it's a global
-hotkey, it fires while you're focused in WebStorm. Since Hammerspoon runs outside cmux, the
-binding sets `CMUX_SOCKET_MODE=allowAll` so `speak.sh` can reach the socket.
+(no per-pane editing needed — surface comes from the cache, see above), then reload Hammerspoon.
+It offers a toggle style (tap to start/stop) and a push-to-talk style (hold to record). Because
+it's a global hotkey, it fires while you're focused in WebStorm.
+
+**One-time setup:** since Hammerspoon launches `speak.sh` outside cmux, you must switch cmux's
+socket access mode to **allowAll** yourself, persistently, in cmux's own Settings UI — see the
+access-mode note near the top of this README for why a client-side env var doesn't achieve this.
 
 ## Path C — agent speaks back (Claude Code hooks)
 
