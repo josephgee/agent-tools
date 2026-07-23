@@ -33,12 +33,22 @@
 #                               non-zero (with a stderr message) if there is
 #                               no cache yet.
 
-# Match on `initial_command` (set once at pane creation, e.g. a
-# cmux-agent-resume/claude-<uuid>.zsh resume script — stable) and `title`
-# (whatever's currently in the foreground — catches a live `claude` process,
-# but drifts once you run something else in that pane). Deliberately NOT a
-# blanket recursive string search: fields like requested_working_directory
-# could contain "claude" as a path component and false-positive.
+# Primary signal: `resume_binding.kind` — a structured, exact field cmux sets
+# on agent-launched surfaces (confirmed against a real cmux session: the
+# Claude Code surface had `resume_binding: {"kind": "claude", "name": "Claude
+# Code", ...}`; other surfaces had `resume_binding: null`). This is much more
+# reliable than text matching — `initial_command` was null on a real session
+# (not always populated), and `title` reflects the live task/status line
+# (e.g. "✣ Clarify email list source in EmailSelectWithContactDetails"), not
+# literally "claude".
+#
+# Fallback signal: `initial_command`/`title` containing "claude" (kept for
+# surfaces without a resume_binding, e.g. a claude process started by hand
+# rather than through cmux's agent-launch mechanism). Deliberately NOT a
+# blanket recursive string search across all fields: fields like
+# requested_working_directory could contain "claude" as a path component and
+# false-positive.
+#
 # Identifiers are refs like "surface:7", under the key `ref` (confirmed
 # against a real `cmux list-panels --json` response).
 _navwatch_jq_find_claude_id() {
@@ -46,7 +56,10 @@ _navwatch_jq_find_claude_id() {
     (if type=="array" then .
      else (.panels? // .surfaces? // .items? // .workspaces? // [] ) end)
     | .[]
-    | select( ((.initial_command // "") + " " + (.title // "")) | test("claude"; "i") )
+    | select(
+        ((.resume_binding.kind? // "") | test("claude"; "i"))
+        or (((.initial_command // "") + " " + (.title // "")) | test("claude"; "i"))
+      )
     | (.ref? // .id? // .surface_id? // .surfaceId? // .surface? // .panel_id? // empty)
   '
 }

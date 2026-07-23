@@ -429,6 +429,25 @@ by actually symlinking `watch.sh` the way `setup.sh` does and invoking it throug
 letting the outer shell expand variables meant for the replacement text — caught immediately via
 `git checkout` before it was ever tested or committed, redone properly with direct file edits.)
 
+### Correction: the surface-matching heuristic missed the real Claude Code pane
+
+First real-world run surfaced the predicted risk directly: workspace resolution worked correctly
+(found `workspace:3`, queried it), but the surface matcher found zero candidates. Real data
+showed why — on an actual session, the Claude Code surface had `initial_command: null` (not
+always populated, contrary to the one earlier sample) and `title: "✣ Clarify email list source in
+EmailSelectWithContactDetails"` (the live task/status line, not literally "claude"). Both
+signals the matcher relied on were absent or misleading.
+
+The real, reliable signal was sitting in the same payload: **`resume_binding.kind: "claude"`** —
+a structured, exact field cmux sets on agent-launched surfaces (`null` on the other two surfaces
+in the same window: a dev server and the pane running the diagnostic commands themselves).
+Switched matching to prioritize `resume_binding.kind`, keeping the `initial_command`/`title`
+substring check only as a fallback for surfaces without a `resume_binding` (e.g. a `claude`
+process started by hand rather than through cmux's agent-launch mechanism). Verified against the
+user's actual captured JSON, through the real `resolve_surface` function (not just the bare jq
+filter) with a stubbed `cmux` — correctly resolves and caches `surface:5`, the surface the user
+confirmed was actually running Claude Code.
+
 ## Open items / deferred decisions
 
 - Tool-level hardening of the never-edit-code rule (permission config), deferred until/unless

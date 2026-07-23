@@ -131,9 +131,10 @@ The split:
 - **`watch.sh`** runs from inside the target cmux pane (see "Where you run this from"), so its
   auto-detection is legitimate. It resolves the surface running claude — asking `cmux
   current-workspace` for the pane's own window, then matching a surface in it whose
-  `initial_command` (the resume script cmux launches an agent pane with) or `title` mentions
-  "claude", using its `ref` (e.g. `surface:7`) — and **caches** the result to
-  `$NAVIGATOR_STATE_DIR/surface` as a side effect of starting.
+  `resume_binding.kind` is `"claude"` (the primary, reliable signal — confirmed against a real
+  session; `title` reflects the live task/status line, not literally "claude", so it's only a
+  fallback for surfaces without a `resume_binding`), using its `ref` (e.g. `surface:5`) — and
+  **caches** the result to `$NAVIGATOR_STATE_DIR/surface` as a side effect of starting.
 - **`speak.sh`** reads that cache instead of trying to live-resolve. If there's no cache yet
   (e.g. you want voice without running the file watcher), run
   [`refresh-surface.sh`](refresh-surface.sh) once from inside the target pane to prime it:
