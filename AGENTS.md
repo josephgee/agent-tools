@@ -1,9 +1,19 @@
 # agent-tools — Agent Instructions
 
-This repo is a shared collection of [Agent Skills](https://agentskills.io/specification).
-There is no application code, build step, or test suite — the content *is* the product. See
-`README.md` for what this repo is and how skills get installed; this file covers how to work
-on skills within it.
+This repo is a shared collection of reusable agent tooling in two forms:
+
+- **`skills/`** — [Agent Skills](https://agentskills.io/specification): markdown-only, spec
+  -conformant, harness-agnostic. No code, no build step — the content *is* the product.
+- **`tools/`** — actual scripts/programs for things a `SKILL.md` can't do (file watchers,
+  hotkey/voice glue, IPC into a running session). Each tool owns its directory and `README.md`,
+  may have real dependencies, and is not required to be harness-agnostic.
+
+See `README.md` for what this repo is and how things get installed. This file covers how to work
+within it. Design notes for larger efforts live in `docs/designs/`.
+
+The rules below are about **skills** unless stated otherwise. For **tools**: keep each one
+self-contained in its directory with a `README.md` that covers setup and dependencies; don't add
+repo-wide build/CI/packaging infrastructure for them (see Non-goals).
 
 ## Rules
 
