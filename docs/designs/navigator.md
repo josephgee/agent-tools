@@ -379,6 +379,35 @@ preserved alongside the new one (not replaced), a timestamped backup written bef
 and the second run made no further changes (no duplicate entries). Tested with a real `jq`
 binary against fabricated JSON, not against the actual Claude Code app reading the result.
 
+### Safety review (prompted: "review that work carefully, so we don't hose a local env")
+
+Targeted edge-case testing found and fixed real bugs before this ever touched a real machine:
+
+- **Backup-failure bug (the serious one):** the original code did
+  `cp "$CLAUDE_SETTINGS" "$CLAUDE_SETTINGS.bak..." 2>/dev/null || true` followed unconditionally
+  by overwriting the original — if the backup write failed (permissions, disk full), the script
+  proceeded to overwrite anyway with no safety net. Confirmed with a read-only `.claude/`
+  directory: fixed version now checks the `cp` succeeded and the backup file actually exists
+  before writing, and refuses (with a clear message) rather than overwriting unprotected.
+- **Invalid existing JSON:** confirmed jq fails closed (exit 5, no output, `set -e` aborts before
+  any write) if `settings.json` is malformed — already safe, but improved with an explicit
+  `jq empty` pre-check so the failure is a friendly warning that lets the rest of setup continue,
+  instead of a raw jq parse error aborting the whole script.
+- **Merge-output validation:** added a check that the merge result is itself valid, non-empty
+  JSON before it's ever written — belt-and-suspenders against a future jq-logic bug silently
+  corrupting the file.
+- **Hammerspoon broken-symlink edge case:** a dangling symlink at `~/.hammerspoon/init.lua` that
+  isn't ours would previously fail `-f` (so it looked like "nothing there") and then hit an
+  unguarded `ln -s`, hard-aborting the script via `set -e`. Fixed to detect any existing path
+  entry (including broken symlinks) and leave it alone with instructions, matching the pattern
+  already used for the PATH symlink step.
+- **Missing `git`:** added an explicit early check with a clear message, instead of an
+  unguarded `git config` call failing opaquely partway through.
+
+All fixes re-verified against the original happy-path test (still correct, still idempotent)
+plus the specific failure scenarios above, using a real `jq` binary against fabricated
+environments (fake `$HOME`, read-only directories, truncated JSON).
+
 ## Open items / deferred decisions
 
 - Tool-level hardening of the never-edit-code rule (permission config), deferred until/unless

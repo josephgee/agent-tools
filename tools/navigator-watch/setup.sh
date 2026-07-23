@@ -60,6 +60,8 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+command -v git >/dev/null || { echo "error: git not found — required even with --skip-gitignore/--skip-coaching, since project-local scaffolding checks for a git repo" >&2; exit 2; }
+
 note()  { echo "  - $*"; }
 did()   { echo "  ✓ $*"; }
 skip()  { echo "  · $* (already set up)"; }
@@ -146,27 +148,39 @@ if [[ "$SKIP_HOOKS" -eq 0 ]]; then
     mkdir -p "$(dirname "$CLAUDE_SETTINGS")"
     [[ -f "$CLAUDE_SETTINGS" ]] || echo '{}' > "$CLAUDE_SETTINGS"
 
-    # Substitute ABSOLUTE_PATH with this tool's real directory, then merge
-    # additively: for each hook event, concatenate existing + new hook groups
-    # and de-dup by command, so re-running never duplicates entries and any
-    # hooks you already had for other tools are preserved untouched.
-    RESOLVED_HOOKS="$(sed "s#ABSOLUTE_PATH#$HERE#g" "$NEW_HOOKS_TEMPLATE")"
-    MERGED="$(jq -s '
-      .[0] as $old | .[1] as $new |
-      $old * {hooks: (
-        ($old.hooks // {}) as $oh |
-        ($new.hooks // {}) as $nh |
-        (($oh | keys) + ($nh | keys) | unique) as $allkeys |
-        reduce $allkeys[] as $k ({}; . + { ($k): (($oh[$k] // []) + ($nh[$k] // []) | unique_by(.hooks[0].command? // .)) })
-      )}
-    ' "$CLAUDE_SETTINGS" <(echo "$RESOLVED_HOOKS"))"
-
-    if [[ "$MERGED" == "$(cat "$CLAUDE_SETTINGS")" ]]; then
-      skip "hooks already present in $CLAUDE_SETTINGS"
+    if ! jq empty "$CLAUDE_SETTINGS" 2>/dev/null; then
+      warn "$CLAUDE_SETTINGS isn't valid JSON — not touching it. Fix it by hand or pass --skip-hooks, then re-run."
     else
-      cp "$CLAUDE_SETTINGS" "$CLAUDE_SETTINGS.bak.$(date +%s)" 2>/dev/null || true
-      printf '%s\n' "$MERGED" > "$CLAUDE_SETTINGS"
-      did "merged Stop/UserPromptSubmit/PreToolUse hooks into $CLAUDE_SETTINGS (backup saved alongside)"
+      # Substitute ABSOLUTE_PATH with this tool's real directory, then merge
+      # additively: for each hook event, concatenate existing + new hook groups
+      # and de-dup by command, so re-running never duplicates entries and any
+      # hooks you already had for other tools are preserved untouched.
+      RESOLVED_HOOKS="$(sed "s#ABSOLUTE_PATH#$HERE#g" "$NEW_HOOKS_TEMPLATE")"
+      MERGED="$(jq -s '
+        .[0] as $old | .[1] as $new |
+        $old * {hooks: (
+          ($old.hooks // {}) as $oh |
+          ($new.hooks // {}) as $nh |
+          (($oh | keys) + ($nh | keys) | unique) as $allkeys |
+          reduce $allkeys[] as $k ({}; . + { ($k): (($oh[$k] // []) + ($nh[$k] // []) | unique_by(.hooks[0].command? // .)) })
+        )}
+      ' "$CLAUDE_SETTINGS" <(echo "$RESOLVED_HOOKS"))"
+
+      # Belt-and-suspenders: refuse to write anything that isn't itself valid,
+      # non-empty JSON, in case of a merge-logic bug — never trust MERGED blind.
+      if [[ -z "$MERGED" ]] || ! printf '%s' "$MERGED" | jq empty >/dev/null 2>&1; then
+        warn "merge produced unexpected output — not writing anything. Please report this; $CLAUDE_SETTINGS is untouched."
+      elif [[ "$MERGED" == "$(cat "$CLAUDE_SETTINGS")" ]]; then
+        skip "hooks already present in $CLAUDE_SETTINGS"
+      else
+        BACKUP="$CLAUDE_SETTINGS.bak.$(date +%s)"
+        if cp "$CLAUDE_SETTINGS" "$BACKUP" && [[ -f "$BACKUP" ]]; then
+          printf '%s\n' "$MERGED" > "$CLAUDE_SETTINGS"
+          did "merged Stop/UserPromptSubmit/PreToolUse hooks into $CLAUDE_SETTINGS (backup: $BACKUP)"
+        else
+          warn "couldn't write a backup at $BACKUP — refusing to modify $CLAUDE_SETTINGS without one. Check permissions/disk space and re-run."
+        fi
+      fi
     fi
   fi
 else
@@ -205,10 +219,19 @@ if [[ "$SKIP_HAMMERSPOON" -eq 0 ]]; then
       warn "$HS_CONFIG already exists — not overwriting. Add this line to it yourself:"
       note "require(\"$HERE/hammerspoon/init\")"
     fi
+  elif [[ -e "$HS_CONFIG" || -L "$HS_CONFIG" ]]; then
+    # Something's there but isn't a regular file or our symlink (e.g. a
+    # broken/dangling symlink from elsewhere) — don't touch it.
+    warn "$HS_CONFIG exists (possibly a broken symlink) and isn't ours — not touching it. Add this line to your own config:"
+    note "require(\"$HERE/hammerspoon/init\")"
   else
     mkdir -p "$HOME/.hammerspoon"
-    ln -s "$HERE/hammerspoon/init.lua" "$HS_CONFIG"
-    did "symlinked $HS_CONFIG -> $HERE/hammerspoon/init.lua (reload Hammerspoon to pick it up)"
+    if ln -s "$HERE/hammerspoon/init.lua" "$HS_CONFIG" 2>/dev/null; then
+      did "symlinked $HS_CONFIG -> $HERE/hammerspoon/init.lua (reload Hammerspoon to pick it up)"
+    else
+      warn "couldn't create $HS_CONFIG (permissions?). Add this line to your own config:"
+      note "require(\"$HERE/hammerspoon/init\")"
+    fi
   fi
 else
   echo; echo "[6/6] Hammerspoon config — skipped (--skip-hammerspoon)"
