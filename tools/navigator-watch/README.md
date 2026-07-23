@@ -52,6 +52,44 @@ touching the terminal; Claude Code hooks let the agent talk back by voice.
 - **Hammerspoon** (`brew install --cask hammerspoon`) — Path B global hotkey.
 - **macOS `say`** (built in) — Path C TTS. Swappable, see below.
 
+## Where you run this from
+
+The scripts live in this `agent-tools` checkout, but you run them **against whatever project
+you're learning in** — a different directory entirely. Two things follow from that:
+
+- **`watch.sh`** defaults `--dir` to your current directory, so the natural pattern is: open a
+  cmux pane, `cd` into the project you're working in, then invoke the script *by its path in
+  this checkout* (or use the PATH symlink below) with no `--dir` needed:
+
+  ```bash
+  cd ~/work/thing                                  # your project, not agent-tools
+  ~/workspace/agent-tools/tools/navigator-watch/watch.sh --surface 3
+  ```
+
+  Running it from inside `tools/navigator-watch/` itself, or passing `--dir` pointed at the wrong
+  place, would watch this repo instead of your project.
+- **`speak.sh`** doesn't care about your working directory at all (it only needs `--surface`), so
+  it has no equivalent gotcha — run it from anywhere, or trigger it via the Hammerspoon hotkey
+  binding, which already invokes it by absolute path.
+- **Claude Code hooks** (`hooks/on-stop.sh`, `hooks/on-busy.sh`) are configured with absolute
+  paths in your Claude Code settings (see Path C below) and run wherever Claude Code invokes
+  them — nothing to think about here.
+
+### Optional: put `watch.sh` on PATH
+
+To avoid typing the full path every time, symlink it once:
+
+```bash
+ln -s ~/workspace/agent-tools/tools/navigator-watch/watch.sh /usr/local/bin/navigator-watch
+```
+
+Then the pattern above becomes just:
+
+```bash
+cd ~/work/thing
+navigator-watch --surface 3
+```
+
 ## Finding the surface id
 
 Every command needs the cmux surface id of the pane running Claude Code:
@@ -65,11 +103,17 @@ help orient you.)
 
 ## Path A — file watcher
 
-Run it from *inside* a cmux pane (so the socket is reachable in the default access mode):
+Run it from *inside* a cmux pane (so the socket is reachable in the default access mode), with
+your project directory as the working directory (see [Where you run this
+from](#where-you-run-this-from) above):
 
 ```bash
-./watch.sh --surface 3 --dir ~/work/thing
+cd ~/work/thing   # the project you're learning in — not this agent-tools checkout
+~/workspace/agent-tools/tools/navigator-watch/watch.sh --surface 3
+# or, if symlinked onto PATH: navigator-watch --surface 3
 ```
+
+`--dir <path>` overrides the working directory explicitly if you'd rather not `cd` first.
 
 Options: `--debounce <secs>` (quiet period after last save, default 3), `--idle <secs>` (idle
 poll interval, default 2), `--max-lines <n>` (threshold for calling a diff "large" in the

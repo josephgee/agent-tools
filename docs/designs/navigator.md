@@ -287,6 +287,14 @@ cmux's own Node-wrapped distribution) if `cmux-tui <verb>` CLI coverage proves i
 `fswatch` for file events; local Whisper (whisper.cpp or mlx-whisper) for STT; Hammerspoon for
 the global hotkey. No new build system — installed via existing brew/npm.
 
+## Usage model clarification
+
+`watch.sh` is invoked from the *project being learned*, not from this `agent-tools` checkout —
+it's not obvious from the script alone since `--dir` silently defaults to the caller's cwd. Fixed
+by adding an explicit "Where you run this from" section to the README (cd into the project, then
+invoke by path or via an optional PATH symlink), rather than relying on the `--dir` flag being
+discovered. `speak.sh` has no such gotcha (cwd-independent, only needs `--surface`).
+
 ## Open items / deferred decisions
 
 - Tool-level hardening of the never-edit-code rule (permission config), deferred until/unless
