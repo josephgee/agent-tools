@@ -355,6 +355,30 @@ by adding an explicit "Where you run this from" section to the README (cd into t
 invoke by path or via an optional PATH symlink), rather than relying on the `--dir` flag being
 discovered. `speak.sh` has no such gotcha (cwd-independent, only needs `--surface`).
 
+## Setup automation (setup.sh)
+
+User question: could an agent do most of the setup instead of the human hand-typing every step
+from the READMEs? Considered a repo-local `CLAUDE.md` for this and rejected it — the setup work
+mostly needs to happen in the *target* learning project's directory tree (a different repo),
+and CLAUDE.md loading is scoped to the agent's current working directory tree, so a CLAUDE.md
+living only in `agent-tools` wouldn't load there.
+
+Instead: `tools/navigator-watch/setup.sh`, an idempotent script any agent can be told to run
+(from anywhere — it doesn't depend on being "loaded"). It handles: the global gitignore trick,
+scaffolding empty coaching.md templates (global + project-local, never inventing actual coaching
+content), merging this tool's Claude Code hooks into a settings.json, a PATH symlink for
+`watch.sh`, and Hammerspoon config (symlinked only if none exists; otherwise reports what to add
+rather than overwrite). Explicitly does not touch cmux's socket access mode (only settable from
+within the cmux app itself) or install brew/npm dependencies.
+
+The hooks merge is the part with real correctness risk (clobbering a user's existing Claude Code
+hooks would be bad), so it was tested directly: a fake `settings.json` pre-populated with an
+unrelated `PostToolUse` hook and an existing `Stop` hook for a different tool, run through
+`setup.sh` twice. Confirmed: unrelated settings/hooks untouched, the pre-existing `Stop` hook
+preserved alongside the new one (not replaced), a timestamped backup written before any change,
+and the second run made no further changes (no duplicate entries). Tested with a real `jq`
+binary against fabricated JSON, not against the actual Claude Code app reading the result.
+
 ## Open items / deferred decisions
 
 - Tool-level hardening of the never-edit-code rule (permission config), deferred until/unless

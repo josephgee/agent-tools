@@ -6,7 +6,9 @@ during a session.
 
 See also: [`tools/navigator-watch`](../../tools/navigator-watch/README.md) for the voice/file
 -watch infrastructure this skill is normally paired with (optional — the skill works fine in a
-plain chat too, just without hands-free voice or automatic file-change updates).
+plain chat too, just without hands-free voice or automatic file-change updates). If you're using
+that tool, its [`setup.sh`](../../tools/navigator-watch/setup.sh) can do most of the steps below
+for you — including the coaching-file scaffolding — idempotently; ask your coding agent to run it.
 
 ## Starting a session
 

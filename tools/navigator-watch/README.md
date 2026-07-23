@@ -7,6 +7,19 @@ the agent's *behavior* is governed by the [`navigator` skill](../../skills/navig
 see its [setup guide](../../skills/navigator/README.md) for starting a session and configuring
 how you want to be coached (this doc only covers the file-watch/voice/TTS plumbing).
 
+**Quick setup:** most of the mechanical setup below (gitignore, coaching-file scaffolds, merging
+Claude Code hooks, PATH symlink, Hammerspoon config) can be done for you by running
+[`setup.sh`](setup.sh) — or just ask your coding agent to run it. It's idempotent (safe to
+re-run) and additive (merges into existing Claude Code hooks/settings rather than overwriting
+them). A few things it can't do for you are listed at the end of its output (installing brew/npm
+dependencies, granting Hammerspoon Accessibility permission, and switching cmux's socket access
+mode, since that's only settable from within the cmux app itself). Everything below still applies
+as the manual/detailed version, and as the reference for what `setup.sh` is actually doing.
+
+```bash
+~/workspace/agent-tools/tools/navigator-watch/setup.sh --project-dir ~/work/thing
+```
+
 It's built for **Claude Code running inside the [cmux](https://cmux.com) macOS app** (the
 Ghostty-based terminal by manaflow — `cmux --version` ≈ 0.64+, *not* the npm `cmux-tui`). cmux
 ships a `cmux` CLI / Unix socket that lets us inject text into the agent's surface without you
