@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # navigator-watch: Path B — voice → immediate injection into a cmux surface.
 #
-# NOTE: Claude Code now ships a built-in `/voice` dictation command. If that
-# covers your needs, you may not need this script at all. Path B's niche is
-# talking WITHOUT focusing the Claude Code pane (e.g. while in your IDE): a
-# global hotkey triggers this, transcribes locally, and injects the text via
-# the cmux CLI. Prefer /voice unless you specifically want hands-free-from-IDE.
+# This exists specifically so you can talk to the navigator WITHOUT switching focus
+# away from your IDE (e.g. WebStorm). Claude Code's built-in `/voice` dictation needs
+# its pane focused, which defeats that purpose, so it doesn't replace this path —
+# it's only a simpler alternative for moments when you're fine focusing that pane.
+# A global hotkey triggers this script; it records, transcribes locally, and
+# injects the text via the cmux CLI.
 #
 # Records audio, transcribes it locally, and sends the transcript straight into
 # the target cmux surface (no idle-waiting — Claude Code's own input queueing

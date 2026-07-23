@@ -118,12 +118,14 @@ for getting text *into* the running session (A and B); Claude Code hooks drive a
   finishes; Escape hard-interrupts) covers this for free — no busy-detection logic needed on
   this path. If the human wants a hard interrupt, that's a manual Escape press, not something the
   tool decides.
-- The global hotkey (Hammerspoon) fires while focused in WebStorm, so no terminal focus needed.
-- **Update:** Claude Code now ships a built-in `/voice` dictation command, which largely
-  supersedes this whole path. `/voice` is triggered inside the Claude Code pane (needs that pane
-  focused), so `speak.sh` is kept only for the narrower "talk without leaving the IDE" case.
-  Because Hammerspoon launches outside cmux, `speak.sh` needs `CMUX_SOCKET_MODE=allowAll` to
-  reach the socket.
+- The global hotkey (Hammerspoon) fires while focused in WebStorm, so no terminal focus needed —
+  this is the entire reason this path exists.
+- **On Claude Code's built-in `/voice`:** considered as a possible replacement, but rejected —
+  `/voice` requires focusing the Claude Code pane, which defeats the actual requirement (talk to
+  the navigator without changing contexts away from the IDE). `/voice` remains a simpler fallback
+  for moments the human doesn't mind switching focus, but `speak.sh`/Hammerspoon stays the primary
+  mechanism. Because Hammerspoon launches outside cmux, `speak.sh` needs
+  `CMUX_SOCKET_MODE=allowAll` to reach the socket.
 - **Multi-line/paste caveat:** the cmux app CLI has no documented bracketed-paste flag, so Path A
   no longer injects multi-line diffs. It writes the full diff to a file
   (`$NAVIGATOR_STATE_DIR/last-diff.patch`) and sends a single-line message naming the files and

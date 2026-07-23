@@ -21,8 +21,7 @@ touching the terminal; Claude Code hooks let the agent talk back by voice.
    you edit  ──▶ │ watch.sh   file changes → debounce → (idle?) │ ─▶ cmux `send` ─▶ agent pane
    in WebStorm   └─────────────────────────────────────────────┘        (Path A)
 
-   you speak  ──▶ Claude Code `/voice` (built-in dictation)  ── OR ──
-              ──▶ hotkey (Hammerspoon) ─▶ speak.sh: record → whisper → cmux `send` ─▶ agent pane
+   you speak  ──▶ hotkey (Hammerspoon) ─▶ speak.sh: record → whisper → cmux `send` ─▶ agent pane
                                                                                        (Path B)
 
    agent replies ─▶ Claude Code `Stop` hook ─▶ on-stop.sh: extract last message → TTS (`say`)
@@ -32,11 +31,11 @@ touching the terminal; Claude Code hooks let the agent talk back by voice.
 - **Path A — file changes → agent.** `watch.sh` watches your git project, debounces bursts of
   saves, waits until the agent is idle, then injects a single size-capped `git diff` so the
   navigator can react. Never interrupts the agent mid-turn.
-- **Path B — your voice → agent.** Claude Code's built-in **`/voice`** dictation is the simplest
-  option (use it if it fits). `speak.sh` is the alternative for talking *without focusing the
-  Claude Code pane*: a global hotkey records a clip, transcribes locally with Whisper, and sends
-  the text into the agent's surface immediately (Claude Code queues it if mid-turn; hit Escape to
-  hard-interrupt).
+- **Path B — your voice → agent, without leaving your IDE.** This is the core reason this path
+  exists: Claude Code's built-in `/voice` needs its pane focused, which defeats the point. A
+  global hotkey (works while focused in WebStorm) triggers `speak.sh`, which records a clip,
+  transcribes locally with Whisper, and sends the text into the agent's surface immediately
+  (Claude Code queues it if mid-turn; hit Escape to hard-interrupt).
 - **Path C — agent → your ears.** A Claude Code `Stop` hook (`on-stop.sh`) reads the agent's last
   message and speaks it via TTS, so you never have to look at the terminal.
 
@@ -86,11 +85,11 @@ Idle detection uses the Claude Code hook flag files (see Path C). Without the ho
 watcher can't detect idle and flushes after the debounce (with a warning) — installing the hooks
 is recommended.
 
-## Path B — voice
+## Path B — voice hotkey
 
-**Prefer Claude Code's built-in `/voice`** (type `/voice` in the Claude Code pane) if it fits your
-workflow — it needs none of the tooling below. Use `speak.sh` only if you want to talk *without*
-focusing the Claude Code pane (e.g. from WebStorm).
+The point of this path is talking to the navigator **without switching focus away from your
+IDE** — Claude Code's built-in `/voice` needs its pane focused, so it doesn't cover this case.
+(If you're ever fine focusing the Claude Code pane, `/voice` is simpler and needs none of this.)
 
 `speak.sh` records, transcribes, and sends:
 

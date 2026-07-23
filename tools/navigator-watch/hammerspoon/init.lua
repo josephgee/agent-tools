@@ -9,10 +9,9 @@
 --
 -- Adjust SPEAK and SURFACE to your setup.
 
--- NOTE: Claude Code's built-in `/voice` may cover dictation without any of
--- this. Use these bindings only for hands-free-from-IDE voice. Since Hammerspoon
--- launches outside cmux, the cmux socket is reachable only if cmux's access mode
--- is allowAll (set CMUX_SOCKET_MODE=allowAll in the environment).
+-- This exists so you can talk to the navigator without switching focus away from
+-- your IDE. Since Hammerspoon launches outside cmux, the cmux socket is reachable
+-- only if cmux's access mode is allowAll (set CMUX_SOCKET_MODE=allowAll below).
 
 local SPEAK   = os.getenv("HOME") .. "/workspace/agent-tools/tools/navigator-watch/speak.sh"
 local SURFACE = "4"      -- cmux surface id running the navigator agent (cmux list-panels --json)
