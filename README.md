@@ -26,10 +26,11 @@ Design notes for larger efforts live in `docs/designs/`.
   agent as a compact table grouped by source (builtin, extension, MCP, custom).
 - **[list-skills](skills/list-skills/SKILL.md)** — Lists the skills currently available to the
   agent as a compact table grouped by scope (global vs project) and location.
-- **[navigator](skills/navigator/SKILL.md)** — Reversed-role pairing for learning an unfamiliar
-  stack: the human drives (writes all the code), the agent is a hands-off voice navigator that
-  coaches, questions direction, catches skipped steps, and maintains a lean session artifact.
-  Never edits code. Pairs with the `navigator-watch` tool.
+- **[navigator](skills/navigator/SKILL.md)** ([setup guide](skills/navigator/README.md)) —
+  Reversed-role pairing for learning an unfamiliar stack: the human drives (writes all the code),
+  the agent is a hands-off voice navigator that coaches, questions direction, catches skipped
+  steps, and maintains a lean session artifact. Never edits code. Pairs with the
+  `navigator-watch` tool.
 - **[grill-me](skills/grill-me/SKILL.md)** — Interviews the user relentlessly about a plan or
   idea, branch by branch, until reaching shared understanding, then summarizes it.
 

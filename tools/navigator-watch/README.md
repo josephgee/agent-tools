@@ -3,7 +3,9 @@
 Infrastructure for the **navigator** learning workflow: you drive (write all the code, in your
 editor of choice — e.g. WebStorm), and an agent running in Claude Code acts as a hands-off
 navigator that coaches you by voice. This tool moves information between your work and the agent;
-the agent's *behavior* is governed by the [`navigator` skill](../../skills/navigator/SKILL.md).
+the agent's *behavior* is governed by the [`navigator` skill](../../skills/navigator/SKILL.md) —
+see its [setup guide](../../skills/navigator/README.md) for starting a session and configuring
+how you want to be coached (this doc only covers the file-watch/voice/TTS plumbing).
 
 It's built for **Claude Code running inside the [cmux](https://cmux.com) macOS app** (the
 Ghostty-based terminal by manaflow — `cmux --version` ≈ 0.64+, *not* the npm `cmux-tui`). cmux
