@@ -5,8 +5,15 @@
 // Speaks just enough of the protocol for the navigator watcher: identify,
 // list-workspaces, read-screen, send, send-key.
 //
-// Socket resolution (matches cmux docs): $TMPDIR/cmux-tui-<uid>/<session>.sock
-// Override with --socket <path>. Default session is "main".
+// Socket resolution, in order (matches cmux):
+//   1. --socket <path>              explicit override
+//   2. $CMUX_TUI_SOCKET / $CMUX_MUX_SOCKET   set by cmux for processes it launches
+//      (so anything started inside a cmux pane, incl. Claude Code hooks, just works)
+//   3. $XDG_RUNTIME_DIR/cmux-tui-<uid>/<session>.sock
+//   4. $TMPDIR/cmux-tui-<uid>/<session>.sock
+//   5. /tmp/cmux-tui-<uid>/<session>.sock
+// Default session is "main". The cmux control socket is always served; nothing
+// needs to be enabled.
 //
 // Usage:
 //   cmux.js [--session <name>] [--socket <path>] identify
@@ -49,9 +56,53 @@ function parseArgs(argv) {
 }
 
 function defaultSocketPath(session) {
-  const tmp = process.env.TMPDIR || os.tmpdir();
+  // Prefer the socket cmux exports to its child processes.
+  const fromEnv = process.env.CMUX_TUI_SOCKET || process.env.CMUX_MUX_SOCKET;
+  if (fromEnv) return fromEnv;
+
   const uid = typeof process.getuid === "function" ? process.getuid() : "0";
-  return path.join(tmp, `cmux-tui-${uid}`, `${session}.sock`);
+  const base = `cmux-tui-${uid}`;
+  const file = `${session}.sock`;
+  const roots = [process.env.XDG_RUNTIME_DIR, process.env.TMPDIR, "/tmp"].filter(Boolean);
+  // Return the first candidate that exists; fall back to the first root's path.
+  for (const root of roots) {
+    const p = path.join(root, base, file);
+    if (fs.existsSync(p)) return p;
+  }
+  return path.join(roots[0] || os.tmpdir(), base, file);
+}
+
+// Scan the candidate roots for any cmux control sockets, to help when the
+// derived path doesn't match (wrong session name, unexpected root, etc.).
+function findCmuxSockets() {
+  const roots = [...new Set(
+    [process.env.XDG_RUNTIME_DIR, process.env.TMPDIR, "/tmp"]
+      .filter(Boolean)
+      .map((r) => r.replace(/\/+$/, ""))
+  )];
+  const found = new Set();
+  for (const root of roots) {
+    let dirs;
+    try {
+      dirs = fs.readdirSync(root);
+    } catch {
+      continue;
+    }
+    for (const d of dirs) {
+      if (!d.startsWith("cmux-tui-")) continue;
+      const dir = path.join(root, d);
+      let files;
+      try {
+        files = fs.readdirSync(dir);
+      } catch {
+        continue;
+      }
+      for (const f of files) {
+        if (f.endsWith(".sock")) found.add(path.join(dir, f));
+      }
+    }
+  }
+  return [...found];
 }
 
 // Send one request, resolve with its `data` (ignores any interleaved event
@@ -60,7 +111,18 @@ function defaultSocketPath(session) {
 function request(socketPath, cmd) {
   return new Promise((resolve, reject) => {
     if (!fs.existsSync(socketPath)) {
-      reject(new Error(`cmux socket not found: ${socketPath}`));
+      const found = findCmuxSockets();
+      let msg = `cmux socket not found: ${socketPath}`;
+      if (found.length) {
+        msg +=
+          `\nFound these cmux sockets instead — pass one with --socket, or use its ` +
+          `session name with --session:\n  ` + found.join("\n  ");
+      } else {
+        msg +=
+          `\nNo cmux sockets found under $XDG_RUNTIME_DIR/$TMPDIR/tmp. Is cmux running? ` +
+          `If you're inside a cmux pane, $CMUX_TUI_SOCKET should be set (echo it to check).`;
+      }
+      reject(new Error(msg));
       return;
     }
     const id = 1;
