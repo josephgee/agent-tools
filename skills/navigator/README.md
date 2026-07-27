@@ -4,18 +4,54 @@
 navigator while you drive. This file is the human-facing setup guide: what to do before and
 during a session.
 
-See also: [`tools/navigator-watch`](../../tools/navigator-watch/README.md) for the voice/file
--watch infrastructure this skill is normally paired with (optional — the skill works fine in a
-plain chat too, just without hands-free voice or automatic file-change updates). If you're using
-that tool, its [`setup.sh`](../../tools/navigator-watch/setup.sh) can do most of the steps below
-for you — including the coaching-file scaffolding — idempotently; ask your coding agent to run it.
+## What this is
+
+Reversed-role pairing. You write every line of code; the agent coaches, questions direction,
+catches skipped steps, and keeps a running plan. It never edits your project files.
+
+It's designed to run in a terminal window you keep visible while you work — an IDE terminal pane
+alongside your editor. You don't summon it and wait for it; it watches your working tree and
+reacts on its own, and you glance over when you feel like it.
 
 ## Starting a session
 
-Load the `navigator` skill in Claude Code (or whatever harness you're using) and start talking.
-It will ask whether you're resuming a past effort or starting a new one, and if new, run a short
-intro conversation (goal, acceptance criteria, initial design hypothesis, step plan) before you
-start driving.
+1. `cd` into the project you're working in (not this repo).
+2. Launch Claude Code there.
+3. Say: *use the navigator skill*.
+
+It will arm the file watcher, ask whether you're resuming a past effort or starting a new one,
+and if new, run a short intro conversation (goal, acceptance criteria, initial design hypothesis,
+step plan) before you start driving. Then just code — it picks up your changes on its own.
+
+## The watcher
+
+`scripts/wait-for-change.sh` is bundled with the skill and the agent drives it for you. It polls
+your git working tree in the background and queues changes; you shouldn't need to touch it.
+
+**One-time:** make sure it's executable.
+
+```bash
+chmod +x scripts/wait-for-change.sh
+```
+
+Prerequisites are just `git` and `bash` — no `fswatch`, no daemons to install.
+
+If something seems off (the agent has gone quiet, or you want to stop it watching), you can run
+it yourself from your project directory:
+
+```bash
+<path-to-skill>/scripts/wait-for-change.sh --status   # is a watcher running? anything queued?
+<path-to-skill>/scripts/wait-for-change.sh --stop     # shut the watcher down
+<path-to-skill>/scripts/wait-for-change.sh --arm      # start it again
+```
+
+State lives under `~/.cache/navigator-watch/<hash-of-repo-path>/` (override with
+`NAVIGATOR_STATE_DIR`), keyed per repo so several projects can be watched independently. The
+agent stops the watcher when an effort completes; if a session dies unexpectedly, `--stop`
+cleans up the leftover process.
+
+Nothing is lost if the watcher is down for a while — it compares against the last change it
+reported, so anything you did while it wasn't running shows up when it's armed again.
 
 ## Setting up coaching directives (optional)
 
@@ -58,3 +94,11 @@ You generally don't need to touch this — the agent maintains it — but if you
 to inspect/edit it directly: `~/.claude/projects/<project>/memory/navigator/<slug>/session.md`
 (plus a sibling `history.md`). See [`references/artifact-format.md`](references/artifact-format.md)
 for the full structure. It's outside your project repo, so nothing to gitignore there.
+
+## Not currently wired up
+
+`tools/navigator-watch/` at the repo root holds an earlier approach: hands-free voice (TTS +
+dictation) and delivery into a cmux pane via Hammerspoon. That's parked, not deleted — the
+current setup deliberately does neither, on the theory that a terminal pane in your field of
+vision does the same job as voice with far less machinery. Ignore that directory for now; it
+doesn't participate in the skill.

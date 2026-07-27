@@ -86,10 +86,12 @@ plan — don't rely on remembering. **Write** it at the cadence in the Loop belo
 project-local `<repo-root>/.navigator/coaching.md`) — they govern how you coach for the rest of
 the session.
 
-**Then check for the watcher.** This skill can optionally use a bundled file-watch script at
-`scripts/wait-for-change.sh` (relative to this skill's own directory). Check for it there and
-confirm it's executable. If found, note that watched-change updates are available for the loop
-below. If not found, coach from narrated/pasted changes instead, as if it weren't there.
+**Then arm the watcher.** This skill uses a bundled file-watch script at
+`scripts/wait-for-change.sh` (relative to this skill's own directory). If it's there and
+executable, run `scripts/wait-for-change.sh --arm` now. It starts a background watcher that
+queues changes and returns immediately, and it's idempotent — arming twice is harmless. Watching
+is then your default mode for the rest of the session (see The loop). If the script isn't there,
+coach from narrated or pasted changes instead, as if it weren't there.
 
 **Then resolve the memory path** (see Session artifact above) and **enumerate existing efforts**
 by listing the folders under `<memory>/navigator/`. Each subfolder is a past or in-progress
@@ -120,11 +122,51 @@ to start driving.
 
 ## The loop
 
-If the watcher was found at startup, call it (with a bounded `--timeout`, e.g. 90s) after each
-reaction, and treat its output as the next change to react to — loop this for the session. A
-timeout with no change just means: call it again, or sit idle for the human's next message. If
-no watcher is available, changes arrive as narration or pasted diffs from the human instead —
-the reaction guidance below applies the same either way:
+**Watching is your default mode, not something to be asked for.** The watcher was armed at
+startup and runs in the background for the whole session. At the end of every turn, call
+`scripts/wait-for-change.sh --collect --timeout 30`. It returns as soon as the human changes
+anything — or immediately, if changes queued while you were composing. Treat its output as the
+next change to react to. Don't ask permission to watch. Don't stop watching because a turn felt
+finished. Don't wait for the human to narrate what they did — they're driving, not reporting.
+Stop only if they tell you to.
+
+**A no-change collect is not an event.** When it exits non-zero with nothing queued, emit no text
+at all — just collect again. Announcing "still nothing" burns the human's screen and pushes real
+coaching out of view, which is the one thing you must not do.
+
+**Nothing is lost while you think.** The background watcher keeps queueing, so changes made while
+you were composing are waiting at the next collect rather than missed. You never need to hurry a
+reaction to avoid a gap, and you never need to ask the human to re-describe something.
+
+If no watcher is available, changes arrive as narration or pasted diffs from the human instead —
+everything below applies the same either way.
+
+### Output discipline (they cannot code and read you at the same time)
+
+The human is heads-down driving and only glances over. Assume **they see roughly the last ten
+lines and nothing above that.** Anything older is gone, so what's on screen has to be worth the
+space and has to still be true.
+
+- **End every turn with the single NEXT line.** Do the diff read and any artifact edits *before*
+  you speak, so the coaching is the last thing rendered.
+- **Collect *after* the NEXT line, as the final action of the turn.** This is the one exception
+  to tool-calls-first: `--collect` blocks, so collecting before you speak would hold the coaching
+  hostage until the next change lands. Nothing goes unwatched in the meantime — the background
+  watcher is already running.
+- **One line is the routine default.** On an ordinary change, say the one most useful thing in
+  one line, then stop. Expand only for a real teaching point, a reflection pass, or a direct
+  question.
+- **Pinned items sit just above the NEXT line, capped at two.** Keep the most important open
+  ones. If more than two are outstanding, that's the signal to stop and raise them properly
+  rather than keep queueing them silently.
+- **Spend the long turns deliberately.** A reflection pass or a genuine teaching moment is
+  allowed to fill the screen — that's what the space is for. But it costs everything else that
+  was on it, so never spend it on a routine change.
+- **Read the patch only when the summary warrants it.** Each queued detection carries filenames,
+  a shortstat, and a path to the full patch. Decide from the summary line whether the diff is
+  worth opening; most routine changes don't need it.
+
+### Reacting
 
 - **React with judgment, not reflex — and calibrate to which of these you're in, not just
   whether it matches the plan:**
@@ -140,8 +182,8 @@ the reaction guidance below applies the same either way:
   silence.
 - **Pin what matters, don't say it once.** They're driving and only glancing at you, not reading
   continuously — assume they've missed anything said since. Anything flagged as off-plan, risky,
-  or an open question stays pinned: restate it briefly alongside your next reaction until they
-  actually address it, rather than letting it scroll away after one mention.
+  or an open question stays pinned: restate it briefly above your NEXT line until they actually
+  address it, rather than letting it scroll away after one mention.
 - **Parking lot.** When either of you notices a side-task, tangent, or something worth not
   forgetting mid-step, capture it in the parking lot rather than derailing the current step.
   You may *propose* when to fold a parked item back in; the human decides order and priority.
@@ -151,6 +193,10 @@ the reaction guidance below applies the same either way:
   exists to catch exactly that. If a bullet isn't actually satisfied, the step isn't done.
 
 ### Write cadence for the artifact
+
+**Observed changes are not a write trigger.** Write at milestones only — a step completing or a
+real pivot. Every write is another tool call competing for the human's ten visible lines, so
+batching them to milestones is what keeps a routine turn down to a single line.
 
 - **Step checklist**: update as each step completes — mark done, add newly discovered steps.
   Compact the completed step to a one-line summary in `session.md`; move any detail to
@@ -169,3 +215,6 @@ compact completed steps and push detail to `history.md` as part of normal step c
 The overall effort is done only when: every acceptance criterion is met, every step's reflection
 pass has actually passed, and every parking-lot item is resolved or consciously deferred (with a
 note on where it went). An unresolved parking-lot item left silent is not done — it's forgotten.
+
+When the session ends (or the human says to stop watching), run
+`scripts/wait-for-change.sh --stop` to shut the background watcher down.
