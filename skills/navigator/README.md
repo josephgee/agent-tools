@@ -95,10 +95,11 @@ to inspect/edit it directly: `~/.claude/projects/<project>/memory/navigator/<slu
 (plus a sibling `history.md`). See [`references/artifact-format.md`](references/artifact-format.md)
 for the full structure. It's outside your project repo, so nothing to gitignore there.
 
-## Not currently wired up
+## Why there is no voice mode
 
-`tools/navigator-watch/` at the repo root holds an earlier approach: hands-free voice (TTS +
-dictation) and delivery into a cmux pane via Hammerspoon. That's parked, not deleted — the
-current setup deliberately does neither, on the theory that a terminal pane in your field of
-vision does the same job as voice with far less machinery. Ignore that directory for now; it
-doesn't participate in the skill.
+An earlier version of this delivered coaching as hands-free speech (TTS + dictation) into a cmux
+pane via Hammerspoon. It is gone — see git history if you want it back. The bet replacing it is
+that a terminal pane already in your field of vision does the same job as a spoken notification,
+with none of the machinery: no accessibility permissions, no pane resolution, no audio stack. If
+voice returns, it should return as an additive layer over a loop that already works silently, not
+as a prerequisite for one.
