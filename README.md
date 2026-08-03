@@ -1,17 +1,14 @@
 # agent-tools
 
-A shared collection of reusable agent tooling, meant to be portable across machines (home and
-work) and jobs. It holds two kinds of thing:
+A shared collection of reusable [Agent Skills](https://agentskills.io/specification), meant to be
+portable across machines (home and work) and jobs. Each skill is a self-contained, markdown-only
+capability package living in its own directory under `skills/`, following the standard `SKILL.md`
+format — so the same directory can be used as-is by multiple harnesses
+([Claude Code](https://docs.anthropic.com/en/docs/claude-code) and
+[pi](https://github.com/badlogic/pi-coding-agent)) without modification.
 
-- **`skills/`** — [Agent Skills](https://agentskills.io/specification): self-contained,
-  markdown-only capability packages. Each skill lives in its own directory and follows the
-  standard `SKILL.md` format, so the same directory can be used as-is by multiple harnesses
-  (e.g. [pi](https://github.com/badlogic/pi-coding-agent) and
-  [Claude Code](https://docs.anthropic.com/en/docs/claude-code)) without modification.
-- **`tools/`** — actual scripts/programs for agent-adjacent workflows that can't live inside a
-  `SKILL.md` (file watchers, hotkey/voice glue, IPC into a running session, etc.). Each tool has
-  its own directory and `README.md`, and may have real dependencies and setup. Tools are not
-  required to be harness-agnostic the way skills are.
+A skill may bundle its own supporting scripts (see `navigator`), but the repo has no shared
+application code, build step, or dependencies of its own.
 
 Design notes for larger efforts live in `docs/designs/`.
 
@@ -29,18 +26,10 @@ Design notes for larger efforts live in `docs/designs/`.
 - **[navigator](skills/navigator/SKILL.md)** ([setup guide](skills/navigator/README.md)) —
   Reversed-role pairing for learning an unfamiliar stack: the human drives (writes all the code),
   the agent is a hands-off voice navigator that coaches, questions direction, catches skipped
-  steps, and maintains a lean session artifact. Never edits code. Pairs with the
-  `navigator-watch` tool.
+  steps, and maintains a lean session artifact. Never edits code. Bundles a git-polling file
+  watcher (`scripts/wait-for-change.sh`) that the agent drives for you.
 - **[grill-me](skills/grill-me/SKILL.md)** — Interviews the user relentlessly about a plan or
   idea, branch by branch, until reaching shared understanding, then summarizes it.
-
-## Tools
-
-- **[navigator-watch](tools/navigator-watch/README.md)** — Infrastructure for the `navigator`
-  skill: watches your project for file changes and feeds them to the agent, sends your
-  hotkey-triggered voice input into a cmux-hosted Claude Code session, and speaks the agent's
-  replies aloud via a Claude Code hook — so you can pair by voice while editing in an IDE.
-  macOS + cmux + Claude Code. See its README for setup.
 
 ## Installing skills
 
@@ -59,11 +48,11 @@ git clone <this-repo> ~/workspace/agent-tools
 If you want all skills available everywhere, symlink the whole `skills/` directory:
 
 ```bash
+# Claude Code, global
+ln -s ~/workspace/agent-tools/skills ~/.claude/skills
+
 # pi, global
 ln -s ~/workspace/agent-tools/skills ~/.pi/agent/skills
-
-# Claude Code, global (if your version supports a personal skills directory)
-ln -s ~/workspace/agent-tools/skills ~/.claude/skills
 ```
 
 ### Link one skill at a time (shared/work environments)
@@ -72,11 +61,11 @@ If you only want specific skills available, or don't want to hand over the whole
 wholesale, symlink individual skill directories instead. Replace `tdd` with the skill you want.
 
 ```bash
+# Claude Code, global
+ln -s ~/workspace/agent-tools/skills/tdd ~/.claude/skills/tdd
+
 # pi, global
 ln -s ~/workspace/agent-tools/skills/tdd ~/.pi/agent/skills/tdd
-
-# Claude Code, global (if your version supports a personal skills directory)
-ln -s ~/workspace/agent-tools/skills/tdd ~/.claude/skills/tdd
 ```
 
 ### Project-scoped installs
@@ -85,6 +74,10 @@ To make a skill available only within a specific project (not globally), link in
 project's local skills directory instead of your home directory:
 
 ```bash
+# Claude Code, project-scoped
+mkdir -p .claude/skills
+ln -s ~/workspace/agent-tools/skills/tdd .claude/skills/tdd
+
 # pi, project-scoped
 mkdir -p .pi/skills
 ln -s ~/workspace/agent-tools/skills/tdd .pi/skills/tdd
@@ -93,13 +86,6 @@ ln -s ~/workspace/agent-tools/skills/tdd .pi/skills/tdd
 mkdir -p .agents/skills
 ln -s ~/workspace/agent-tools/skills/tdd .agents/skills/tdd
 ```
-
-### Note on Claude Code
-
-Depending on your Claude Code version, a personal `~/.claude/skills/` directory may or may not
-be picked up — some versions only discover skills bundled inside plugins/marketplaces. If a
-plain skills directory isn't recognized, packaging these skills as a minimal Claude Code plugin
-is a possible future option, but isn't set up in this repo today.
 
 ## Adding a new skill
 

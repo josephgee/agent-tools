@@ -1,11 +1,11 @@
 ---
 name: skill-review
-description: Reviews pi agent skills for effectiveness, structure, and context management. Use when evaluating whether a skill will work as intended, is well-organized, and uses context windows effectively.
+description: Reviews an Agent Skill (a `SKILL.md` directory) for effectiveness, structure, and context management, producing a rated assessment with concrete recommendations. Use only when the user explicitly asks for a skill to be reviewed, critiqued, or audited — this is a deliberate, token-expensive pass the user chooses to run, not something to trigger on your own after editing a skill.
 ---
 
 # Skill Review
 
-You review a pi agent skill and produce a structured assessment across three dimensions: **effectiveness**, **structure**, and **context management**.
+You review an Agent Skill and produce a structured assessment across three dimensions: **effectiveness**, **structure**, and **context management**.
 
 ## Startup
 

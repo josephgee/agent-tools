@@ -11,7 +11,7 @@ Do not read any skill's full `SKILL.md` body for this — you only need the fron
 
 ## Steps
 
-1. **Identify the harness** you're running in (pi, Claude Code, other) from environment clues — which config directories exist (`~/.pi`, `~/.claude`), how the session was launched, etc. If unsure, check both sets of locations below rather than guessing wrong.
+1. **Identify the harness** you're running in (Claude Code, pi, other) from environment clues — which config directories exist (`~/.claude`, `~/.pi`), how the session was launched, etc. If unsure, check both sets of locations below rather than guessing wrong.
 
 2. **Enumerate skill locations for that harness**, in this order, noting each scope with its icon:
 
@@ -24,20 +24,20 @@ Do not read any skill's full `SKILL.md` body for this — you only need the fron
    | ⌨️ | `cli` |
    | 🧩 | `plugin` |
 
-   **pi:**
-   - 🌐 `global`: `~/.pi/agent/skills/`, `~/.agents/skills/`
-   - 📁 `project`: `.pi/skills/`, `.agents/skills/` — check the current directory and walk up through ancestors to the git repo root (or filesystem root if not in a repo)
-   - Also note (without necessarily enumerating fully) any package-provided skills (`pi.skills` in `package.json`, 📦 `package`) or skills added via `settings.json`/`--skill` (⌨️ `cli`) if you have evidence of them — use those scopes rather than guessing global vs project
-
    **Claude Code:**
    - ⚙️ `builtin`: skills shipped with Claude Code itself, not installed by the user or project
    - 🌐 `global`: `~/.claude/skills/`
-   - 📁 `project`: `.claude/skills/` in the current directory and ancestors
+   - 📁 `project`: `.claude/skills/` — check the current directory and walk up through ancestors to the git repo root (or filesystem root if not in a repo)
    - 🧩 `plugin`: marketplace/plugin-provided skills — note their presence if visible, but it's fine to use this scope without fully resolving their origin
+
+   **pi:**
+   - 🌐 `global`: `~/.pi/agent/skills/`, `~/.agents/skills/`
+   - 📁 `project`: `.pi/skills/`, `.agents/skills/` — same walk-up as above
+   - Also note (without necessarily enumerating fully) any package-provided skills (`pi.skills` in `package.json`, 📦 `package`) or skills added via `settings.json`/`--skill` (⌨️ `cli`) if you have evidence of them — use those scopes rather than guessing global vs project
 
    If you're unsure which harness you're in, check both sets of paths.
 
-3. **For each location, list the skill directories it contains** (or root-level `.md` files where the harness allows that — pi allows this in `~/.pi/agent/skills/` and `.pi/skills/`, but not in `.agents/skills/` variants). For each, read only the YAML frontmatter of `SKILL.md` — `name` and `description` — not the rest of the file.
+3. **For each location, list the skill directories it contains.** For each, read only the YAML frontmatter of `SKILL.md` — `name` and `description` — not the rest of the file. Some harnesses also allow a bare root-level `.md` file to be a skill (pi does, in `~/.pi/agent/skills/` and `.pi/skills/` but not in `.agents/skills/` variants); include those where they apply.
 
 4. **Note symlinks when relevant.** Shared skill collections (like this repo) are typically installed via symlink. Scope is determined by *where the link lives* (global vs project skills dir), not by the symlink's target — but if the target path is informative (e.g. points at a shared repo clone), you may mention it in the location column.
 
@@ -48,11 +48,11 @@ Do not read any skill's full `SKILL.md` body for this — you only need the fron
    ```markdown
    | Skill | Scope | Location | Description |
    |-------|-------|----------|--------------|
-   | tdd | 🌐 global | ~/.pi/agent/skills/tdd | Strict TDD via THINK-RED-GREEN-REFACTOR cycles |
-   | skill-review | 🌐 global | ~/.pi/agent/skills/skill-review | Reviews skills for effectiveness and structure |
-   | api-conventions | 📁 project | .pi/skills/api-conventions | House rules for this repo's REST API layer |
+   | tdd | 🌐 global | <global skills dir>/tdd | Strict TDD via THINK-RED-GREEN-REFACTOR cycles |
+   | skill-review | 🌐 global | <global skills dir>/skill-review | Reviews skills for effectiveness and structure |
+   | api-conventions | 📁 project | <project skills dir>/api-conventions | House rules for this repo's REST API layer |
    ```
 
-   Truncate each description to roughly 12 words — enough to know what it's for, not the full frontmatter text.
+   Truncate each description to roughly 12 words — enough to know what it's for, not the full frontmatter text. The locations above are placeholders for shape only — always write the real paths you resolved in step 2 for the harness you're actually in.
 
 7. Respond with just the table — no preamble describing which locations you checked or what you found before it, no per-skill prose, no re-listing in another format afterward, no summary after it. If something notable needs flagging (a collision, a location you couldn't fully enumerate), add it as a single short line *after* the table, not before.

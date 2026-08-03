@@ -310,7 +310,7 @@ An item left open without one of these decisions is not done — it is forgotten
 
 ## Delegated Execution (Subagent Mode)
 
-If your environment gives you a way to delegate a task to an isolated agent and get its result back before proceeding (for example, pi's `subagent` tool, Claude Code's `Task` tool, or an equivalent in whatever harness you're running in), you can delegate each Cycle to a fresh subagent instead of running it directly, keeping this session's own context small no matter how many cycles the feature takes. Preflight, SHIP, and Cleanup stay local — they involve git-history decisions and handovers the user should be part of. This mode is optional and can be mixed with running cycles directly within the same session.
+If your environment gives you a way to delegate a task to an isolated agent and get its result back before proceeding (Claude Code and pi both expose one, under names that vary by version — check your actual tool list rather than assuming), you can delegate each Cycle to a fresh subagent instead of running it directly, keeping this session's own context small no matter how many cycles the feature takes. Preflight, SHIP, and Cleanup stay local — they involve git-history decisions and handovers the user should be part of. This mode is optional and can be mixed with running cycles directly within the same session.
 
 See [references/delegated-execution.md](references/delegated-execution.md) for the full protocol: what stays local vs. delegated, the escalation contract a delegated cycle must follow when it hits a decision that needs the user, the STATUS line format, and how the driving session runs the loop. Read it in full before offering or using this mode — do not guess at the escalation contract from this summary.
 

@@ -1,6 +1,6 @@
 # Skills Specification Reference
 
-Quick reference for reviewing skills against the pi/Agent Skills standard.
+Quick reference for reviewing skills against the [Agent Skills specification](https://agentskills.io/specification). Harnesses that implement it (Claude Code, pi, and others) may differ in the optional fields they honour — check the spec directly if a detail matters.
 
 ## Required Structure
 
@@ -17,12 +17,13 @@ Quick reference for reviewing skills against the pi/Agent Skills standard.
 | `compatibility` | No | Max 500 chars. Environment requirements. |
 | `metadata` | No | Arbitrary key-value mapping. |
 | `allowed-tools` | No | Space-delimited tool list (experimental). |
-| `disable-model-invocation` | No | When `true`, skill hidden from system prompt. |
+
+That's the complete set. Anything else in a skill's frontmatter (e.g. `disable-model-invocation`) is a harness extension — don't flag it as invalid, but don't treat it as portable either.
 
 ## How Skills Are Loaded
 
 1. Agent sees skill name + description in system prompt (always present)
-2. Agent uses `read` to load full SKILL.md when task matches (on-demand)
+2. Agent reads the full SKILL.md when a task matches (on-demand)
 3. Agent follows instructions, loading additional files as referenced
 
 This means:

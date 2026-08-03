@@ -11,10 +11,10 @@ Inventory every tool currently available to you and present it as one small tabl
 
 1. **Enumerate every tool you currently have**, including ones you have never called in this session. Use only tools actually available to you right now — do not include tools you merely know how to describe from training but that aren't present in your current tool list.
 2. **Classify each tool's source.** Use naming conventions and known harness conventions; when genuinely unsure, label it `unknown` rather than guessing:
-   - **builtin** — ships with the harness itself. For pi: `read`, `bash`, `edit`, `write`, `grep`, `find`, `ls`. For Claude Code: `Read`, `Write`, `Edit`, `Bash`, `Grep`, `Glob`, `WebFetch`, `WebSearch`, `Task`, `TodoWrite`, `NotebookEdit`, and similar core tools.
+   - **builtin** — ships with the harness itself: the core file, shell, search, and web tools, plus any task/subagent and notebook tools. Claude Code names these `Read`, `Write`, `Edit`, `Bash`, `Grep`, `Glob`, `WebFetch`, `WebSearch`, `NotebookEdit` and similar; pi uses lowercase equivalents (`read`, `bash`, `edit`, `write`, `grep`, `find`, `ls`).
    - **mcp** — name is prefixed like `mcp__<server>__<tool>` (Claude Code) or otherwise clearly routed through an MCP server. The server name is part of the source, e.g. `mcp:github`.
    - **extension / plugin** — registered by a harness extension, plugin, or package rather than the harness core or an MCP server. If the extension/plugin name isn't derivable from the tool name or description, use `extension (unknown)`.
-   - **sdk / custom** — passed in directly by the host application embedding the agent (e.g. pi's `customTools`), distinct from a discoverable extension.
+   - **sdk / custom** — passed in directly by the host application embedding the agent (e.g. tools supplied through an agent SDK's custom-tool option), distinct from a discoverable extension.
 3. **Determine scope only when it's actually inferable** — e.g. an MCP server defined in a project-local config file vs a global one. If you can't tell, write `n/a` rather than guessing global vs project.
 4. **Summarize the purpose in your own words, ≤10 words.** Do not paste the tool's full description or parameter list.
 5. **Render one markdown table**, tools grouped by source (sort or blank-line-separate groups so provenance is visually scannable):
@@ -22,11 +22,13 @@ Inventory every tool currently available to you and present it as one small tabl
    ```markdown
    | Tool | Source | Scope | Purpose |
    |------|--------|-------|---------|
-   | read | builtin | n/a | Read file contents |
-   | bash | builtin | n/a | Run shell commands |
+   | <file-read tool> | builtin | n/a | Read file contents |
+   | <shell tool> | builtin | n/a | Run shell commands |
    | mcp__github__create_issue | mcp:github | project (.mcp.json) | Create a GitHub issue |
    | deploy_preview | extension (unknown) | n/a | Deploy a preview environment |
    ```
 
-6. **If a tool is disabled/excluded in the current session** (e.g. via `--tools`/`--exclude-tools` on pi) but you can tell it's configured, you may note it in a short "excluded" line below the table — don't fabricate this if you have no evidence either way.
+   Write each tool's name exactly as it appears in your own tool list — casing included. The placeholders above show the row shape, not the names to use.
+
+6. **If a tool is disabled/excluded in the current session but you can tell it's configured**, note it in a short "excluded" line below the table. Harnesses signal this differently — CLI flags (pi's `--tools`/`--exclude-tools`), or settings/permission config (Claude Code's `disallowedTools`) — so don't fabricate it if you have no evidence either way.
 7. Respond with just the table — no preamble describing what you checked or found before it, no per-tool prose, no repeating the table in a different format afterward. If something notable needs flagging (e.g. a tool you couldn't classify, an excluded tool), add it as a single short line *after* the table, not before.

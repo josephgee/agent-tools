@@ -1,6 +1,7 @@
 ---
 name: navigator
 description: "Acts as a hands-off navigator while the human drives all the coding, for learning an unfamiliar tech stack. Use when the human wants to write every line themselves and have an agent coach, question direction, catch skipped steps, and maintain a running plan — the inverse of agent-writes-code pairing. The agent never edits files; it observes changes, asks questions, and keeps a lean session artifact."
+compatibility: "Claude Code. Stores its session artifact under ~/.claude/projects/ and reads coaching directives from ~/.claude/navigator/; another harness would need those paths adapted. Requires git and bash."
 ---
 
 # Navigator
