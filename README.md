@@ -17,6 +17,11 @@ Design notes for larger efforts live in `docs/designs/`.
 - **[tdd](skills/tdd/SKILL.md)** — Guides strict Test-Driven Development (TDD) as a learning
   loop, via THINK-RED-GREEN-REFACTOR cycles with a persistent state file for tracking design
   evolution and backlog.
+- **[backfill-tests](skills/backfill-tests/SKILL.md)** — Backfills a regression-test net onto
+  existing, poorly-tested code by gutting a function and earning each line back under test: comment
+  out the whole body, then write one failing test at a time and un-comment the smallest slice of the
+  original code that makes it pass. Surfaces bugs as skipped tests to fix at the end. The inverse of
+  `tdd`, for code that already exists.
 - **[skill-review](skills/skill-review/SKILL.md)** — Reviews agent skills for effectiveness,
   structure, and context management.
 - **[list-tools](skills/list-tools/SKILL.md)** — Lists the tools currently available to the
