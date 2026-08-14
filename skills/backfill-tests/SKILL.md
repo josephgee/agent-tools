@@ -24,6 +24,12 @@ Two kinds of test come out of this, and you should know which you're writing:
 
 Prefer specification tests. Fall back to characterization only for behavior whose intent you can't reconstruct — and flag those for a human, because a characterization test can happily enshrine a bug.
 
+## Test behavior, not wiring
+
+Assert what the function *does* as seen from outside — its return value, the state it changes, the effect it produces at a boundary. Never assert *how* it does it: that it called a particular collaborator, in a particular order, with particular arguments. Those are wiring tests, and they break the moment you refactor internals even when behavior is unchanged — which makes them actively counterproductive here, since refactoring safely is the whole reason you're building this net. A wiring test cries wolf during the exact change it was supposed to protect.
+
+This trap is sharper in legacy code than in greenfield: a tangled function is often easiest to "cover" by mocking every collaborator and asserting the call sequence. Resist it. Use real objects wherever practical; reach for a mock only at a genuine system boundary — network, database, filesystem, clock, third-party service — *or* when the real collaborator is prohibitively slow for the suite to run regularly (the Fast in FIRST). Either way, mock it *at* that boundary, not deep inside your own logic. If the function turns out to be impossible to test without mocking its internals, that difficulty is itself a finding worth surfacing — it usually names exactly the seam the coming refactor should address.
+
 ## Setup
 
 1. **Preserve the original.** If the project uses git, confirm a clean working tree and commit (or note the current sha) first, so the pristine function is recoverable and you can diff against it at the end. If not on git, copy the target function verbatim into a scratch note before touching it. You must be able to prove, later, that what you restored is byte-for-byte what was there.
@@ -34,9 +40,17 @@ Prefer specification tests. Fall back to characterization only for behavior whos
 
 Comment out the **entire body**, leaving the signature intact. Keep the commented lines *in place* — you will un-comment them progressively, so they are your source of truth, not deletable clutter.
 
-Leave a minimal placeholder so the file still compiles and the *only* thing failing is your test — not the parser. Use whatever is idiomatic for a not-yet-implemented function in the language: `raise NotImplementedError`, `throw new Error("gutted")`, `return null`, `panic("gutted")`, `t.b.d`. In typed languages the placeholder also satisfies the return type. See [references/language-notes.md](references/language-notes.md) for keeping gutted code compiling and for how to comment out blocks cleanly per language.
+Leave a minimal placeholder so the file still compiles and the *only* thing failing is your test — not the parser. Use whatever is idiomatic for a not-yet-implemented function in the language: `raise NotImplementedError`, `throw new Error("gutted")`, `return null`, `panic("gutted")`, `todo!()`. In typed languages the placeholder also satisfies the return type. See [references/language-notes.md](references/language-notes.md) for keeping gutted code compiling and for how to comment out blocks cleanly per language.
 
 Run the suite. Existing tests that touched this function will now fail — that's expected and fine; they'll come back to green as you restore lines. If a *lot* of unrelated things break, the target has more reach than you thought — reconsider scope.
+
+## Freeze the production code; keep the tests clean
+
+Two rules govern the loop below, pulling in opposite directions, both essential:
+
+**Never refactor the production code inside the loop.** Restore it verbatim — byte-for-byte identical to the original is the invariant that proves you built a net rather than a new function (see Finish). If you catch yourself renaming a variable, merging a branch, or "just tidying" while un-commenting, stop: that is a rewrite in disguise, and it is unpinned. Cleaning up the code is the *downstream* job this net exists to make safe — do it afterward, once the suite is green. This is the one place TDD's REFACTOR step deliberately does **not** carry over.
+
+**Hold the tests themselves to standard.** The tests are new code and the suite is *not* frozen — refactor it freely as it grows, rerunning after each change. Keep them FIRST: Fast, Independent (no shared state between tests), Repeatable, Self-validating. Name them for the behavior they pin (`charges_express_rate`, not `test_case_2`), and factor out duplicated setup as it appears.
 
 ## The Cycle
 
@@ -47,6 +61,8 @@ Repeat RED → RESTORE, one case at a time, until the function is whole again.
 - Write **exactly one** test for **one** concrete case — the simplest untested path first (usually the happy path or the earliest early-return).
 - **Derive the expected value independently** (see [Why this isn't circular](#why-this-isnt-circular)). Do not run the code and copy its output.
 - Run it. **Confirm it fails, and fails for the right reason** — the behavior is missing because the body is gutted, not because of a typo, an import error, or a wrong assertion. A test that errors out on setup isn't red for the reason you want.
+- **If it passes without you having restored anything**, it drove no progress — an earlier cycle's restored code already covers this case. Drop it, unless it pins a genuinely distinct edge case worth keeping as extra coverage.
+- **If the test is awkward to write** — contorted setup, a pile of mocks, hard-to-reach state — treat that as a design finding, not friction to push through. It names the seam the eventual refactor should fix. Note it in the ledger and proceed with the simplest test you can manage.
 
 ### RESTORE — un-comment the smallest slice that makes it pass
 
@@ -68,7 +84,7 @@ Sometimes you write a specification test for behavior you're confident about, re
 
 Instead:
 - Keep the test asserting the **correct** (intended) behavior.
-- Mark it **skipped / expected-to-fail** with a one-line reason pointing at the bug (`@pytest.mark.xfail(reason=…)`, `it.skip`, `t.Skip`, `#[ignore]`, `@Disabled` — see [references/language-notes.md](references/language-notes.md)).
+- Mark it **skipped / expected-to-fail** with a one-line reason pointing at the bug. Prefer an expected-to-fail marker where the framework has one — an xfail that starts *passing* tells you the bug got fixed — and fall back to a plain skip otherwise. See [references/language-notes.md](references/language-notes.md) for the skip-vs-xfail marker per framework.
 - Restore the (buggy) original line anyway if it's needed for other paths, so behavior stays unchanged and the rest of the net can continue.
 - Log it in the ledger (below). Keep moving.
 
@@ -80,6 +96,7 @@ Keep a short running ledger — inline in the conversation is fine; a scratch no
 - **Cases covered** — one line each.
 - **Lines still commented** — what's left to earn back.
 - **Bugs found** — the skipped/xfail tests and their reasons.
+- **Findings** — design/seam observations (awkward-to-test spots), dead or unreachable code, and characterization-only pins — anything to surface at Finish or hand to the later refactor.
 
 Report it at each check-in so the user can see coverage growing and redirect.
 
@@ -97,12 +114,15 @@ Then present:
 
 **Fixing the bugs is a separate, user-gated step.** For each skipped test, the user decides: fix now (un-skip it and make it pass — a normal small red-green change, now safe because the net exists), or defer it (leave it skipped as documented, tracked work). Don't roll into fixes unprompted; the deliverable of *this* technique is the net, not the repairs.
 
+With the net in place, the refactor it was built to make safe can begin — and *that* is where production-code cleanup (naming, duplication, structure) belongs, held green by the tests you just wrote. If you carry it out, the [tdd](../tdd/SKILL.md) skill's refactor guidance applies to that pass.
+
 ## Discipline (the invariants)
 
 - **One test per RED.** One case at a time is what keeps each restored slice small and justified.
 - **Verify RED fails for the right reason** — gutted behavior, not a broken test.
 - **Restore, don't rewrite.** If a commented line needs *editing* to pass, you've mis-targeted the case, mis-derived the expected value, or found a bug. Never quietly reimplement.
 - **Derive expected values independently.** Reading them off the code makes the test unfalsifiable — worthless.
+- **Assert behavior, not wiring.** Test the observable outcome, not which collaborators got called; wiring tests break under the very refactor this net exists to make safe.
 - **Never edit a test to force green;** never inline-fix a discovered bug. Bugs become skipped tests, fixed later under the user's call.
 - **Un-comment the smallest slice** — inner body before surrounding conditional/loop where a single case allows it.
 - **The final body must match the original** except for sanctioned fixes. The diff is your proof you built a net rather than a new function.
