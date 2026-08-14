@@ -23,7 +23,13 @@ within it. Design notes for larger efforts live in `docs/designs/`.
   harnesses via symlinks of the bare directory name (see `README.md`).
 - Keep `SKILL.md` lean. Move detailed reference material into `references/`, loaded on-demand
   — don't inline everything just because it's convenient while writing.
-- Don't add a manifest, index, or install script (see `README.md` for why).
+- Don't add a central manifest or index — skills are discovered by directory listing, and
+  any cross-skill dependency info lives in the dependent skill's own `SKILL.md` frontmatter
+  (`metadata.soft-deps`, a space-separated list of skill names), never in a shared file. An
+  install helper that symlinks skills into a harness is fine, and the repo ships one:
+  `install-claude.sh` for Claude Code, which links selected skills into `~/.claude/skills`
+  and follows `soft-deps` so an interdependent skill isn't installed half-wired. Keep it a
+  single self-contained script — don't grow a shared top-level code directory around it.
 
 ## Writing or editing a skill
 

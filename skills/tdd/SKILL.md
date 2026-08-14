@@ -1,6 +1,8 @@
 ---
 name: tdd
 description: "Guides strict Test-Driven Development (TDD) as a learning loop, delivered as a stack of small reviewable PRs. Use when building a feature: decompose it into an ordered sequence of PR-sized behavioral increments, then drive each one through THINK-RED-GREEN-REFACTOR cycles — choose the next behavior, write one failing test, make it pass with the simplest possible code, then refactor and reflect — and SHIP it as a clean, independently reviewable commit before starting the next. Also use when asked to break a feature into small, reviewable, incrementally shippable pull requests."
+metadata:
+  soft-deps: design-principles
 ---
 
 # TDD

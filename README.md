@@ -48,6 +48,26 @@ Clone this repo somewhere stable first, then link from there:
 git clone <this-repo> ~/workspace/agent-tools
 ```
 
+### Claude Code: the install script
+
+For Claude Code, `install-claude.sh` does the linking for you and — importantly — follows
+each skill's declared soft dependencies, so an interdependent skill (e.g. `design-review`,
+which consults `design-principles`) isn't installed half-wired. It links one skill at a time
+into `~/.claude/skills`, so it coexists with skills already there, and never overwrites an
+existing directory or a symlink pointing elsewhere. Re-running is safe.
+
+```bash
+./install-claude.sh                     # link all skills
+./install-claude.sh tdd design-review   # link those (+ their soft-deps)
+./install-claude.sh --list              # list available skills
+./install-claude.sh --dry-run tdd       # preview, change nothing
+./install-claude.sh --no-deps <skill>   # link only what's named
+./install-claude.sh --target .claude/skills tdd   # project-scoped install
+```
+
+Prefer the manual `ln -s` recipes below if you're on another harness, or want to see exactly
+what gets linked.
+
 ### Link everything (personal use)
 
 If you want all skills available everywhere, symlink the whole `skills/` directory:
@@ -114,3 +134,14 @@ description: What this skill does and when to use it. Be specific.
 `name` should match the directory name. Everything else — `scripts/`, `references/`,
 `assets/` — is optional and freeform; see the existing skills for examples. There's no
 manifest or index to update — skills are discovered by directory listing.
+
+If your skill relies on another skill (as `design-review` relies on `design-principles`),
+declare it in your own frontmatter so `install-claude.sh` pulls it along:
+
+```yaml
+metadata:
+  soft-deps: design-principles
+```
+
+Keep such dependencies *soft* — the skill should still function degraded if the dep isn't
+installed. There's no central dependency file; each skill declares its own.

@@ -1,6 +1,8 @@
 ---
 name: design-review
 description: "Reviews existing code for design and test-quality problems — naming smells and design-rot symptoms, locating them, and rating them by severity, then reporting a ranked assessment with a suggested direction for each. Use when the user explicitly asks for a design review, a design/quality critique of a diff, PR, branch, or path, or asks 'what's wrong with the design here'. This is a deliberate, focused pass the user chooses to run — not an ambient check to fire on every coding task, and distinct from a correctness/bug review. It diagnoses design; it does not hunt for functional bugs or rewrite the code."
+metadata:
+  soft-deps: design-principles
 ---
 
 # Design Review
