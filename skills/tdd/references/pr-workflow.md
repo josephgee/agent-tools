@@ -53,7 +53,8 @@ git diff <previous-pr-branch>...HEAD
 Per-cycle REFACTOR only sees one cycle at a time, so duplication introduced in cycle 1 and
 repeated in cycle 4 survives it. This pass catches that. Apply the checklists in
 [refactor-checklist.md](refactor-checklist.md) across the combined diff, and check it against
-[design-smells.md](design-smells.md). Any fix here is its own commit, then re-run the suite.
+the `design-principles` skill's `design-catalog.md` (falling back to the checklist alone if
+that skill is unavailable). Any fix here is its own commit, then re-run the suite.
 
 **2. Write the PR description** into the state file's entry for this PR. Do this *before* squashing
 so the description is committed with the work:
