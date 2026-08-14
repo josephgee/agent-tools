@@ -34,6 +34,13 @@ within it. Design notes for larger efforts live in `docs/designs/`.
 - Write instructions assuming the agent following them has no other context beyond what's in
   the skill. Don't assume knowledge of this repo's other skills or your conversation with the
   user.
+- When a step branches into a preferred path and a fallback, make the *preferred* path the
+  concrete, prescriptive one (spell out the exact action or command) and explicitly rule out the
+  fallback when its condition doesn't hold. Agents under ambiguity reach for whichever branch
+  names the most concrete, guarantee-satisfying action regardless of the gating condition — so a
+  vague preferred path beside a sharp fallback gets the fallback taken even when it shouldn't be.
+  (Seen for real: a "note the git sha, else copy the file" step got the copy done in a clean git
+  repo, because copying was the concrete instruction.)
 - Don't run `skill-review` on your own initiative. It's a deliberate, token-expensive pass the
   user triggers when they judge it worth the cost. If a change looks like it warrants one, say
   so in a sentence and let them decide — then treat its output as a checklist, not just advice.
