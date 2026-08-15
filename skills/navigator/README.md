@@ -27,14 +27,21 @@ step plan) before you start driving. Then just code — it picks up your changes
 
 `scripts/wait-for-change.sh` is bundled with the skill and the agent drives it for you. It polls
 your git working tree in the background and queues changes; you shouldn't need to touch it.
+Prerequisites are `git`, `bash`, and `shasum` (present on stock macOS and virtually every
+Linux) — no `fswatch`, no daemons to install. It ships
+executable; if your install method strips the exec bit (some archive downloads do), restore it
+with `chmod +x scripts/wait-for-change.sh`.
 
-**One-time:** make sure it's executable.
+Detections are debounced: the watcher waits for your working tree to hold still (`--idle`,
+default 5s) before reporting, so a burst of typing becomes one detection when you pause rather
+than one every poll. In practice the agent reacts about 5–10 seconds after your last keystroke.
+If that feels sluggish, re-arm with a smaller `--idle` (and `--interval`); if the agent is
+reacting to half-written code, raise it.
 
-```bash
-chmod +x scripts/wait-for-change.sh
-```
-
-Prerequisites are just `git` and `bash` — no `fswatch`, no daemons to install.
+**If the watcher feels sluggish or pegs a core**, the usual cause is a large file that isn't
+gitignored — a dataset, a build artifact, a log. Every poll re-reads untracked files to notice
+edits to code you haven't `git add`ed yet, so anything big and untracked gets re-hashed every few
+seconds. Gitignoring it fixes it.
 
 If something seems off (the agent has gone quiet, or you want to stop it watching), you can run
 it yourself from your project directory:
@@ -47,8 +54,11 @@ it yourself from your project directory:
 
 State lives under `~/.cache/navigator-watch/<hash-of-repo-path>/` (override with
 `NAVIGATOR_STATE_DIR`), keyed per repo so several projects can be watched independently. The
-agent stops the watcher when an effort completes; if a session dies unexpectedly, `--stop`
-cleans up the leftover process.
+agent stops the watcher when an effort completes, which also deletes that repo's saved patch
+files; if a session dies unexpectedly, `--stop` cleans up the leftover process. A session killed
+without `--stop` can leave patches behind, but any later `--arm` (in any repo) sweeps patches
+older than a week — and the whole directory is safe to `rm -rf` whenever nothing is being
+watched.
 
 Nothing is lost if the watcher is down for a while — it compares against the last change it
 reported, so anything you did while it wasn't running shows up when it's armed again.

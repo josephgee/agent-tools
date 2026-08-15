@@ -78,7 +78,10 @@ uses, for the same reason: keep the always-loaded context small.
   `MEMORY.md` itself).
   - Doesn't automatically shrink; the skill must actively compact completed steps down to one
     line and move detail to `history.md` as part of normal step-completion handling.
-- Watcher diffs are size-capped so one large hand-made edit doesn't blow a turn's context budget.
+- Large edits don't blow a turn's context budget because the watcher writes the full patch to
+  disk and queues only a one-line summary (files, shortstat, patch path); the agent opens the
+  patch only when the summary warrants it. (An earlier plan to size-cap diffs became unnecessary
+  under this scheme.)
 - Out of scope: the agent's own context window filling up over a long session from conversational
   back-and-forth (independent of the artifact). If that becomes a problem in practice, likely
   mitigations are periodic `/compact` or starting a fresh session per step/phase — not something
@@ -118,6 +121,38 @@ friction that drove the artifact out of the repo in the first place. The agent o
 files (and may scaffold an empty template on request); it never writes coaching content into them.
 Details/templates: `skills/navigator/references/coaching-directives.md`.
 
+## Watch loop mechanics: background collect, never foreground polling
+
+The watcher is a daemon that queues detections; the agent picks them up with `--collect`. The
+collect must be launched as a **backgrounded** shell command with `--timeout 0` at the end of
+each agent turn — the harness re-invokes the agent when it exits (i.e. when a change lands).
+
+Rejected alternative (and the original design, corrected after real use): a *foreground*
+`--collect --timeout 30` at end of turn, silently re-run when empty. In Claude Code a foreground
+tool call holds the agent's turn open, so the human's prompt stays blocked while the agent loops
+on empty collects, and every re-poll renders "Running shell command"/"thinking" chrome that no
+amount of "emit no text" instruction can suppress — defeating both goals (interjectable human,
+quiet screen) the loop was built around. The background collect yields the turn immediately and
+produces zero output during quiet stretches. Consequence handled in the script: `--collect`
+exits early if the watcher dies, so a forever-collect left pending at `--stop` doesn't hang.
+
+Two rules in the skill fall out of this mechanism: the agent keeps exactly one collect
+outstanding (a second concurrent collect would just race the first for the queue drain and
+produce confusing extra wakeups), and a "watcher gone" return triggers a re-arm plus a one-line
+notice to the human — relaunching collects against a dead watcher would leave the session
+silently deaf, the exact failure the watching loop exists to prevent.
+
+### Debounce (`--idle`)
+
+A collect returns on the *first* queued detection — that was true of the foreground version too,
+so the background switch changed nothing about coalescing. What it did change is the cost of a
+detection: each one is now a full agent wakeup. Undebounced, an editor autosaving mid-sentence
+produces a detection per poll, and each is a wakeup, a coaching opportunity spent on half-written
+code, and a line of chrome — the screen-noise failure the loop exists to prevent, arriving by a
+different route. So the daemon requires the state hash to hold steady for `--idle` seconds before
+queueing: a typing burst becomes one detection when the human pauses. The cost is a few seconds
+of reporting lag, which is the right trade for a coach that reacts to finished thoughts.
+
 ## Coaching restraint (deferred to skill prompt, not architecture)
 
 Explicitly flagged during design: agent "soliloquies" need limiting so the human can interject.
@@ -129,7 +164,8 @@ turns, checking in before elaborating, explicit stop points), not a technical co
 
 - Tool-level hardening of the never-edit-code rule (permission config), deferred until/unless the
   soft instruction leaks in practice.
-- Exact debounce/idle thresholds and the diff-size cap (~50 lines) are flag-configurable defaults
-  — tune from real use.
+- Tuning knobs are the poll interval (`--interval`, default 3s) and the settle threshold
+  (`--idle`, default 5s). A diff-size cap was considered and dropped — patch-on-disk (see Context
+  management) removed the need for one.
 - Detailed coaching-style content in `SKILL.md` (verbosity limits, question style, when to
   interject) is intentionally light and the user's to tune from experience.

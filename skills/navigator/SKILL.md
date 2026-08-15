@@ -1,7 +1,7 @@
 ---
 name: navigator
 description: "Acts as a hands-off navigator while the human drives all the coding, for learning an unfamiliar tech stack. Use when the human wants to write every line themselves and have an agent coach, question direction, catch skipped steps, and maintain a running plan — the inverse of agent-writes-code pairing. The agent never edits files; it observes changes, asks questions, and keeps a lean session artifact."
-compatibility: "Claude Code. Stores its session artifact under ~/.claude/projects/ and reads coaching directives from ~/.claude/navigator/; another harness would need those paths adapted. Requires git and bash."
+compatibility: "Claude Code. Stores its session artifact under ~/.claude/projects/ and reads coaching directives from ~/.claude/navigator/; another harness would need those paths adapted. Requires git, bash, and shasum, plus a harness shell tool that can run a command in the background and wake the agent when it exits (Claude Code's Bash run_in_background) — the watch loop depends on that."
 ---
 
 # Navigator
@@ -87,12 +87,17 @@ plan — don't rely on remembering. **Write** it at the cadence in the Loop belo
 project-local `<repo-root>/.navigator/coaching.md`) — they govern how you coach for the rest of
 the session.
 
-**Then arm the watcher.** This skill uses a bundled file-watch script at
-`scripts/wait-for-change.sh` (relative to this skill's own directory). If it's there and
-executable, run `scripts/wait-for-change.sh --arm` now. It starts a background watcher that
-queues changes and returns immediately, and it's idempotent — arming twice is harmless. Watching
-is then your default mode for the rest of the session (see The loop). If the script isn't there,
-coach from narrated or pasted changes instead, as if it weren't there.
+**Then arm the watcher.** This skill bundles a file-watch script at `scripts/wait-for-change.sh`
+— a path relative to *this skill's own directory*, which is **not** your working directory (you
+are in the human's project). Resolve it to an absolute path once, now: take the directory this
+`SKILL.md` was loaded from and append `/scripts/wait-for-change.sh`. Keep that string for the
+whole session — every invocation below writes it as `<watch>` — and always invoke it as
+`bash <watch> …`, never as a bare relative path and never relying on the exec bit.
+
+Then run `bash <watch> --arm`. It starts a background watcher that queues changes and returns
+immediately, and it's idempotent — arming twice is harmless. Watching is then your default mode
+for the rest of the session (see The loop). Only if the script is genuinely not at that path, or
+`--arm` fails, say so in one line and coach from narrated or pasted changes instead.
 
 **Then resolve the memory path** (see Session artifact above) and **enumerate existing efforts**
 by listing the folders under `<memory>/navigator/`. Each subfolder is a past or in-progress
@@ -124,20 +129,41 @@ to start driving.
 ## The loop
 
 **Watching is your default mode, not something to be asked for.** The watcher was armed at
-startup and runs in the background for the whole session. At the end of every turn, call
-`scripts/wait-for-change.sh --collect --timeout 30`. It returns as soon as the human changes
-anything — or immediately, if changes queued while you were composing. Treat its output as the
-next change to react to. Don't ask permission to watch. Don't stop watching because a turn felt
-finished. Don't wait for the human to narrate what they did — they're driving, not reporting.
-Stop only if they tell you to.
+startup and runs in the background for the whole session. As the final action of every turn —
+unless a collect is already outstanding (next paragraph) — launch
+`bash <watch> --collect --timeout 0` as a **background** shell command
+(Bash with `run_in_background: true`), then end your turn. It exits only when the human has
+changed something — immediately, if changes queued while you were composing — and the harness
+wakes you with its output when it does. Treat that output as the next change to react to.
+**Never run `--collect` in the foreground.** A foreground collect holds your turn open, which
+locks the human out of their own prompt and drips shell-command chrome onto their screen while
+nothing is happening — the two things this skill must never do. Don't ask permission to watch.
+Don't stop watching because a turn felt finished. Don't wait for the human to narrate what they
+did — they're driving, not reporting. Stop only if they tell you to.
 
-**A no-change collect is not an event.** When it exits non-zero with nothing queued, emit no text
-at all — just collect again. Announcing "still nothing" burns the human's screen and pushes real
-coaching out of view, which is the one thing you must not do.
+**Keep exactly one collect outstanding.** A collect is outstanding if you launched it and its
+output has not yet come back to you. If the human speaks while one is outstanding, respond to
+them — the pending collect is still watching; don't launch a second one. Launch a fresh collect
+only after the previous one has returned. A quiet stretch produces no wakeups, no text, and no
+chrome at all: silence on screen is the correct resting state, not something to fill.
+
+**If a collect returns `[navigator-watch] watcher gone; ending collect`, the watcher died —
+don't relaunch into the void.** Unless you just ran `--stop` yourself, re-arm with
+`bash <watch> --arm`, tell the human in one line that the watcher dropped and was restarted,
+then launch a fresh background collect. If re-arming fails, say so and coach from narrated or pasted changes
+instead. Silently re-collecting against a dead watcher makes the session go deaf without the
+human ever knowing — the one failure worse than admitting the watcher is down.
 
 **Nothing is lost while you think.** The background watcher keeps queueing, so changes made while
 you were composing are waiting at the next collect rather than missed. You never need to hurry a
 reaction to avoid a gap, and you never need to ask the human to re-describe something.
+
+**Detections are settled edits, not keystrokes.** The watcher waits for the working tree to hold
+still for a few seconds before queueing, so a burst of typing arrives as one detection once the
+human pauses — you are not seeing half-written code, and you don't need to allow for that when
+reacting. The flip side: a detection arrives roughly five to ten seconds after the human's last
+keystroke, so don't read its timestamp as the moment they stopped, and don't conclude they've
+gone idle from a few seconds of silence.
 
 If no watcher is available, changes arrive as narration or pasted diffs from the human instead —
 everything below applies the same either way.
@@ -148,12 +174,15 @@ The human is heads-down driving and only glances over. Assume **they see roughly
 lines and nothing above that.** Anything older is gone, so what's on screen has to be worth the
 space and has to still be true.
 
-- **End every turn with the single NEXT line.** Do the diff read and any artifact edits *before*
-  you speak, so the coaching is the last thing rendered.
-- **Collect *after* the NEXT line, as the final action of the turn.** This is the one exception
-  to tool-calls-first: `--collect` blocks, so collecting before you speak would hold the coaching
-  hostage until the next change lands. Nothing goes unwatched in the meantime — the background
-  watcher is already running.
+- **The single NEXT line is the last *text* of every turn.** Do the diff read and any artifact
+  edits *before* you speak, so the coaching is the last thing rendered — only the collect launch
+  comes after it.
+- **Launch the background collect *after* the NEXT line, as the final action of the turn.** One
+  line of tool chrome after your coaching is acceptable; anything that delays the coaching or the
+  human's prompt is not. Ending the turn is what hands the prompt back — so speak, launch the
+  collect in the background, and stop. If a collect is already outstanding, just speak and stop —
+  don't launch a second one. Nothing goes unwatched while you compose — the background watcher is
+  already queueing.
 - **One line is the routine default.** On an ordinary change, say the one most useful thing in
   one line, then stop. Expand only for a real teaching point, a reflection pass, or a direct
   question.
@@ -164,8 +193,10 @@ space and has to still be true.
   allowed to fill the screen — that's what the space is for. But it costs everything else that
   was on it, so never spend it on a routine change.
 - **Read the patch only when the summary warrants it.** Each queued detection carries filenames,
-  a shortstat, and a path to the full patch. Decide from the summary line whether the diff is
-  worth opening; most routine changes don't need it.
+  a line-delta count covering new files as well as edited ones, and a path to the full patch.
+  Decide from the summary line whether the diff is worth opening; most routine changes don't
+  need it. The counts are cumulative against the last commit, not per-detection, so read them as
+  "how much has moved," not "how much just changed."
 
 ### Reacting
 
@@ -217,5 +248,8 @@ The overall effort is done only when: every acceptance criterion is met, every s
 pass has actually passed, and every parking-lot item is resolved or consciously deferred (with a
 note on where it went). An unresolved parking-lot item left silent is not done — it's forgotten.
 
-When the session ends (or the human says to stop watching), run
-`scripts/wait-for-change.sh --stop` to shut the background watcher down.
+When the session ends (or the human says to stop watching), run `bash <watch> --stop` to shut the
+background watcher down. It prints any detections that were still uncollected — fold those into
+the final reflection rather than ignoring them, since they're the human's last edits. Any collect
+still waiting notices the watcher is gone and exits on its own — don't launch another one after
+stopping.
