@@ -24,6 +24,52 @@ Five principles for where responsibilities and dependencies should sit.
   *Fragility* — a change low in the stack ripples upward because the arrows point the wrong
   way.
 
+## Law of Demeter
+
+A unit should talk only to its immediate collaborators — its own fields, its parameters, and
+objects it created — never to objects reached *through* another object. Violations read as
+*train wrecks* (`a.getB().getC().getD()`), which is what *Message Chains* detects; the deeper
+cost is that the caller now depends on a structure it doesn't own, so a change two objects
+away breaks it. Also the principle behind *Inappropriate Intimacy*.
+
+## Component principles
+
+SOLID governs classes. These govern the next level up — which classes belong in a component,
+and which way dependencies between components should point. Martin's rot symptoms are usually
+the *effects* of violations here, not of class-level ones.
+
+**Cohesion — what belongs together**
+
+- **REP (Reuse/Release Equivalence)** — the granule of reuse is the granule of release. Things
+  reused together must be releasable together, under a version someone can depend on.
+- **CCP (Common Closure)** — classes that change for the same reasons, at the same times,
+  belong in one component. This is *Single Responsibility* restated at component scale, and
+  its violation is *Shotgun Surgery* at component scale.
+- **CRP (Common Reuse)** — classes not reused together shouldn't be grouped together.
+  Depending on a component means depending on *everything* in it: you inherit its transitive
+  dependencies and get redeployed when parts you never used change. This is *Interface
+  Segregation* restated at component scale.
+
+These three pull against each other. REP and CCP are inclusive — they grow components. CRP is
+exclusive — it shrinks them. Over-weighting REP and CCP forces users through releases they
+don't need; over-weighting CRP scatters one reason-to-change across many components. The
+balance also shifts with a project's age: early on, CCP (developability) dominates; later, CRP
+and REP (reusability) matter more. There is no fixed right answer — naming which of the three
+is being traded away is the useful move.
+
+**Coupling — which way the arrows point**
+
+- **ADP (Acyclic Dependencies)** — the component dependency graph must have no cycles. A cycle
+  means neither component can be built, tested, or released without the other, and the pair is
+  one component in practice whatever the directory layout says.
+- **SDP (Stable Dependencies)** — depend in the direction of stability. A component with many
+  dependents is hard to change; it must not depend on something volatile, or that volatility
+  propagates upward into everything.
+- **SAP (Stable Abstractions)** — a component should be as abstract as it is stable. Stable and
+  concrete is the bad quadrant (Martin's *zone of pain*): everything depends on it and nothing
+  can extend it without modifying it. Database schemas and shared utility packages land there
+  most often.
+
 ## Beck's four rules of simple design
 
 A design is simple, in priority order, when it:

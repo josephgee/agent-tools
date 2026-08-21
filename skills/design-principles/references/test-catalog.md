@@ -5,6 +5,11 @@ A vocabulary for the quality of *tests*, as distinct from the code under test. S
 
 ## FIRST — the properties a good test has
 
+From Martin's *Clean Code* ch. 9, which is also the source for much of this file's framing:
+test code is held to the same standard as production code. A suite allowed to rot stops being
+a safety net and becomes a second system to maintain — and then gets abandoned, taking the
+protection with it.
+
 - **Fast** — runs in milliseconds. A slow suite gets run less, and a suite run less catches less.
 - **Independent** — no shared state between tests; order and selection don't change results.
 - **Repeatable** — same result every run, on any machine, with no reliance on wall-clock, network, or ambient state.
@@ -19,6 +24,11 @@ A vocabulary for the quality of *tests*, as distinct from the code under test. S
   are refactored even though behavior is unchanged, and it never tells you whether the
   feature is actually correct. The question is "did the feature behave correctly?" not "did
   it use the right objects internally?"
+
+- **One concept per test** — a test should pin a single behavior. A test asserting several
+  unrelated things fails without telling you which one broke, and can't be named for what it
+  proves. This is about concepts, not a literal one-assert rule: several assertions
+  establishing one outcome are fine.
 
 ## Mocks
 
@@ -53,6 +63,10 @@ itself a design smell.
 
 - **Names describe behavior** — `rejects_expired_tokens`, not `test_token_validation_method`.
   If you must read the body to know what a test proves, the name is failing.
+- **Build-Operate-Check** — a readable test has three visible parts: build the world it needs,
+  perform the one action under test, check the outcome. When those blur together, a reader has
+  to disentangle setup from assertion to see what is actually being proven. (Also met by
+  Given/When/Then and Arrange/Act/Assert — the same shape under other names.)
 - **Setup duplication** — setup copy-pasted across many tests is the same *Duplicate Code*
   smell as in production; consolidate it into fixtures/builders, but not so aggressively that
   a reader can no longer see what a given test depends on.

@@ -2,10 +2,11 @@
 
 ## Problem
 
-Design-review knowledge — Fowler's code smells, Martin's rot symptoms, SOLID, Beck's rules
-of simple design, DRY/Pragmatic values, and test-quality smells (FIRST, mock-at-boundary,
-behavioral-not-wiring) — originally lived as reference files **inside `tdd`**
-(`references/design-smells.md`, the "Test Code" section of `refactor-checklist.md`).
+Design-review knowledge — Fowler's code smells, Martin's *Clean Code* heuristics, Martin's
+rot symptoms, SOLID, the component principles, Beck's rules of simple design, DRY/Pragmatic
+values, and test-quality smells (FIRST, mock-at-boundary, behavioral-not-wiring) — originally
+lived as reference files **inside `tdd`** (`references/design-smells.md`, the "Test Code"
+section of `refactor-checklist.md`).
 
 The repo model — one directory per skill, consumed via symlinks of bare directory names,
 **no manifest** (see `README.md`, `AGENTS.md`) — makes a skill's `references/` **private to
@@ -43,9 +44,18 @@ tdd, backfill-tests (flow skills; keep their own cadence + inline fast-triggers)
   `design-catalog.md` (smells + rot), `test-catalog.md` (test smells, loaded only when tests
   are in scope), `principles.md` (SOLID/Beck/DRY, loaded when naming the *why*). It states
   concepts only.
+
+  The catalogs are organized by **structural altitude** — statements and names, functions,
+  classes, components, whole system — because a symptom at one level often has its cause a
+  level up, and naming it at the wrong level yields a fix that doesn't move the symptom. Two
+  consequences the files make explicit: size is a *prompt* to apply lenses, never a finding on
+  its own; and the ladder is open (nothing yet names the architecture/boundary level, and a
+  few entry names are marked descriptive rather than canonical). Entries are expected to be
+  added — the structure is built to be reopened, not frozen.
 - **`design-review`** — the diagnostic activity. Resolves a target, determines scope +
-  altitude, invokes the lens with a **detection** posture, emits a rated assessment. Scoped
-  to explicit review requests (not ambient).
+  reading mode, invokes the lens with a **detection** posture, emits a rated assessment.
+  Scoped to explicit review requests (not ambient). It says *reading mode* for how much
+  history it reads at once, reserving *altitude* for the catalog's structural sense.
 - **`tdd`** (and later `backfill-tests`) — flow skills that keep their tuned per-cycle
   triggers inline and invoke the lens for the deep end-of-increment / end-of-feature pass.
 
