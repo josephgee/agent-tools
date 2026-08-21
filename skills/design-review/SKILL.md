@@ -1,6 +1,7 @@
 ---
 name: design-review
 description: "Reviews existing code for design and test-quality problems — naming smells and design-rot symptoms, locating them, and rating them by severity, then reporting a ranked assessment with a suggested direction for each. Use when the user explicitly asks for a design review, a design/quality critique of a diff, PR, branch, or path, or asks 'what's wrong with the design here'. This is a deliberate, focused pass the user chooses to run — not an ambient check to fire on every coding task, and distinct from a correctness/bug review. It diagnoses design; it does not hunt for functional bugs or rewrite the code."
+compatibility: "Requires the design-principles skill to be installed alongside it — its catalogs are this skill's reference material, with no bundled fallback."
 metadata:
   soft-deps: design-principles
 ---
@@ -47,6 +48,12 @@ The scopes:
 
 If the chosen scope resolves to nothing (e.g. `uncommitted` on a clean tree), say so and
 stop — do not silently widen to a different scope.
+
+A caller may also pass a **focus** alongside the scope — a subset of the catalog's altitudes
+or concerns to cover (e.g. "component and system altitudes only", "cross-PR seams"). Honor
+it: sweep only what it names, and state in the report that the assessment was narrowed and
+to what. A focus comes from a caller that knows what other reviews have already covered;
+widening past it re-reviews work the caller deliberately excluded.
 
 ### 2. Classify what's touched, and the reading mode
 
@@ -96,41 +103,24 @@ Then **invoke the `design-principles` skill** for the catalog:
   component-level smells, and the rot symptoms. Detection is the one posture that does sweep
   rather than look up a single entry, but sweep **by altitude**: cover the levels your scope
   actually touches (a single-file change rarely reaches the component level; a change moving
-  code between packages starts there) rather than reading the file end to end;
+  code between packages starts there) — or, if the caller passed a focus, only the levels it
+  names — rather than reading the file end to end;
 - consult its `test-catalog.md` **only if** step 2 found test files in scope;
 - consult its `principles.md` when you need to name *why* a finding is a problem or what the
   fix should preserve.
 
-**Only if the `design-principles` skill is not available** in this environment, fall back to
-the compact core list below — it is a floor, not a substitute for the full catalog:
-
-- *Duplicate Code* / DRY violation — the same knowledge in more than one place.
-- *Long Method* / *Large Class* — a unit doing too much to summarize in a sentence.
-- *Divergent Change* — one place changing for several unrelated reasons.
-- *Shotgun Surgery* — one change forcing scattered edits across many places.
-- *Feature Envy* / *Inappropriate Intimacy* — a unit reaching into another's internals.
-- *Switch Statements* — the same type/kind conditional repeated in many places.
-- *Speculative Generality* — abstraction with no present caller.
-- *Primitive Obsession* — raw primitives standing in for concepts that deserve a type.
-- *Mixed abstraction levels* — high-level policy and low-level detail interleaved in one unit.
-- *Missing abstraction* — a concept the code plainly has, but never named.
-- *Dependency cycle* — components that depend on each other, directly or transitively.
-- (tests, if in scope) wiring tests, mocking your own code, tests named for implementation.
-
-On the fallback path you also lose the catalog's lenses for a unit that merely *looks* too big,
-so carry them here — a long or densely branched unit is a finding only if one of these names a
-cause: **comprehension cost** (a reader can't reconstruct what it does), **mixed abstraction
-levels**, **missing abstraction**, or **more than one reason to change**. Cyclomatic complexity
-is a reason to look, never a finding by itself.
+`design-principles` is a **hard dependency** of this skill — it is installed wherever this
+skill is, and there is no bundled substitute for its catalogs. If it is genuinely absent,
+stop and say so rather than reviewing from memory: an assessment not grounded in the
+catalog's named entries is not what this skill promises.
 
 ### 4. Report a rated assessment
 
 **Before ranking, apply the finding gate.** Size, length, and branching-density observations
 are prompts to look, not findings. Promote one to a finding only when a lens names an actual
-cause — from the catalog's "When a unit feels too big" cluster, or, on the fallback path, from
-the lenses at the end of step 3. If nothing names it, drop it: do not report "this function is
-long" as a finding in its own right, and do not inflate it into the nearest smell that
-half-fits. Examining a unit and leaving it is a correct result.
+cause — from the catalog's "When a unit feels too big" cluster. If nothing names it, drop it:
+do not report "this function is long" as a finding in its own right, and do not inflate it
+into the nearest smell that half-fits. Examining a unit and leaving it is a correct result.
 
 The exception is a unit that clearly troubles you while no lens names why. Say exactly that, as
 its own note rather than a rated finding — it points at a real gap in the catalog, and it is

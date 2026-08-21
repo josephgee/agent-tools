@@ -30,6 +30,11 @@ within it. Design notes for larger efforts live in `docs/designs/`.
   `install-claude.sh` for Claude Code, which links selected skills into `~/.claude/skills`
   and follows `soft-deps` so an interdependent skill isn't installed half-wired. Keep it a
   single self-contained script — don't grow a shared top-level code directory around it.
+  The key's name notwithstanding, a listed dependency may be *hard*: a skill that requires
+  another outright states that in its `compatibility` frontmatter and carries no fallback
+  instructions for the dependency's absence (e.g. `tdd` and `design-review` both require
+  `design-principles`). Don't re-add graceful-degradation branches to such a skill — the
+  installer resolves the link, and a hand-copy that omits the dependency is broken by design.
 
 ## Writing or editing a skill
 

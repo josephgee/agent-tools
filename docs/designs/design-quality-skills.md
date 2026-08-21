@@ -36,7 +36,7 @@ design-principles (lens)            <- shared catalogs, neutral concepts, scope-
       | invoke             | invoke
 design-review (activity)   [future] design/brainstorm (activity)
       ^
-      | invoke for the deep pass (degrade to inline subset if the lens is absent)
+      | invoke for the deep pass (hard dep — no degrade path)
 tdd, backfill-tests (flow skills; keep their own cadence + inline fast-triggers)
 ```
 
@@ -77,17 +77,28 @@ dozens of times and roughly double the lazily-loaded token weight. The one excep
 targeted `designing note:` on the few entries whose *forward* application isn't obvious from
 the detection-flavored description (e.g. *Speculative Generality*, *Primitive Obsession*).
 
-## Single-source + degrade (not self-contained)
+## Single-source, hard dependency (not self-contained, not degrading)
 
 The catalogs live in **one** place (`design-principles`). Flow skills do **not** keep their
-own copies — self-contained copies would inevitably drift. Instead:
+own copies — self-contained copies would inevitably drift. Flow skills keep only their
+**tuned inline subset** (e.g. `tdd`'s three per-cycle triggers) and **invoke** the lens for
+depth.
 
-- flow skills keep only their **tuned inline subset** (e.g. `tdd`'s three per-cycle
-  triggers) and **invoke** the lens for depth;
-- because there is no manifest, the dependency is **soft** — a skill may be installed
-  without the lens. Every consumer therefore **degrades gracefully**: the preferred path
-  invokes `design-principles`; if it is unavailable, the inline subset is the floor. The
-  preferred (invoke) path is written as the concrete instruction, per `AGENTS.md`.
+The dependency is **hard**. Consumers originally carried graceful-degradation branches
+("if the lens is unavailable, fall back to the inline list"), but those mirrored chunks of
+the catalog into the consumers — the exact drift this extraction exists to prevent — and
+tripled the branch structure at every review step. Since `install-claude.sh` follows
+`soft-deps` and installs the lens with its consumers, the absence case only arises from a
+hand-copy, which is declared broken by design: `design-review` and `tdd` state the
+requirement in their `compatibility` frontmatter, carry no fallback instructions, and stop
+with a clear message if the lens is genuinely missing. The one fallback that remains is
+about *capability*, not installation: if the environment has no delegation mechanism, `tdd`
+runs `design-review` in-session instead of in a subagent.
+
+Reviews are additionally **focus-narrowed**: a caller passes `design-review` both a scope
+(what diff/path) and a focus (which altitudes), so `tdd`'s SHIP pass stays below the
+component altitude and its Cleanup pass covers only cross-PR seams and the component/system
+altitudes — the two passes partition the work instead of overlapping.
 
 ### Activity skills must be non-blocking when invoked by a skill
 
@@ -108,8 +119,10 @@ Built:
 - `skills/design-principles/` — lens.
 - `skills/design-review/` — diagnostic activity.
 - `tdd` rewired: its four deep-catalog references and `refactor-checklist.md` /
-  `pr-workflow.md` now invoke the lens with a degrade fallback; the old private
-  `design-smells.md` was deleted.
+  `pr-workflow.md` now invoke the lens (hard dep); the old private `design-smells.md` was
+  deleted. Its SHIP and Cleanup design reviews delegate to a subagent running
+  `design-review` with an explicit scope and focus (see
+  `tdd/references/delegated-execution.md`).
 
 Planned (documented here, not yet built):
 

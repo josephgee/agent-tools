@@ -143,5 +143,20 @@ metadata:
   soft-deps: design-principles
 ```
 
-Keep such dependencies *soft* — the skill should still function degraded if the dep isn't
-installed. There's no central dependency file; each skill declares its own.
+There's no central dependency file; each skill declares its own, and the installer resolves
+them transitively.
+
+Despite the key's name, the dependency need not be soft. Decide which you're building:
+
+- **Soft** — the skill still does its job without the dep, just less well. Write the
+  preferred path as the concrete instruction and the degraded path as an explicitly gated
+  fallback.
+- **Hard** — the skill can't do what it promises without the dep. Say so in a
+  `compatibility:` field, write *no* fallback branch, and have the skill stop with a clear
+  message if the dep is genuinely missing. `design-review` and `tdd` are both hard on
+  `design-principles`.
+
+Prefer hard when the fallback would have to restate the dependency's content — a mirrored
+copy is drift waiting to happen, and it is why these two were converted. Since the installer
+links the dep alongside the skill, the absent case only arises from a hand-copy, which a
+hard dependency declares broken by design.

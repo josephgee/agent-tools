@@ -97,10 +97,6 @@ experienced reader while none of these lenses names why is a gap in this catalog
 bill of health — say so plainly in that case, rather than forcing a match to the nearest smell
 that half-fits or declaring the code fine.
 
-*Editing note:* this lens list is mirrored by consumers that must degrade without this skill —
-`design-review` carries a copy in its fallback path. Change it here first, then update the
-mirrors.
-
 ## Martin's Clean Code heuristics
 
 A lower altitude than Fowler's smells: where those are class- and method-shaped, these sit at
