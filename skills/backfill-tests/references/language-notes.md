@@ -1,47 +1,41 @@
 # Language notes
 
-Two mechanical problems recur across languages: keeping a gutted function
-compiling, and marking a discovered-bug test as skipped/expected-to-fail. Quick
-references below. When in doubt, check the project's actual test framework rather
-than assuming from these.
+Per-ecosystem specifics for three steps of the loop: finding un-covered lines, marking a
+discovered bug, and (optionally) running a full mutation sweep. When in doubt, check the
+project's actual configuration rather than assuming from these tables.
 
-## Keeping a gutted function compiling
+## Coverage, for the one-shot blind-spot scan
 
-Commenting out a body often leaves a function that no longer returns its declared
-type or satisfies the compiler. Drop in an idiomatic "not implemented" placeholder
-so the *only* thing failing is your test — not the parser or type checker. Remove
-the placeholder once restored `return`s cover the paths under test.
+Run coverage over the target's own tests, restricted to the target file — a whole-suite report is
+noise you have to search. Ask for **branch** coverage: line coverage is near-useless here, since an
+`if` with no `else` reports 100% from a single test through the true path.
 
-| Language    | Placeholder                                  |
-|-------------|----------------------------------------------|
-| Python      | `raise NotImplementedError`                  |
-| JS/TS       | `throw new Error("gutted");`                 |
-| Go          | `panic("gutted")`                            |
-| Rust        | `unimplemented!()` or `todo!()`              |
-| Java/Kotlin | `throw new UnsupportedOperationException();` |
-| Ruby        | `raise NotImplementedError`                  |
-| C#          | `throw new NotImplementedException();`       |
-| C/C++       | `abort();` (and a dummy `return {};` if the type demands it) |
+Read only the zeroes. A covered line is not a pinned line — coverage records that code *ran*, not
+that anything asserted about it — so the percentage tells you nothing about the quality of the net
+and is not a thing to move. The skill's three outcomes for an unhit branch (test it / leave it and
+report it / flag it as possibly dead) are all valid endings; two of them leave the number lower.
 
-Notes:
-- **Loops and multi-line blocks**: comment the whole block out together. Restoring
-  the inner body without its loop/guard is the point (see the worked example) — but
-  keep the commented structure intact above/around it so you can un-comment the loop
-  header in a later cycle without retyping it.
-- **Statically-typed early returns**: if the placeholder is unreachable after you
-  restore a `return`, the compiler may warn about dead code — that's your cue to
-  delete the placeholder.
-- **Guard clauses / exhaustiveness**: some compilers (Rust `match`, Kotlin `when`,
-  switch exhaustiveness) won't accept a partially-restored block. If restoring one
-  arm won't compile without the others, restore the minimal compiling unit and let
-  tests drive *which values* you assert, rather than which lines exist.
+| Ecosystem | Command |
+|-----------|---------|
+| Python | `pytest --cov=<module> --cov-branch --cov-report=term-missing <test-file>` (pytest-cov) |
+| JS/TS (Jest) | `jest --coverage --collectCoverageFrom='<path>' <test-file>` |
+| JS/TS (Vitest) | `vitest run --coverage --coverage.include='<path>' <test-file>` |
+| Go | `go test -coverprofile=c.out -covermode=count ./<pkg> && go tool cover -func=c.out` (`-html=c.out` for line detail) |
+| Rust | `cargo llvm-cov --lcov` (or `cargo tarpaulin`) |
+| Java/Kotlin | JaCoCo — `mvn test jacoco:report` / `gradle test jacocoTestReport` |
+| Ruby | SimpleCov, configured in `spec_helper.rb`; `--branch-coverage` for branches |
+| C# | `dotnet test /p:CollectCoverage=true /p:Include='[asm]Type'` (coverlet) |
+
+If no coverage tool is configured, don't install one uninvited. Do the blind-spot scan by reading
+the body against your ledger instead — it is the same question asked by hand, and on a single
+function it is not much slower.
 
 ## Marking a discovered-bug test skipped / expected-to-fail
 
-When a specification test exposes a real bug, keep it asserting the **correct**
-behavior and mark it so the suite stays green while documenting the defect. Prefer
-"expected to fail" over a plain skip where the framework offers it — an xfail that
-starts unexpectedly *passing* tells you the bug got fixed.
+Keep the test asserting the **correct** behavior so it stays a ready-made red test for whoever
+fixes the bug. Prefer expected-to-fail over a plain skip where the framework offers it — an xfail
+that starts unexpectedly *passing* tells you the bug got fixed. Always include the reason, and a
+ticket reference if there is one.
 
 | Framework            | Skip                              | Expected-to-fail                                  |
 |----------------------|-----------------------------------|---------------------------------------------------|
@@ -55,6 +49,19 @@ starts unexpectedly *passing* tells you the bug got fixed.
 | RSpec (Ruby)         | `skip "reason"` / `xit`           | `pending "reason"`                                |
 | xUnit (C#)           | `[Fact(Skip = "reason")]`         | —                                                 |
 
-Always include the reason and, ideally, a pointer to the bug (ticket, or a one-line
-description of the wrong behavior). The skipped test is documentation of a known
-defect *and* the ready-made red test for whoever fixes it later.
+## Mutation testing (optional end-of-pass sweep)
+
+The per-test perturbation in the main loop is the required check. If the project *already* has one
+of these configured, a scoped run at the end is a stronger sweep — surviving mutants name behaviors
+nothing asserts. Scope it to the target; whole-repo runs are slow enough to be unusable in a
+session. Don't add one of these to a project that doesn't have it as part of a backfill.
+
+| Ecosystem | Tool | Scoped run |
+|-----------|------|-----------|
+| Python | mutmut / cosmic-ray | `mutmut run` — scope via `--paths-to-mutate <path>` or the project's mutmut config, depending on version |
+| JS/TS | Stryker | `stryker run --mutate '<path>'` |
+| Java/Kotlin | PIT | `mvn org.pitest:pitest-maven:mutationCoverage -DtargetClasses=<Class>` |
+| C# | Stryker.NET | `dotnet stryker --mutate '<path>'` |
+| Ruby | mutant | `mutant run --subject <Class#method>` |
+| Go | go-mutesting | `go-mutesting ./<pkg>` |
+| Rust | cargo-mutants | `cargo mutants --file <path>` |
