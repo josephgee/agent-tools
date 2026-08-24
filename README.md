@@ -35,6 +35,11 @@ Design notes for larger efforts live in `docs/designs/`.
   watcher (`scripts/wait-for-change.sh`) that the agent drives for you.
 - **[grill-me](skills/grill-me/SKILL.md)** — Interviews the user relentlessly about a plan or
   idea, branch by branch, until reaching shared understanding, then summarizes it.
+- **[distill](skills/distill/SKILL.md)** — Turns a sprawling result — a research write-up, a
+  codebase survey, a log dump — into a layered brief: a sized lead, the actions to take, and a
+  complete reference layer for whatever gets looked up later. Synthesizes findings into claims
+  rather than shortening the pile, demotes what can't change the reader's next decision rather
+  than deleting it, states where everything went, and never overwrites the source.
 
 ## Installing skills
 
