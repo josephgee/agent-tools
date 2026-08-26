@@ -13,6 +13,16 @@
 # It never clobbers: an existing real directory, or a symlink pointing somewhere
 # else, is reported and skipped. Re-running is safe (idempotent).
 #
+# --personal-md is a separate concern: it wires up personal/working-with-joe.md, a
+# personal (not repo-specific) set of instructions meant to apply wherever
+# Claude Code runs, not just in this repo. Rather than symlinking over the
+# user's global CLAUDE.md, it appends an "@<path>" import line pointing at
+# personal/working-with-joe.md — same mechanism this repo's own CLAUDE.md uses for
+# AGENTS.md — so it composes with whatever the user already has there. The
+# append is idempotent: it checks for the line first. Given alone (no skill
+# names), it skips the "no names -> install everything" default and only
+# does the CLAUDE.md wiring.
+#
 # Usage:
 #   ./install-claude.sh                        # link all skills
 #   ./install-claude.sh tdd design-review      # link those (+ their soft-deps)
@@ -20,17 +30,24 @@
 #   ./install-claude.sh --dry-run tdd          # show what would happen, change nothing
 #   ./install-claude.sh --no-deps design-review   # link only what's named, skip soft-deps
 #   ./install-claude.sh --target DIR ...       # link into DIR instead of ~/.claude/skills
+#   ./install-claude.sh --personal-md          # import personal/working-with-joe.md into
+#                                               # the global CLAUDE.md, nothing else
 #
 # The target can also be set with CLAUDE_SKILLS_DIR. A relative --target/env value
 # is resolved against the current directory (handy for project-scoped .claude/skills).
+# The global CLAUDE.md path for --personal-md can be set with CLAUDE_GLOBAL_MD
+# (default ~/.claude/CLAUDE.md).
 
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 skills_dir="$repo_root/skills"
+personal_md="$repo_root/personal/working-with-joe.md"
 target="${CLAUDE_SKILLS_DIR:-$HOME/.claude/skills}"
+global_md="${CLAUDE_GLOBAL_MD:-$HOME/.claude/CLAUDE.md}"
 dry_run=0
 with_deps=1
+personal_md_requested=0
 requested=()
 
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
@@ -59,6 +76,28 @@ list_skills() {
   done
 }
 
+# Append an "@<path>" import for personal/working-with-joe.md to the global CLAUDE.md,
+# unless it's already there. Never overwrites the file — only ever appends one line.
+link_personal_md() {
+  [ -f "$personal_md" ] || die "no personal/working-with-joe.md at $personal_md"
+  local import_line="@$personal_md"
+
+  if [ -f "$global_md" ] && grep -qxF "$import_line" "$global_md"; then
+    printf '  ok    working-with-joe.md — already imported in %s\n' "$global_md"
+    return 0
+  fi
+
+  if [ "$dry_run" -eq 1 ]; then
+    printf '  would append "%s" to %s\n' "$import_line" "$global_md"
+    return 0
+  fi
+
+  mkdir -p "$(dirname "$global_md")"
+  # Blank-line separator before the import, but only if the file already has content.
+  { [ -s "$global_md" ] 2>/dev/null && printf '\n'; printf '%s\n' "$import_line"; } >> "$global_md"
+  printf '  linked working-with-joe.md -> %s\n' "$global_md"
+}
+
 # --- parse args ---
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -66,6 +105,7 @@ while [ $# -gt 0 ]; do
     --list)       list_skills; exit 0 ;;
     --dry-run)    dry_run=1 ;;
     --no-deps)    with_deps=0 ;;
+    --personal-md) personal_md_requested=1 ;;
     --target)     shift; [ $# -gt 0 ] || die "--target needs a directory"; target="$1" ;;
     --target=*)   target="${1#--target=}" ;;
     -*)           die "unknown option: $1" ;;
@@ -73,6 +113,13 @@ while [ $# -gt 0 ]; do
   esac
   shift
 done
+
+# --personal-md alone (no skill names) is a standalone action: wire up the
+# CLAUDE.md import and stop, without falling into "no names -> install everything".
+if [ "$personal_md_requested" -eq 1 ] && [ "${#requested[@]}" -eq 0 ]; then
+  link_personal_md
+  exit 0
+fi
 
 [ -d "$skills_dir" ] || die "no skills/ directory at $skills_dir"
 
@@ -143,4 +190,10 @@ printf '\n%s into %s\n' \
   "$([ "$dry_run" -eq 1 ] && echo 'Dry run' || echo 'Done')" "$target"
 printf 'linked: %d   already: %d   skipped(conflict): %d\n' "$linked" "$already" "$conflict"
 [ "$conflict" -gt 0 ] && printf 'Resolve conflicts by hand — nothing existing was overwritten.\n'
+
+if [ "$personal_md_requested" -eq 1 ]; then
+  printf '\n'
+  link_personal_md
+fi
+
 exit 0
