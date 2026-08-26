@@ -13,14 +13,14 @@ TDD is a learning loop. You start with a hypothesis about the right design and t
 Work is delivered as a stack of small PRs. There are three levels, and keeping them distinct is what makes the process work:
 
 - **Acceptance criteria** are behavioral — they describe what the feature must do from the outside, as observed by a user or consumer. They are the fixed target. They do not describe how the feature is built.
-- **The PR plan** is the delivery layer — an ordered sequence of independently reviewable increments, each changing observable product behavior, however small. Each PR is closed out and handed over before the next begins.
+- **The PR plan** is the delivery layer — an ordered sequence of independently reviewable increments, each changing observable product behavior, however small. Each PR is closed out and handed over before the next begins — or, on a standing go-ahead, the whole plan runs through and is reviewed once at the end (see [Execution modes](#execution-modes)).
 - **Design hypothesis** is the implementation layer — your current best theory for how to build what the criteria require. It is expected to evolve as you learn.
 
-Inside one PR you run cycles. At the end of one you run SHIP. The loop stops when every planned PR has shipped, all acceptance criteria are satisfied by passing tests, and all learnings captured in the backlog are resolved. The discipline of one test at a time keeps the feedback tight; the discipline of one small PR at a time keeps the work reviewable.
+Inside one PR you run cycles. At the end of one you cross a PR boundary — normally a SHIP with a review gate. The loop stops when every planned PR has been delivered, all acceptance criteria are satisfied by passing tests, and all learnings captured in the backlog are resolved. The discipline of one test at a time keeps the feedback tight; the discipline of one small PR at a time keeps the work reviewable.
 
 ## State File
 
-Maintain a state file at `plans/tdd-<feature-slug>.md` throughout the session. This is the source of truth for resuming work, tracking design evolution, and managing context as the window grows. It is named after the effort so that parallel TDD sessions never collide, and it is committed with the work so that every cycle commit is a complete rollback point.
+Maintain a state file at `plans/tdd-<feature-slug>.md` throughout the session. This is the source of truth for resuming work, tracking design evolution, and managing context as the window grows. It is named after the effort so that parallel TDD sessions never collide, and it is committed with each cycle so that every cycle commit is a complete rollback point — `git reset --hard <cycle-commit>` restores the code *and* the session state together. It is kept out of every PR by the squash, not by `.gitignore`; [references/pr-workflow.md](references/pr-workflow.md) has the mechanism and the reason.
 
 See [state-format.md](state-format.md) for the format when creating the file, and for how to choose the directory and slug.
 
@@ -35,13 +35,13 @@ See [state-format.md](state-format.md) for the format when creating the file, an
 - At SHIP — record the PR description, branch, and commit; mark the PR `ready`; open the next PR
 - Driver Status — keep current at every phase transition (default `in-progress`); update immediately when escalating (`needs-user-input`, with a one-sentence `Reason`), when a PR is ready to hand over (`pr-ready`), or when declaring the feature complete (`feature-complete`). See [Delegated Execution](#delegated-execution-subagent-mode).
 
-Keep the file's diff quiet — append entries and tick checkboxes rather than reflowing prose. It rides along in every PR's diff, so its churn is a reviewer's problem. See [references/pr-workflow.md](references/pr-workflow.md).
+Keep the file's diff quiet — append entries and tick checkboxes rather than reflowing prose. It rides along in every cycle commit, so a tidy diff keeps cycle history and the resume point legible.
 
 ---
 
 ## Startup
 
-**First:** Look for existing state files — glob `tdd-*.md` in `plans/`, `docs/plans/`, and `.plans/`. A state file is identifiable by its `# TDD Session State` heading even if it has been renamed.
+**First:** Look for existing state files — glob `tdd-*.md` in `plans/`, `docs/plans/`, and `.plans/`. A state file is identifiable by its `# TDD Session State` heading even if it has been renamed. Right after a squash (interactive SHIP or one-shot Finalization) the file is *untracked* — that is expected; the next cycle commit re-adds it. Do not commit or `git clean` it.
 
 - **None found** — start fresh.
 - **Exactly one** — offer to resume it.
@@ -101,7 +101,7 @@ Once all four are established, present a concise summary:
 > **PR plan**: [ordered PR sequence, one sentence each]
 > **State file**: `plans/tdd-<feature-slug>.md`
 
-Include the proposed slug so the user can correct it — it is permanent for the effort and names the branches too. Then ask: *"Are we aligned? Shall I proceed?"* Do not begin any cycles until the user explicitly confirms.
+Include the proposed slug so the user can correct it — it is permanent for the effort and names the branches too. Then ask: *"Are we aligned? Shall I proceed?"* Do not begin any cycles until the user explicitly confirms. If they answer with a standing go-ahead ("just run the whole thing"), start in one-shot mode — see [Execution modes](#execution-modes).
 
 ### Setup
 
@@ -114,8 +114,7 @@ If the project uses git, confirm the working tree is clean before proceeding: `g
 3. **Choose the plans directory.** Use whichever of `plans/`, `docs/plans/`, or `.plans/` the repo already has. Create `plans/` only if none exists. If more than one exists, ask which to use rather than guessing.
 4. **Create the state file** at `<plans-dir>/tdd-<feature-slug>.md` with session info, feature definition, acceptance criteria, initial design hypothesis, and the PR plan.
 5. **Create the first PR's branch.** If the project uses git: `git switch -c tdd/<feature-slug>/01-<pr-slug>`. See [references/pr-workflow.md](references/pr-workflow.md) for the stack layout. Record the base branch in the state file — it is what PR 01 will be reviewed against.
-6. **Commit the state file.** If the project uses git: `git add <state-file> && git commit -m "tdd: begin <feature name>"`. This is the baseline from which each cycle builds a rollback point.
-7. **Optionally offer** to mark the plans directory `linguist-generated=true` in `.gitattributes`, so the state file collapses by default in PR diffs. Offer it; don't add it unilaterally.
+6. **Commit the state file.** If the project uses git: `git add <state-file> && git commit -m "tdd: begin <feature name>"`. This is the baseline from which each cycle builds a rollback point. The state file rides along in every cycle commit and is unstaged again at every squash (see [references/pr-workflow.md](references/pr-workflow.md)), so it never appears in a PR — no `.gitignore` or `.gitattributes` change is needed.
 
 ---
 
@@ -139,7 +138,23 @@ When you do mock, mock at the boundary — not deep inside your own code.
 
 ## The Cycle
 
-Cycles run inside a PR. Repeat them until the current PR's behavior is fully delivered, then run SHIP and move to the next PR. The feature is done when every planned PR has shipped, all acceptance criteria have passing tests, all backlog items are resolved, dismissed, or deferred, and a final code review confirms the code is clean. See Progress for the full completion gate — this is a summary, not a second source of truth.
+Cycles run inside a PR. Repeat them until the current PR's behavior is fully delivered, then cross the PR boundary — SHIP in interactive mode, or the lightweight boundary steps in one-shot (see [Execution modes](#execution-modes)) — and move to the next PR. The feature is done when every planned PR has been delivered, all acceptance criteria have passing tests, all backlog items are resolved, dismissed, or deferred, and a final code review confirms the code is clean. See Progress for the full completion gate — this is a summary, not a second source of truth.
+
+### Execution modes
+
+THINK → RED → GREEN → REFACTOR is identical in both modes. Only what happens at a PR boundary differs.
+
+**Interactive** (default): stop at every PR boundary. Run SHIP, present the finished PR, and wait for the user's review before starting the next PR. This is the reviewable-stack workflow the skill is built around.
+
+**One-shot** (on a standing go-ahead — "keep going", "just finish it", "take it from here"): run the entire PR plan as one continuous stream of cycles, reviewed once at the end. In this mode:
+
+- **Do not run per-PR SHIP.** No squash, no per-PR branch, no handoff at boundaries. History stays linear on the current branch.
+- **At each boundary crossed**, do only the boundary-crossing steps flagged in SHIP — the delegated design review of that PR's cycle range, and writing its PR description into the state file — then record the boundary and continue. Fixes from the design review are ordinary cycle commits; the linear history absorbs them with no restack. Record the boundary *after* those fixes: the last cycle commit's sha, fix commits included, in that PR's plan entry's `Ends at` — Finalization squashes exactly up to that sha, so a fix left past it would ship in the next PR.
+- **Every cycle commit is kept.** If the end review sends you back, `git reset --hard <cycle-commit>` rewinds to any point in the whole feature — code and session state together — and you resume from there, in either mode.
+- **When the completion conditions in [Progress](#progress) are met**, run the end-of-feature review, take the user's single review, then **finalize**: build the squashed PR stack from the linear history (see [references/pr-workflow.md](references/pr-workflow.md)) and hand off.
+- **`needs-user-input` decisions still stop the run** — a criteria correction, a blocked or invalidated plan. One-shot forgoes the *review* gates, not the *decision* gates.
+
+The mode can be chosen at the alignment gate or any time after ("ok, just take it from here"). Given mid-feature, it applies from the current PR forward — PRs already shipped interactively keep their squashed branches, and Finalization only stacks the one-shot range. It holds until feature-complete. Switching back to interactive takes effect at the next boundary — but the PRs crossed in one-shot are still unsquashed linear history with no branches, so SHIP's single squash cannot close out the current PR alone: present the whole crossed range for review there, and on approval build its stack by running Finalization early (current PR included; see [references/pr-workflow.md](references/pr-workflow.md)). Normal interactive SHIP resumes from the next PR.
 
 ### THINK — Choose the Next Behavior
 
@@ -227,39 +242,35 @@ If there is nothing to improve and nothing new to observe, say so explicitly. Si
 
 ### SHIP — Close Out the PR
 
-Runs once per PR, after its final cycle — not after every cycle. Read [references/pr-workflow.md](references/pr-workflow.md) for the mechanics; this is the sequence, not the commands.
+**Interactive mode.** In one-shot mode you do not run SHIP per PR — see [Execution modes](#execution-modes). The two steps marked *(both modes)* below still run once per boundary in one-shot; the rest is deferred to Finalization in [references/pr-workflow.md](references/pr-workflow.md).
 
-**SHIP ends in a review gate.** A PR boundary is where a human reads the work, so treat it the way Preflight treats the alignment gate: present the finished PR and stop. This is the user's opportunity to reject the slicing, reorder what's left, redirect the design, or call the feature done early — and it is far cheaper for them to do that here than three PRs later. Do not roll into the next PR's cycles until they respond. If the user gives a standing go-ahead ("keep going, don't stop each time"), honour it and continue reporting at each SHIP without pausing.
+Runs once per PR, after its final cycle. Read [references/pr-workflow.md](references/pr-workflow.md) for the git mechanics; this is the sequence.
+
+**SHIP ends in a review gate.** A PR boundary is where a human reads the work, so treat it the way Preflight treats the alignment gate: present the finished PR — cycle commits still intact — and stop. This is the user's opportunity to reject the slicing, reorder what's left, redirect the design, or call the feature done early — and it is far cheaper for them to do that here than three PRs later. Do not roll into the next PR's cycles until they respond. **The squash happens only after this review, on the user's approval** — never before. It rewrites the PR to a single commit and the per-cycle checkpoints stop being reachable by name, so an unreviewed squash is exactly the thing this gate prevents.
 
 - Update the state file: set phase to SHIP.
-- **Confirm the full suite is green** and the working tree is clean. A PR that leaves tests failing is not shippable at any size.
-- **Review the whole PR diff**, not just the last cycle's. Per-cycle REFACTOR only ever sees one cycle, so duplication introduced in the first cycle and repeated in the fourth survives it — this pass is the first thing that looks at the increment as a unit. Apply the [refactor-checklist](references/refactor-checklist.md) across the combined diff yourself, then **delegate the design review to a subagent** — see [references/delegated-execution.md](references/delegated-execution.md) for the task prompt and why this one delegates even though SHIP otherwise stays local. This pass's focus is the statement, name, function, and class altitudes — components and cross-PR seams belong to the end-of-feature pass, not this one — and the task prompt passes that focus explicitly. **Only if your environment has no delegation mechanism**, run the same review in this session: invoke the `design-review` skill yourself with the same explicit scope and focus, accepting that the catalog rides in this session's context for the rest of the feature. **Triage the findings yourself either way**: you know what was deliberate, so dismiss what was consciously deferred and say which, fix what is worth fixing now while staying green, and send the rest to the backlog as named entries. Do this before writing the PR description, so the fixes ride in the squashed commit.
+- **Confirm the full suite is green** and the working tree is clean apart from the state file (SHIP keeps writing to it). A PR that leaves tests failing is not shippable at any size.
+- ***(both modes)*** **Review the whole PR diff** — the combined increment, not just the last cycle's changes; exclude the state file, which is session bookkeeping (the exact `git diff` is in [references/pr-workflow.md](references/pr-workflow.md)). Per-cycle REFACTOR only ever sees one cycle, so duplication introduced in the first cycle and repeated in the fourth survives it — this pass is the first thing that looks at the increment as a unit. Apply the [refactor-checklist](references/refactor-checklist.md) across the combined diff yourself, then **delegate the design review to a subagent** — see [references/delegated-execution.md](references/delegated-execution.md) for the task prompt and why this one delegates even though SHIP otherwise stays local. This pass's focus is the statement, name, function, and class altitudes — components and cross-PR seams belong to the end-of-feature pass, not this one — and the task prompt passes that focus explicitly. **Only if your environment has no delegation mechanism**, run the same review in this session: invoke the `design-review` skill yourself with the same explicit scope and focus, accepting that the catalog rides in this session's context for the rest of the feature. **Triage the findings yourself either way**: you know what was deliberate, so dismiss what was consciously deferred and say which, fix what is worth fixing now while staying green, and send the rest to the backlog as named entries. Each fix you make here is its own cycle commit.
 - **Confirm the PR is genuinely mergeable on its own**: it changes observable behavior, it does not depend on a later PR to make sense, and anything stubbed underneath is inert or flag-gated.
-- **Write the PR description** into the state file *before* squashing, so it is committed with the work: what changes, which criteria it advances, what is deliberately not here (stubs, deferred edge cases, flags), and the base branch to open it against.
-- **Squash the cycle commits into one clean commit.** The commit subject is the PR's one-sentence behavior; the body is the PR description just written.
-- **Update the state file again**: mark this PR `ready` with its branch and resulting commit sha, open the next PR as `in-progress`, reset Current Position to its first cycle, and set Driver Status to `pr-ready`. A commit cannot contain its own sha, so this edit stays uncommitted and rides along in the next PR's first cycle commit. That is expected — do not amend the squashed commit to absorb it.
-- **Create the next PR's branch** from the commit just made, so cycles can resume on it once the gate clears. Driver Status returns to `in-progress` when that PR's first cycle begins.
-- **Report to the user and stop**: the PR is ready, its branch and base, its one-sentence behavior, what is deliberately left out, and what the next PR will do. Do not push the branch or open the PR — that is the user's call. Then wait, unless they have given a standing go-ahead.
+- ***(both modes)*** **Write the PR description** into the state file — what changes, which criteria it advances, what is deliberately not here (stubs, deferred edge cases, flags), and the base branch to open it against. It becomes the squashed commit's message body at squash time.
+- **Present the PR and stop for review.** Report the one-sentence behavior, branch, base, what is deliberately left out, and what the next PR will do. This is the user's moment to reslice, reorder, redirect, or call the feature done. Wait for their response.
+- **On approval, close out the PR** per [references/pr-workflow.md](references/pr-workflow.md): squash its cycle commits to one clean commit (subject = the behavior, body = the description), record the branch and squashed sha in the state file, mark the PR `ready`, set Driver Status to `pr-ready`, then open the next PR as `in-progress` and create its branch. The state file is left untracked after the squash and rides along again in the next PR's first cycle commit — expected; do not amend the squashed commit.
+- **Confirm the handover**: the PR is ready on its branch, against its base. Do not push the branch or open the PR — that is the user's call. Then wait for the next instruction.
 
-**If this was the last planned PR**, there is no next PR to open and no branch to create. Skip those two steps and go to the completion gate in Progress instead — which may itself add a PR to the plan, in which case branch from here and carry on.
+**If this was the last planned PR**, there is no next PR to open and no branch to create. Skip that step and go to the completion gate in Progress instead — which may itself add a PR to the plan, in which case branch from here and carry on.
 
 ---
 
 ## Design Evolution
 
-As cycles accumulate, your understanding deepens. There are three levels of response to what you learn:
+As cycles accumulate, your understanding deepens. Four responses, escalating in scope — see [references/design-evolution.md](references/design-evolution.md) for the full treatment:
 
-**Incremental refinement** (handled in REFACTOR): Small continuous improvements — renaming, restructuring, moving things. The tests protect you.
+- **Incremental refinement** (in REFACTOR): renaming, restructuring, moving things. Tests protect you. No user involvement.
+- **Hypothesis revision** (between cycles): several cycles — a *recurring* backlog smell, not one instance — show the design direction needs structural change. State the revised hypothesis, revisit the PR plan, and **present both to the user for acknowledgment before restructuring**. Restructuring can't rewrite a PR already handed over or merged — it happens forward.
+- **Acceptance criteria correction**: implementation reveals a criterion is misspecified. Never silently adjust tests. **Surface it to the user immediately**; corrected criteria need sign-off before continuing.
+- **Starting fresh**: the approach is fundamentally wrong — delete the implementation, keep the behavioral tests as the spec, restart with a new hypothesis. Not a failure; it means TDD worked.
 
-**Hypothesis revision** (handled between cycles): When several cycles reveal that the design direction needs structural change — not just cleanup — pause before the next THINK. A recurring backlog entry naming the same smell (named via the `design-principles` skill's `design-catalog.md`) across multiple cycles is a concrete version of this trigger — recurrence, not any single instance, is what elevates it from a local refactor to a hypothesis revision. State the revised hypothesis explicitly. A hypothesis revision almost always requires revisiting the PR plan — some planned PRs may no longer apply, new ones may be needed, the sequence may change. Present the revised hypothesis and the revised PR plan together to the user: what changed, what was learned that drove it, and what the new direction and sequence are. Get acknowledgment on both before restructuring. Then restructure the implementation to match the revised hypothesis. Tests that still describe valid behavior are kept; implementation can change freely. Confirm all tests pass, update the state file hypothesis and PR plan, then begin the next THINK.
-
-Restructuring is bounded by what has already shipped. A PR that has been handed over — and especially one that has merged — cannot be quietly rewritten; the change has to happen forward, in the PR you are in now or a new one added to the plan. If the revision invalidates a PR still under review, say so to the user explicitly so they can stop reviewing it.
-
-**Acceptance criteria correction**: Implementation occasionally reveals that a criterion is misspecified — untestable as written, contradicts another, or reflects a misunderstanding of the feature. Do not silently adjust tests to accommodate this. Surface it to the user immediately, discuss whether to correct, narrow, or remove the criterion, and update the state file. Corrected criteria require user sign-off before continuing.
-
-**Starting fresh**: When you learn the current approach is fundamentally wrong, be willing to delete the implementation entirely and restart with a new design. The behavioral tests you have written remain — they are a specification of what the system must do, independent of how it does it. State the new design hypothesis in the state file, then use the existing tests to guide you through the next GREEN phase.
-
-Starting fresh is not a failure. It means TDD worked: you learned something important before committing to the wrong design permanently.
+The two "present to the user" points are **decision gates**, not review gates: in one-shot mode they are `needs-user-input` stops, not things a standing go-ahead waves past.
 
 ---
 
@@ -279,8 +290,9 @@ These restate the non-negotiable invariants already enforced in the cycle above 
 - **Never execute a stale plan item.** If the next planned behavior no longer makes sense given what you have learned, update the plan before writing any test.
 - **Always do REFACTOR.** Even "nothing to improve here" counts. Skipping it lets debt accumulate and learning go unnoticed.
 - **Never plan a PR you cannot state in one sentence without "and."** If it needs two, it is two PRs.
-- **Never start the next PR's cycles before the current one has shipped and the user has seen it.** SHIP is a gate, not a formality — an unshipped PR that keeps growing is the failure this process exists to prevent, and a PR boundary is where the user gets to redirect. The only exception is a standing go-ahead from the user.
-- **Never leave the suite red at a PR boundary.** Green within a cycle is a checkpoint; green at SHIP is a precondition for handing the work to a reviewer.
+- **In interactive mode, never start the next PR's cycles before the current one has shipped and the user has seen it.** SHIP is a gate, not a formality — an unshipped PR that keeps growing is the failure this process exists to prevent. One-shot mode (a standing go-ahead) is the deliberate exception: it runs the whole plan through and reviews once at the end.
+- **Squash a PR's cycle commits only after that PR has been reviewed** — the per-PR review in interactive mode, the single end-of-feature review in one-shot. Never squash unreviewed history; keeping it intact is what makes a bad review recoverable.
+- **Never leave the suite red at a PR boundary.** Green within a cycle is a checkpoint; green at a boundary is a precondition for handing the work to a reviewer.
 
 ---
 
@@ -293,14 +305,16 @@ After each complete cycle, briefly state:
 - Which acceptance criteria remain unsatisfied
 - What you plan to target in the next cycle, giving the user a chance to redirect
 
-At each SHIP, report the PR itself: its behavior, branch, base, what is deliberately left out, and what the next PR does — then stop and wait. Per-cycle progress is a status update the user can skim; a PR boundary is a decision point, and the two should feel different. This is where they reslice, reorder, redirect, or call it done.
+In one-shot mode these still get stated — they are the running log the user scans if the end review sends them back — but no response is expected, and the boundary report shrinks to one line: `PR 02 done at <sha>, design review clean, on to PR 03`.
+
+At each SHIP (interactive mode), report the PR itself: its behavior, branch, base, what is deliberately left out, and what the next PR does — then stop and wait. Per-cycle progress is a status update the user can skim; a PR boundary is a decision point, and the two should feel different. This is where they reslice, reorder, redirect, or call it done.
 
 Declare the feature complete only when all four conditions are met:
 
-1. **PR plan**: every planned PR has shipped, or has been consciously dropped with a reason
+1. **PR plan**: every planned PR has been delivered (shipped in interactive mode; its cycles complete and its boundary recorded in one-shot), or consciously dropped with a reason
 2. **Acceptance criteria**: every criterion has passing test coverage
 3. **Learnings**: every backlog item is resolved, dismissed, or deferred
-4. **Code is clean**: a final pass over what no single PR could show. Every PR was already reviewed at its own SHIP, so **do not re-sweep the codebase** — that work is done, and repeating it here, at the point of most accumulated context, is the least useful place to spend it. Look only at what first becomes visible at feature scale: **cross-PR seams**, where duplication most easily survives because no single PR's diff contains both sides of it, and the **component and system altitudes** — dependency cycles, grab-bag packages, and rot symptoms assembled across several PRs that were each individually clean. Delegate it exactly as SHIP does — scope: the feature branch against its base; focus: cross-PR seams and the component and system altitudes, stated explicitly in the task prompt so the reviewer does not re-cover what each SHIP already saw (see [references/delegated-execution.md](references/delegated-execution.md)). **Only if your environment has no delegation mechanism**, invoke the `design-review` skill in this session with the same scope and focus. If the feature shipped as a single PR, there are no cross-PR seams — narrow the focus to the component and system altitudes alone; the same delegate-or-run-here rule applies. New findings go to the backlog and must be resolved before declaring done; if a finding is substantial, it becomes another PR in the plan rather than an amendment to one already shipped.
+4. **Code is clean**: a final pass over what no single PR could show. Every PR already had its own per-PR design review — at its SHIP in interactive mode, at its boundary in one-shot — so **do not re-sweep the codebase**; that work is done, and repeating it here, at the point of most accumulated context, is the least useful place to spend it. Look only at what first becomes visible at feature scale: **cross-PR seams**, where duplication most easily survives because no single PR's diff contains both sides of it, and the **component and system altitudes** — dependency cycles, grab-bag packages, and rot symptoms assembled across several PRs that were each individually clean. Delegate it exactly as SHIP does — scope: the feature branch against its base; focus: cross-PR seams and the component and system altitudes, stated explicitly in the task prompt so the reviewer does not re-cover what each per-PR review already saw (see [references/delegated-execution.md](references/delegated-execution.md)). **Only if your environment has no delegation mechanism**, invoke the `design-review` skill in this session with the same scope and focus. If the feature is a single PR, there are no cross-PR seams — narrow the focus to the component and system altitudes alone; the same delegate-or-run-here rule applies. New findings go to the backlog and must be resolved before declaring done; if a finding is substantial, it becomes another PR in the plan rather than an amendment to one already delivered.
 
 Before declaring complete, do a final backlog review. For each open item, make a conscious decision:
 - **Resolve it**: address it now, which may mean new cycles
@@ -309,11 +323,13 @@ Before declaring complete, do a final backlog review. For each open item, make a
 
 An item left open without one of these decisions is not done — it is forgotten.
 
+**In one-shot mode**, once the four conditions hold and this backlog review is done, present the whole feature for the user's single review — the one review gate the mode keeps. On approval, run **Finalization** in [references/pr-workflow.md](references/pr-workflow.md) to build the squashed PR stack from the linear history, then proceed to Cleanup.
+
 ---
 
 ## Delegated Execution (Subagent Mode)
 
-If your environment gives you a way to delegate a task to an isolated agent and get its result back before proceeding (Claude Code and pi both expose one, under names that vary by version — check your actual tool list rather than assuming), you can delegate each Cycle to a fresh subagent instead of running it directly, keeping this session's own context small no matter how many cycles the feature takes. Preflight, SHIP, and Cleanup stay local apart from their design reviews — they involve git-history decisions and handovers the user should be part of. This mode is optional and can be mixed with running cycles directly within the same session.
+If your environment gives you a way to delegate a task to an isolated agent and get its result back before proceeding (Claude Code and pi both expose one, under names that vary by version — check your actual tool list rather than assuming), you can delegate each Cycle to a fresh subagent instead of running it directly, keeping this session's own context small no matter how many cycles the feature takes. Preflight, SHIP (interactive mode), Finalization (one-shot mode), and Cleanup stay local apart from their design reviews — they involve git-history decisions and handovers the user should be part of. This mode is optional, is independent of interactive vs. one-shot, and can be mixed with running cycles directly within the same session.
 
 **Delegating cycles is the optional part. Delegating the design reviews is not** — SHIP's review of the PR diff and Cleanup's end-of-feature pass go to a subagent in both modes, because a session that wrote the code is the wrong context to review it from. That is a separate decision from this mode, and it applies even if you never delegate a single cycle.
 
@@ -325,10 +341,8 @@ See [references/delegated-execution.md](references/delegated-execution.md) for t
 
 Once the feature is declared complete:
 
-1. **Verify** all acceptance criteria are checked off, every planned PR has shipped or been consciously dropped, and all learnings have landed in code — in tests, naming, structure, or explicit *why* comments for conscious deferrals. If any are unresolved, do not clean up — run the cycles needed to close them first, then return here.
+1. **Verify** all acceptance criteria are checked off, every planned PR has been delivered (shipped in interactive mode, or finalized from the one-shot history) or consciously dropped, and all learnings have landed in code — in tests, naming, structure, or explicit *why* comments for conscious deferrals. If any are unresolved, do not clean up — run the cycles needed to close them first, then return here.
 2. **Verify the stack.** Report each PR's branch, base, and status, so the user knows exactly what is outstanding and in what order it must merge. If earlier PRs have merged while later ones were being built, restack them now — see [references/pr-workflow.md](references/pr-workflow.md).
-3. **Decide the state file's fate.** Default is to delete it — the code and tests tell the whole story. But the file is effort-named and lives in a durable plans directory, so keeping it as a record of what was learned is a reasonable choice. Ask; don't assume.
+3. **Decide the state file's fate.** After the last squash it is untracked in the working tree — there is no cleanup commit to make either way. The choice is only whether to `rm` it or keep it on disk as a record of what was learned. Default is to delete it; the code and tests tell the whole story. Ask; don't assume.
 
-If deleting, the removal is its own commit on top of the last PR's branch — `git rm <state-file> && git commit -m "tdd: remove session artifact"` — because the last PR has already been squashed and reported as ready, and a shipped PR is not rewritten in place. Tell the user which it should be: folded into the final PR if that one has not been opened or reviewed yet, or a trivial follow-up PR if it has.
-
-There is no end-of-feature squash. Each PR was already squashed to a single clean commit at SHIP, so the history is one commit per reviewable increment — which is the shape you want. Do not collapse the stack into one commit; that would undo the point of slicing it.
+The history is one commit per reviewable increment — reached PR-by-PR at each SHIP in interactive mode, or all at once in Finalization from one-shot. Either way, do not now collapse the stack into one commit; that would undo the point of slicing it.

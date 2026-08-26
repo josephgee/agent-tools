@@ -1,8 +1,10 @@
 # TDD State File Format
 
 The state file records the whole session: the feature, the PR plan, the design hypothesis as it
-evolves, and where you are right now. It is committed with each completed cycle alongside the code
-changes, creating a rollback point at every stage.
+evolves, and where you are right now. It is committed with each completed cycle alongside the
+code changes, creating a rollback point at every stage. It is kept out of every PR diff by the
+squash, not by `.gitignore` — `references/pr-workflow.md` ("Keeping the state file out of the
+PR") is the authoritative explanation.
 
 ## Location and name
 
@@ -57,7 +59,9 @@ to the user before proceeding.
 
 ### PR 01 — <one-sentence behavior, no "and"> — `ready`
 - **Branch**: `tdd/<feature-slug>/01-<pr-slug>` (base: `<base branch>`)
-- **Commit**: <sha of the squashed commit, once shipped>
+- **Ends at**: <sha of this PR's last cycle commit, review-fix commits included — recorded when
+  the boundary is crossed; Finalization needs it in one-shot mode>
+- **Commit**: <sha of the squashed commit, once shipped/finalized>
 - **Kind**: behavioral
 - **Criteria**: advances <which acceptance criteria>
 - **Cycles**:
@@ -70,6 +74,7 @@ to the user before proceeding.
 
 ### PR 02 — <one-sentence behavior> — `in-progress`
 - **Branch**: `tdd/<feature-slug>/02-<pr-slug>` (base: `tdd/<feature-slug>/01-<pr-slug>`)
+- **Ends at**: <last cycle commit sha, once the boundary is crossed>
 - **Kind**: behavioral
 - **Criteria**: advances <which acceptance criteria>
 - **Cycles**:
@@ -121,17 +126,21 @@ before the feature is declared complete.
 
 ## Notes on Use
 
-- **Keep the diff quiet.** This file is committed with the work, so it appears in every PR's diff.
+- **Keep the diff quiet.** This file is committed with each cycle, so it appears in every cycle
+  commit's diff (the squash later strips it before the PR — see `references/pr-workflow.md`).
   Append cycle log entries, tick checkboxes, and edit Current Position in place. Never re-wrap or
   re-order prose that has not actually changed. A good per-cycle diff is a few added lines and a
   flipped checkbox.
-- **PR Plan statuses**: `planned` (not started), `in-progress` (cycles running), `ready` (shipped
-  — squashed, described, awaiting the user), `merged`, `dropped` (with a reason). Keep shipped and
-  dropped entries in place; they show how the plan evolved.
+- **PR Plan statuses**: `planned` (not started), `in-progress` (cycles running), `ready`
+  (squashed, described, awaiting the user — reached per-PR at SHIP in interactive mode, or all at
+  once at Finalization in one-shot), `merged`, `dropped` (with a reason). Keep shipped and dropped
+  entries in place; they show how the plan evolved. In one-shot mode PRs stay `in-progress`
+  through the whole run and move to `ready` together at Finalization.
 - **PR `Kind`** is `behavioral` by default. `refactor` or `scaffolding` requires a stated reason —
   every PR is expected to change observable behavior, and the exceptions should be visible.
-- **PR descriptions** are written at SHIP and are the source for the commit message body. Fill in
-  Branch and Commit as they become real; a `planned` PR has neither yet.
+- **PR descriptions** are written when the PR's cycles finish (at SHIP, or at the boundary in
+  one-shot) and are the source for the commit message body. Fill in Branch, Ends at, and Commit
+  as they become real; a `planned` PR has none yet.
 - **Hypothesis history** is append-only. Never delete prior versions — the history of what was
   learned and why the design changed is part of the record.
 - **Cycle log** is append-only. Add a new `### PR NN / Cycle N` block after each completed
@@ -142,9 +151,10 @@ before the feature is declared complete.
 - **Acceptance criteria** use `[ ]` / `[x]` markdown checkboxes. Mark a criterion satisfied (with
   the PR that satisfied it) as soon as a passing test covers it. A criterion advanced by several
   PRs stays open with a note until the last of them lands.
-- **Committed with each cycle.** Each git commit contains the code changes for that cycle plus the
-  updated state file. Rolling back to a commit restores both the code and the full session state
-  at that moment. At SHIP these cycle commits are squashed into the PR's single commit.
+- **Committed with each cycle.** Each cycle commit contains that cycle's code changes plus the
+  updated state file, so rolling back to a commit restores both the code and the full session
+  state at that moment. It is unstaged before every squash so no PR diff contains it — mechanism
+  and rationale in `references/pr-workflow.md`.
 - **Backlog** uses four states: `[ ]` open, `[x]` resolved (with how), `[-]` dismissed (with
   reason), `[>]` deferred (with reason and destination). Every item must reach a closed state
   before the feature is declared complete.
@@ -153,9 +163,10 @@ before the feature is declared complete.
   declared complete. The user must know what real work is being moved out.
 - **Driver Status** defaults to `in-progress` and is kept current at every phase transition, the
   same as Current Position. It changes to `needs-user-input` (a decision point requiring the user,
-  with a one-sentence `Reason`), `pr-ready` (a PR has shipped and is awaiting handover), or
-  `feature-complete` (all completion conditions in the skill's Progress section are met). It
-  matters most when cycles are executed by a delegated subagent (see the skill's "Delegated
-  Execution" section) — a driver loop reads it to decide whether to keep going, run SHIP, stop and
-  surface something, or wrap up — but keep it accurate regardless of execution mode, so switching
+  with a one-sentence `Reason`), `pr-ready` (a PR's cycles are complete — in interactive mode the
+  driver runs SHIP; in one-shot it does the boundary steps and continues), or `feature-complete`
+  (all completion conditions in the skill's Progress section are met). It matters most when cycles
+  are executed by a delegated subagent (see the skill's "Delegated Execution" section) — a driver
+  loop reads it to decide whether to keep going, run SHIP, stop and surface something, or wrap up
+  — but keep it accurate regardless of execution mode, so switching
   modes mid-session works without reconstructing state.
