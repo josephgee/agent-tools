@@ -17,6 +17,12 @@ Design notes for larger efforts live in `docs/designs/`.
 - **[tdd](skills/tdd/SKILL.md)** — Guides strict Test-Driven Development (TDD) as a learning
   loop, via THINK-RED-GREEN-REFACTOR cycles with a persistent state file for tracking design
   evolution and backlog.
+- **[tdd-batch](skills/tdd-batch/SKILL.md)** — The same PR-stack delivery as `tdd`, with the
+  inner loop rebuilt for how agents work rather than how humans do: per PR, plan a batch of
+  behaviors, write all their tests against a raising skeleton, have a fresh subagent review the
+  test set before any implementation exists, implement holistically with milestone commits and a
+  pressure log, then run a whole-diff refactor and delegated design review. A competing
+  alternative to `tdd`, not a replacement — install one or the other and compare.
 - **[backfill-tests](skills/backfill-tests/SKILL.md)** — Backfills a *trustworthy* regression-test
   net onto existing, poorly-tested code: expected values derived from intent rather than read off
   the implementation, every test proven falsifiable by perturbing the code it claims to pin, and
