@@ -282,9 +282,9 @@ a harness installs one of the two, and side-by-side trials pick per-session by n
 
 ## Status
 
-**Built.** `skills/tdd-batch/` exists: `SKILL.md`, `state-format.md`, and six references
-(`delegation.md`, `refactor-checklist.md`, `when-stuck.md`, `design-evolution.md`,
-`pr-slicing.md`, `pr-workflow.md`). `skills/tdd/` is untouched. The throwaway Cycle draft that
+**Built.** `skills/tdd-batch/` exists: `SKILL.md`, `state-format.md`, and seven references
+(`review-prompts.md`, `phase-delegation.md`, `refactor-checklist.md`, `when-stuck.md`,
+`design-evolution.md`, `pr-slicing.md`, `pr-workflow.md`). `skills/tdd/` is untouched. The throwaway Cycle draft that
 preceded it has been deleted — the skill files are the artifact now.
 
 All eight failure modes above are answered in the built skill: raising skeletons and per-test
@@ -294,7 +294,7 @@ superlative pressure-log prompts (6), coverage-or-named-judgment (7), and the mi
 section plus a rethought phase-delegation contract (8). The four open gaps closed as: THINK
 produces the behavior list and interface sketch; the pressure log is intra-PR and dies at
 REVIEW, leaving the backlog as the only cross-PR notebook; state writes are per-phase with
-GREEN deliberately dark; and both review prompts are written out in `delegation.md`.
+GREEN deliberately dark; and both review prompts are written out in `review-prompts.md`.
 
 Decisions made during the build that this document did not ratify — the things to watch in
 trials: raising stubs rather than empty ones; contract reconstruction *before* the reviewer

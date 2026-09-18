@@ -1,8 +1,10 @@
 # PR Workflow
 
-The git mechanics for shipping a feature as a stack of small PRs. Read this at Setup (to create
-the stack's first branch), at every SHIP in interactive mode, and at Finalization in one-shot
-mode.
+The git mechanics for shipping a feature as a stack of small PRs. Read the section you need,
+not the whole file: §"The stack" and §"During a pass" at Setup, §"SHIP: closing out a PR" at
+each SHIP in interactive mode, §"Finalization" in one-shot mode, §"Restacking" only when a
+branch below another one changes, and §"Keeping the state file out of the PR" if you need the
+rationale. Re-reading all of it at every SHIP is the cost this split exists to avoid.
 
 This file assumes git. If the project doesn't use git, the PR plan still governs *ordering and
 sizing* — skip the branch and squash mechanics and treat each PR as a checkpoint where the suite
@@ -47,11 +49,12 @@ git commit -m "tddb: make room for PR NN"          # MAKE ROOM, preparatory refa
 git commit -m "tddb: red batch for PR NN"          # RED, tests + raising skeleton
 git commit -m "tddb: green <tests> of PR NN"       # GREEN, each milestone
 git commit -m "tddb: amend batch — <reason>"       # GREEN, amendment protocol only
-git commit -m "tddb: review fix — <what>"          # REVIEW, one per finding fixed
+git commit -m "tddb: refactor — <what>"            # GREEN, a refactor step; not a milestone
+git commit -m "tddb: review fix — <what>"          # REVIEW, each green fix or refactor step
 ```
 
-Stage everything with `git add -A` so the state file rides along where it is written. `git reset
---hard <commit>` restores code and session state together.
+Stage everything with `git add -A` so the state file rides along where it is written. A
+discard within a pass leaves the state file alone (SKILL.md, *Discarding an experiment*).
 
 **Milestone commit messages must name what newly passes** — a test name, several, or a count
 plus the batch position (`green 4/7 of PR 02`). This is not decoration: mid-GREEN resume reads
@@ -79,10 +82,11 @@ inert or flag-gated. Raising stubs from RED that are still reachable are not shi
 were a within-pass device, and by SHIP they must be either implemented or made inert.
 
 **2. Present the PR and stop for review.** Report the one-sentence behavior, branch, base, what
-is deliberately left out, any open concern REVIEW's three-round cap pushed to the backlog, and
-what the next PR does. Wait for the user — this is where they reslice, reorder, redirect, or call
-the feature done. The squash below waits on their approval: it rewrites the PR to one commit and
-the milestone checkpoints stop being reachable by name.
+is deliberately left out, any open concern REVIEW's three-round cap pushed to the backlog, the
+experiments discarded (from the PR Log's `Discarded` field; say "none" when there were none),
+and what the next PR does. Wait for the user — this is where they reslice, reorder, redirect,
+or call the feature done. The squash below waits on their approval: it rewrites the PR to one
+commit and the milestone checkpoints stop being reachable by name.
 
 **3. Squash to one commit** once approved. Collapse the pass's commits into the reviewable unit,
 and drop the state file so its churn stays out of the PR:
@@ -99,7 +103,9 @@ one-sentence behavior, body is the description written at REVIEW. The milestone 
 inside this PR are gone from `git log` after this (reflog still holds them briefly) — intended,
 and only once the user has approved. The squashed commit is code and tests only.
 
-**4. Record the result and start the next PR's branch:**
+**4. Record the result and start the next PR's branch.** If the PR just squashed was the
+**last** planned one, create no branch — there is no next PR to name it after; record the
+result and go to SKILL.md's completion gate instead.
 
 ```bash
 git switch -c tddb/<feature-slug>/<NN>-<pr-slug>
@@ -226,7 +232,8 @@ not by `.gitignore`:
   — runs `git reset -- <state-file>` (equivalently `git restore --staged <state-file>`) before
   the commit, so no squashed commit contains it. Each PR is reviewed as the range between
   squashed tips, and no squashed tip has the file, so it appears in no PR diff.
-- **Review scopes exclude it.** REVIEW's self-refactor diff and both delegated review scopes add
+- **Review scopes exclude it.** REVIEW's self-refactor diff and both delegated review scopes
+  (`references/review-prompts.md`) add
   `. ':(exclude)<state-file>'` (the `.` is required — a lone `:(exclude)` pathspec errors on some
   git versions), so a pre-squash review isn't cluttered by its churn.
 

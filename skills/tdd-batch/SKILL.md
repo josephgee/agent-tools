@@ -34,28 +34,32 @@ every planned PR is delivered, all criteria have passing tests, and the backlog 
 ## State File
 
 Maintain a state file at `<plans-dir>/tddb-<feature-slug>.md` throughout the session — see
-[state-format.md](state-format.md) for the format, directory choice, and slug rules. It is
-committed with milestone commits and kept out of every PR by the squash
-([references/pr-workflow.md](references/pr-workflow.md) has the mechanism). The `tddb-` prefix
-and its `# TDD Batch Session State` heading keep it distinct from the `tdd` skill's state
-files, so both skills can run in the same repo without finding each other's sessions.
+[state-format.md](state-format.md) for the format, directory choice, and slug rules. Its writes
+ride the next commit that already exists and never get one of their own (except Setup's
+`begin`, which starts tracking the file); the squash keeps it out of every PR
+([references/pr-workflow.md](references/pr-workflow.md), §"Keeping the state file out of the
+PR"). The `tddb-` prefix and its `# TDD Batch Session State` heading keep it distinct from the
+`tdd` skill's state files, so both skills can run in the same repo.
 
-**Read** it at startup, and re-read the PR Plan, Backlog, and Current Position sections at the
-start of every THINK — unconditionally, as a fixed checkpoint.
+**Rules in Force**, the header at its top, is this flow's non-negotiable steps, copied verbatim
+at creation and never edited. This body was read into the conversation once, so a long feature
+dilutes it by position and a compaction can drop it; the file is on disk, and re-reading the
+header puts the rules back at the end of the context. So **at the start of every THINK, re-read
+the header plus the PR Plan, Backlog, and Current Position** — unconditionally, even if you
+believe you know the rules; that belief is what erodes first. Re-read the header alone at every
+milestone commit in GREEN, when GREEN drops to the ladder (a thrashing stretch makes no
+milestone commits), and at the start of each REVIEW round. These are reads: GREEN stays dark
+for writes apart from pressure-log appends. If a resumed state file has no header, or one that
+differs from the block in [state-format.md](state-format.md), replace it wholesale and verbatim
+before the next pass — it is fixed text with a single source, so replacing is not the drift the
+never-edit rule guards against.
 
-**Write** it at these points (the canonical list; the phases below restate each at the moment
-it applies):
-
-- When starting fresh (create it)
-- End of THINK — the PR's behavior list and interface sketch; phase set to MAKE ROOM or RED
-- End of RED — the per-test verification list, then review-triage outcomes; phase set to GREEN
-- During GREEN — **pressure log appends only**; position is carried by milestone commits, not
-  the state file
-- End of REVIEW — pressure log drained, PR log entry, criteria statuses, hypothesis, backlog,
-  PR description; phase set to boundary
-- At SHIP — branch, squashed sha, statuses; next PR opened
-- Driver Status — kept current at phase transitions; `needs-user-input` set immediately when
-  escalating, with a one-sentence Reason
+**Write** it at these points (the phases restate each where it applies): creation; end of
+THINK (behavior list, interface sketch, next phase); end of RED (per-test verification, review
+triage); during GREEN, pressure-log appends only — milestone commits carry the position; end
+of REVIEW (log drained, PR log entry, criteria, hypothesis, backlog, PR description); SHIP
+(branch, squashed sha, statuses); and Driver Status at every phase transition, set to
+`needs-user-input` with a one-sentence Reason the moment you escalate.
 
 Keep the diff quiet: append entries and tick checkboxes; never reflow unchanged prose.
 
@@ -73,10 +77,11 @@ not commit or clean it.
 - **Exactly one** — offer to resume it.
 - **More than one** — list them (feature, last-updated) and ask which, or whether to start new.
 
-**If resuming:** read the state file; report feature, current PR and position, phase, remaining
-criteria and PRs, current hypothesis; confirm the checked-out branch matches; ask whether to
-resume or start fresh; if resuming, continue from the recorded phase — for mid-GREEN resume,
-see [Resuming mid-PR](#resuming-mid-pr).
+**If resuming:** read the state file — if its Rules in Force header is missing or differs from
+the block in [state-format.md](state-format.md), replace it now, verbatim; report feature,
+current PR and position, phase, remaining criteria and PRs, current hypothesis; confirm the
+checked-out branch matches; ask whether to resume or start fresh; if resuming, continue from
+the recorded phase — for mid-GREEN resume, see [Resuming mid-PR](#resuming-mid-pr).
 
 **If starting fresh**, run Preflight before touching code.
 
@@ -108,11 +113,11 @@ not start until confirmed. A standing go-ahead ("just run it all") selects one-s
 
 1. Confirm a clean working tree (stash or commit unrelated work first).
 2. Identify the test runner; ask if it cannot be determined from project files.
-3. Run the full suite; get confirmation on any pre-existing failures — you need a green
-   baseline.
+3. Run the full suite; get confirmation on any pre-existing failures — you need a green baseline.
 4. Choose the plans directory (whichever of `plans/`, `docs/plans/`, `.plans/` exists; create
    `plans/` only if none; ask if several).
-5. Create the state file.
+5. Create the state file, starting with the Rules in Force header copied verbatim from
+   [state-format.md](state-format.md).
 6. Create the first PR's branch: `git switch -c tddb/<feature-slug>/01-<pr-slug>`. Record the
    base branch.
 7. Commit the state file: `git add <state-file> && git commit -m "tddb: begin <feature>"`.
@@ -153,14 +158,50 @@ at the end. No per-PR SHIP, no per-PR branches; history stays linear. At each bo
 the PR's `Ends at` sha (its last commit, REVIEW fixes included) and continue — the PR
 description was already written at REVIEW. When the completion conditions in
 [Progress](#progress) are met, take the user's single review, then run Finalization
-([references/pr-workflow.md](references/pr-workflow.md)) to build the squashed stack.
-`needs-user-input` decision gates still stop the run — one-shot forgoes review gates, not
-decision gates. Switching modes mid-feature works as in the workflow reference.
+([references/pr-workflow.md](references/pr-workflow.md), §"Finalization") to build the squashed
+stack. `needs-user-input` decision gates still stop the run — one-shot forgoes review gates,
+not decision gates. Switching modes mid-feature works as in the workflow reference.
+
+### Discarding an experiment
+
+Uncommitted work is an experiment, and every phase can produce a failed one — refactors most
+often. Two rules make throwing one away cheap:
+
+- **Start every refactor step from a clean tree** (clean apart from the state file): commit
+  whatever is green first, and commit each step that leaves every previously passing test
+  passing — `tddb: refactor — <what>` in GREEN (MAKE ROOM keeps its own `make room` commit),
+  `tddb: review fix — <what>` in REVIEW. Neither is a milestone. In GREEN the commit *before* a
+  refactor is a milestone only if the passing batch subset grew since the last one; if it did
+  not, there is nothing green to commit, so finish the implementation stretch first — and never
+  refactor while flat lines are pending (GREEN's convergence tripwire owns that rule). The
+  discard below then removes exactly one step, never good work beside it.
+- **Discard when a trigger fires.** Either GREEN's convergence tripwire (three flat runs — see
+  GREEN for what counts as one), or any refactor step — MAKE ROOM, GREEN's steer-now, REVIEW's
+  self-refactor or a fix — that breaks a test that passed before it, where one repair attempt
+  does not put it right.
+
+To discard, restore everything except the state file, then remove new files. Commits stay;
+everything else uncommitted goes:
+
+```bash
+top=$(git rev-parse --show-toplevel)
+git -C "$top" restore --source=HEAD --staged --worktree -- . ':(exclude)<state-file>'
+git -C "$top" clean -fd -- <source dirs>
+```
+
+Give `<state-file>` and `<source dirs>` as repo-root-relative paths and keep the `-C`: pathspecs
+follow the working directory, so from a subdirectory the discard is silently partial and the
+state-file exclusion stops matching. The state file is left alone, so pressure-log entries and
+any uncommitted state write survive. Then append one `discarded` line to the Pressure Log
+saying what entangled; it drains into the PR Log's `Discarded` field at REVIEW and is the only
+trace the experiment leaves. Then resume: after the tripwire, drop to the ladder; after a
+failed refactor, retry the change in smaller steps once, and if that fails too, put it in the
+backlog.
 
 ### THINK — Plan the Batch
 
-**First, re-read the PR Plan, Backlog, and Current Position sections of the state file.**
-Every time, unconditionally.
+**First, re-read the state file's Rules in Force header and its PR Plan, Backlog, and Current
+Position sections** — every time, unconditionally.
 
 1. **Restate the PR's one-sentence behavior** (no "and"). Everything in this pass serves that
    sentence.
@@ -195,7 +236,8 @@ When it fires, in this order:
    falsifiable). Commit separately: `tddb: pin <what> before PR NN`.
 2. **Then preparatory refactoring**: make the change easy before making the easy change.
    Behavior-preserving only; full suite green after each step. Commit separately:
-   `tddb: make room for PR NN`.
+   `tddb: make room for PR NN`. A step the suite rejects and one repair does not fix is a
+   failed experiment — [discard it](#discarding-an-experiment).
 
 If the preparatory refactor grows beyond a few commits, stop — it is its own PR; add it to the
 plan ahead of this one and surface that.
@@ -217,15 +259,16 @@ plan ahead of this one and surface that.
    skeleton is broken** — it is not exercising what it claims; fix it or delete it. This
    per-test check against the skeleton is where the tautology catch lives in this flow.
 4. **Commit**: tests + skeletons + state file — `tddb: red batch for PR NN`.
-5. **Delegate the test-set review** to a fresh subagent — the exact task prompt and context
-   bundle are in [references/delegation.md](references/delegation.md); read that section
-   before spawning. In brief, the reviewer gets the PR sentence, criteria, hypothesis, and the
-   test files — no implementation exists, which is the point — and must produce artifacts, not
-   opinions: a contract reconstruction from the tests alone (divergence from the hypothesis =
-   the tests are ambiguous), a trace table (every test → behavior/criterion; no row =
-   speculative), a setup census, and the worst assertion named. **Triage the findings
-   yourself**: interface revisions happen *now* — amend tests and skeletons, re-run the
-   per-test verification, commit. Dismissals need stated reasons, recorded in the state file.
+5. **Delegate the test-set review** to a fresh subagent — prompts and context bundle are in
+   [references/review-prompts.md](references/review-prompts.md), §"Review 1"; read that section
+   before spawning. It runs as **two turns**, and the second is not optional: the reviewer
+   reconstructs the contract from the test files alone (no implementation exists, which is the
+   point) and is told the intended contract only once that reconstruction is back. It must
+   produce artifacts, not opinions: the divergences between reconstruction and intent (each one
+   = the tests are ambiguous), a trace table (no row = speculative test), a setup census, and
+   the worst assertion named. **Triage the findings yourself**: interface revisions happen
+   *now* — amend tests and skeletons, re-run the per-test verification, commit. Dismissals need
+   stated reasons, recorded in the state file.
 
 Set phase to GREEN — the last state write until REVIEW, apart from pressure-log appends.
 
@@ -239,18 +282,38 @@ Set phase to GREEN — the last state write until REVIEW, apart from pressure-lo
   commit at each *green milestone*. Green in this phase means: **every test that passed before
   this PR still passes, and the set of passing batch tests only grows.** Name the newly
   passing tests in the message: `tddb: green <tests or count> of PR NN`. Never a long stretch
-  where everything is red and nothing is committed.
+  where everything is red and nothing is committed. A milestone commit is the base a failed
+  experiment gets thrown back to (see Discarding an experiment), so it belongs after a
+  coherent chunk, not after every test — a commit per test is the ladder's rhythm, not the
+  holistic pass's.
+- **At every milestone commit, re-read the state file's Rules in Force header** before writing
+  the pressure log. GREEN is the longest phase and the one whose rules decay furthest from the
+  THINK that last read them; the milestone is the fixed beat that closes that gap, and you are
+  touching the file anyway. This is a read — it does not reopen GREEN to other state writes.
 - **Pressure log — at every milestone commit**, append two lines to the state file's pressure
   log, answering: *ugliest thing you wrote since the last milestone?* and *most annoying test
   to satisfy so far?* Superlatives always have answers — "nothing" is not a legal reply;
   "X, and it's fine because Y" is. Each answer gets a disposition: **steer now** (refactor
-  immediately, stay green) or **hold** (REVIEW will force a decision). Log any smell the
+  immediately, stay green — never while flat lines are pending, see the tripwire below) or
+  **hold** (REVIEW will force a decision). Log any smell the
   moment it bites, too — a growing switch, a third repetition, hurting setup — don't wait for
   the milestone.
-- **Convergence tripwire**: after **three consecutive full-suite runs with no decrease in the
-  failing count**, stop the holistic pass. Drop to the ladder: pick one failing test, make it
-  pass, run, commit, repeat. The ladder is a diagnostic mode, not a discipline — return to
-  holistic once the entanglement is broken. Log the drop in the pressure log.
+- **Convergence tripwire — count it in writing.** This bullet is the rule; the header, Phase
+  Discipline, and *Discarding an experiment* only point at it. A **flat run** is a full-suite
+  run in which **no batch test newly passes** — append `flat run <N> of 3 — nothing new
+  passing` to the pressure log. Do not hold the count in your head: GREEN is long, its runs are
+  spread across it, and an uncounted tripwire never fires. Two exemptions, because neither is
+  meant to make a batch test pass and counting them would push a healthy pass toward a discard:
+  the run after an `amend batch` commit and the run after a `refactor` commit are not flat runs,
+  whatever they show. A batch test newly passing clears the counter — if flat lines were
+  pending, write `count reset — <test> now passing`; otherwise the milestone commit is record
+  enough. And **never refactor while flat lines are pending**: committing one would carry the
+  thrashing stretch past the discard. **At the third flat line** the holistic pass has failed —
+  discard it ([Discarding an experiment](#discarding-an-experiment)), then drop to the ladder:
+  pick one failing test, make it pass, run, commit, repeat. **Re-read the Rules in Force header
+  as you drop** — a thrashing stretch produces no milestone commits, so it has no other
+  re-read, and it is where the amendment protocol is most likely to get bent. The ladder is a
+  diagnostic mode, not a discipline — return to holistic once the entanglement is broken.
 - **Amendment protocol — the only legal way to touch a test in GREEN.** If a batch test turns
   out to be wrong (mis-specified expectation, wrong contract), or a genuinely missing behavior
   *within the PR's sentence* surfaces: halt implementation; state the defect or gap in one
@@ -265,12 +328,17 @@ GREEN ends when the full suite is green, batch included.
 
 ### REVIEW — Refactor and Converge
 
-Set phase to REVIEW.
+Set phase to REVIEW. Every fix or refactor step in it follows [Discarding an
+experiment](#discarding-an-experiment): clean tree before, commit after each green step.
+**Re-read the Rules in Force header at the start of REVIEW and again before every re-entry
+round** — each delegated report lands in context here.
 
-1. **Drain the pressure log.** Every held item gets a terminal disposition: **fix now** (own
-   commit, suite green after), **dismiss** with a reason, or **promote to the backlog** (real,
-   but not this PR's work). The pressure log must be empty when this phase ends — it does not
-   outlive the PR; the backlog is the only cross-PR notebook.
+1. **Drain the pressure log.** Every held item gets a terminal disposition: **fix now** (suite
+   green after), **dismiss** with a reason, or **promote to the backlog** (real, but not this
+   PR's work). An entry logged at a discard instead drains into the PR Log's `Discarded` field.
+   Counter lines (`flat run N of 3`, `count reset`) are not observations and need no
+   disposition — erase them with the rest. The pressure log must be empty when this phase
+   ends — it does not outlive the PR; the backlog is the only cross-PR notebook.
 2. **Self-refactor the whole PR diff** (state file excluded) with
    [references/refactor-checklist.md](references/refactor-checklist.md) and Simple Design
    priority: tests pass > intention clear > no duplication > fewest elements. Where the
@@ -279,84 +347,87 @@ Set phase to REVIEW.
    is no tooling, walk the diff's branches and say so — never claim the mechanical check ran
    when it didn't. Do not manufacture trivial tests to silence coverage; a test added here
    must pass the same trace rule RED's review enforces.
-3. **Delegate the whole-diff design review** — task prompt and bundle in
-   [references/delegation.md](references/delegation.md). The reviewer gets the diff, the
-   hypothesis, the dismissals and deferrals so far, and the batch as the spec; its question is
-   *"does the implementation honor the hypothesis, and what design pressure emerged?"* — not a
-   cold catalog scan. Its report tags each finding **`structural-if-fixed`** (fixing it would
-   move responsibilities, add/merge types, or change contracts) or **`local`**.
-4. **Triage every finding**: fix (own commit), dismiss with reason, or backlog. Then the
-   re-entry rule, decided by the reviewer's tags, not yours: **if any fix you applied was
-   tagged `structural-if-fixed`, delegate one more review round on the new diff.** Fixes of
-   `local` findings never re-enter. Hard cap: three rounds total — anything structural still
-   open after round three goes to the backlog and is surfaced at the boundary as an open
-   concern, never silently.
+3. **Delegate the whole-diff design review** — prompt and bundle in
+   [references/review-prompts.md](references/review-prompts.md), §"Review 2". The reviewer gets
+   the diff, the hypothesis, the dismissals and deferrals so far, and the batch as the spec; its
+   question is *"does the implementation honor the hypothesis, and what design pressure
+   emerged?"*, not a cold catalog scan. Its report tags each finding **`structural-if-fixed`**
+   (fixing it would move responsibilities, add/merge types, or change contracts) or **`local`**.
+4. **Triage every finding**: fix, dismiss with reason, or backlog. Then the re-entry rule,
+   decided by the reviewer's tags, not yours: **if any fix you applied was tagged
+   `structural-if-fixed`, delegate one more review round on the new diff.** Fixes of `local`
+   findings never re-enter. Hard cap: three rounds total — anything structural still open after
+   round three goes to the backlog and is surfaced at the boundary as an open concern, never
+   silently.
 5. **Write the state file**: PR log entry (behaviors delivered, what was learned, hypothesis
-   change if any), newly satisfied criteria, hypothesis update, backlog updates, pressure log
-   emptied, and the **PR description** (what changes, criteria advanced, what is deliberately
-   not here, base branch). Set phase to boundary. Commit. If any backlog item was marked
-   deferred, surface it to the user now, not at completion.
+   change if any, experiments discarded), newly satisfied criteria, hypothesis update, backlog
+   updates, pressure log emptied, and the **PR description** (what changes, criteria advanced,
+   what is deliberately not here, base branch). Set phase to boundary and leave the write
+   uncommitted: the SHIP squash, or the next pass's first commit, picks it up. If any backlog
+   item was marked deferred, surface it to the user now, not at completion.
 
-Then cross the boundary: SHIP in interactive mode; in one-shot, record `Ends at` and start the
-next pass.
+Then cross the boundary: SHIP (interactive), or record `Ends at` and continue (one-shot).
 
 ### SHIP — Close Out the PR (interactive mode)
 
 SHIP is **gate, squash, and handover only** — the design review already ran in REVIEW; do not
-re-review the diff here. Read [references/pr-workflow.md](references/pr-workflow.md) for the
-git mechanics.
+re-review the diff here. Read §"SHIP: closing out a PR" in
+[references/pr-workflow.md](references/pr-workflow.md) for the git mechanics; the rest of that
+file is for Setup, restacking, and Finalization.
 
 - Confirm the full suite is green and the tree is clean apart from the state file.
 - Confirm the PR is genuinely mergeable alone: observable behavior, no dependence on a later
   PR, anything stubbed is inert or flag-gated.
 - **Present the PR and stop.** One-sentence behavior, branch, base, what is deliberately left
-  out, any open concern from REVIEW's round cap, and what the next PR does. This is the user's
-  moment to reslice, reorder, redirect, or call the feature done. **The squash happens only on
-  their approval — never before**; it collapses the milestone checkpoints.
+  out, any open concern from REVIEW's round cap, **the experiments discarded** (from the PR
+  Log's `Discarded` field, each with what entangled it — say "none discarded" outright when
+  there were none, so the user never has to open the state file), and what the next PR does.
+  This is the user's moment to reslice, reorder, redirect, or call the feature done. **The
+  squash happens only on their approval — never before**; it collapses the milestone
+  checkpoints.
 - On approval: squash to one commit (subject = behavior, body = the description), record
-  branch and sha, mark the PR `ready`, set Driver Status `pr-ready`, open the next PR and its
-  branch per the workflow reference.
+  branch and sha, mark the PR `ready`, set Driver Status `pr-ready`. Then open the next PR and
+  its branch per the workflow reference — **unless this was the last planned PR**: there is no
+  next PR to name a branch after, so create none (a stray branch trips Cleanup's stack report)
+  and go to the completion gate in [Progress](#progress).
 - Do not push or open the PR — that is the user's call.
-
-**If this was the last planned PR**, go to the completion gate in [Progress](#progress).
 
 ### Resuming mid-PR
 
 The state file records the phase; within GREEN it deliberately records nothing else. To resume
 in GREEN: the last milestone commit is the position — its message names the passing subset —
-and the pressure log holds the in-flight observations. Re-run the suite to re-establish which
-batch tests remain red, then continue the holistic pass. Do not reconstruct position from
-memory; the commits are the record.
+and the pressure log holds the in-flight observations and the flat-run count. Re-run the suite
+to re-establish which batch tests remain red, then continue the holistic pass. Do not
+reconstruct position from memory; the commits are the record.
 
 ---
 
 ## Design Evolution
 
-Understanding deepens as passes accumulate. Four responses, escalating — full treatment in
+Understanding deepens as passes accumulate. Four responses, escalating — detail in
 [references/design-evolution.md](references/design-evolution.md):
 
-- **Incremental refinement** (in GREEN's steer-now and REVIEW): tests protect you; no user
-  involvement.
+- **Incremental refinement** (GREEN's steer-now, REVIEW): tests protect you; no user involvement.
 - **Hypothesis revision** (between passes): a *recurring* smell across PRs — in pressure-log
-  drains or backlog entries — shows the direction needs structural change. Present the revised
-  hypothesis and revised PR plan together for acknowledgment before restructuring.
-- **Acceptance criteria correction**: implementation reveals a criterion is misspecified.
-  Never silently adjust tests; surface immediately, get sign-off.
-- **Starting fresh**: the approach is fundamentally wrong — delete the implementation, keep
-  the batch as the spec, restart with a new hypothesis. Cheap here by design: the tests
-  already exist, and the slice bounds the loss to one PR. Not a failure.
+  drains or backlog entries — means the direction needs structural change. Present the revised
+  hypothesis and PR plan together for acknowledgment before restructuring.
+- **Acceptance criteria correction**: a criterion is misspecified. Never silently adjust tests;
+  surface immediately, get sign-off.
+- **Starting fresh**: the approach is fundamentally wrong — delete the implementation, keep the
+  batch as the spec, restart with a new hypothesis. Cheap here by design; not a failure.
 
 The two "present to the user" points are **decision gates** — `needs-user-input` stops in
-one-shot mode, not things a standing go-ahead waves past.
-
-If you get stuck, see [references/when-stuck.md](references/when-stuck.md).
+one-shot mode, not things a standing go-ahead waves past. If you get stuck, see
+[references/when-stuck.md](references/when-stuck.md).
 
 ---
 
 ## Phase Discipline
 
 Restatements of the invariants enforced above — a checklist, not a second rulebook. If you
-edit one, edit both.
+edit one, edit all three. The state file's Rules in Force header is the compressed, on-disk copy of
+the sharpest of these — change it in [state-format.md](state-format.md) too, but keep it short,
+since it is re-read every pass.
 
 - **Every batch test verified failing for the right reason, per test, against a raising
   skeleton.** A test that passes against the skeleton is broken.
@@ -367,7 +438,13 @@ edit one, edit both.
 - **Write nothing the batch does not demand.** REVIEW's uncovered-path check enforces it;
   RED's trace rule keeps the batch itself honest.
 - **No checkpoint accepts "nothing to report" as an answer to a superlative question.**
-- **Three flat full-suite runs → the ladder.** Do not thrash holistically.
+- **A failed experiment is thrown away, not patched.** Three flat runs in GREEN — a run where
+  no batch test newly passes, counted in the pressure log — or a refactor step that breaks a
+  previously passing test and survives one repair → restore everything but the state file,
+  record what entangled. Do not thrash.
+- **Start every refactor step from a clean tree, with no flat lines pending; commit each green
+  step.** The discard then removes one step and nothing else. State-file writes never commit
+  alone (except `begin`).
 - **A batch never spans more than one planned PR.** Split the plan, not the fence.
 - **The pressure log dies with the PR** — drained to fixes, dismissals, or the backlog.
 - **REVIEW re-entry follows the reviewer's `structural-if-fixed` tags, capped at three
@@ -376,7 +453,7 @@ edit one, edit both.
   is the wrong context to review them from.
 - **Never execute a stale plan item.**
 - **Never leave the suite red at a PR boundary.**
-- **Squash only after the PR has been reviewed** — per-PR in interactive, once at the end in
+- **Squash only on the user's approval** — per PR in interactive, once at the end in
   one-shot.
 
 ---
@@ -387,7 +464,7 @@ After each phase transition, state briefly: where the pass stands, what the pres
 reviews surfaced, which criteria remain, and what comes next. At each boundary (interactive),
 report the PR as SHIP describes and stop — a boundary is a decision point and should feel
 different from a status update. In one-shot, the boundary report is one line:
-`PR 02 done at <sha>, review round(s): N, on to PR 03`.
+`PR 02 done at <sha>, review round(s): N, discarded: M, on to PR 03`.
 
 Declare the feature complete only when all four hold:
 
@@ -398,12 +475,13 @@ Declare the feature complete only when all four hold:
 4. **Code is clean at feature scale**: one final delegated review of what no single PR could
    show — **cross-PR seams and the component/system altitudes only**; per-PR altitudes were
    covered by each pass's REVIEW and must not be re-swept. Task prompt in
-   [references/delegation.md](references/delegation.md). Findings go to the backlog and must
-   be resolved before declaring done; substantial ones become a new PR, never an amendment to
-   a delivered one.
+   [references/review-prompts.md](references/review-prompts.md), §"Review 3". Findings go to
+   the backlog and must be resolved before declaring done; substantial ones become a new PR,
+   never an amendment to a delivered one.
 
-In one-shot mode, once these hold, present the whole feature for the user's single review;
-on approval run Finalization, then Cleanup.
+In one-shot mode, once these hold, present the whole feature for the user's single review —
+including every PR's discarded experiments, gathered from the PR Log, since the one-line
+boundary reports only counted them; on approval run Finalization, then Cleanup.
 
 ---
 
@@ -413,7 +491,7 @@ on approval run Finalization, then Cleanup.
    names, structure, or *why* comments for conscious deferrals). If not, run more passes
    first.
 2. **Verify the stack**: report each PR's branch, base, and status; restack if earlier PRs
-   merged (see [references/pr-workflow.md](references/pr-workflow.md)).
+   merged (see [references/pr-workflow.md](references/pr-workflow.md), §"Restacking").
 3. **Decide the state file's fate** — untracked after the last squash; default is delete, but
    ask.
 
@@ -423,9 +501,9 @@ The history is one commit per reviewable increment. Do not collapse the stack fu
 
 ## Delegated Execution
 
-The two per-PR reviews and the end-of-feature review are **always** delegated — that is not a
-mode, it is the design. Optionally, whole *phases* can also be delegated to keep the driving
-session small across a long feature; GREEN is the natural unit. The escalation contract, STATUS
-line, driver loop, and all task prompts live in
-[references/delegation.md](references/delegation.md) — read it in full before delegating
-anything; do not guess at the contract from this summary.
+The two per-PR reviews and the end-of-feature review are **always** delegated — not a mode, the
+design; their prompts are in [references/review-prompts.md](references/review-prompts.md), so
+read the section for the review you are about to run, not the whole file. Optionally, whole
+*phases* can also be delegated to keep the driving session small across a long feature; GREEN
+is the natural unit. Read [references/phase-delegation.md](references/phase-delegation.md) in
+full before delegating a phase — do not guess at the contract from this summary.

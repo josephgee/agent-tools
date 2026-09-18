@@ -26,6 +26,31 @@ after the effort is also what lets several sessions run in parallel without coll
 ```markdown
 # TDD Batch Session State
 
+## Rules in Force
+
+Copied verbatim at creation. Re-read at the start of every THINK, at every milestone commit in
+GREEN, when dropping to the ladder, and at the start of each REVIEW round. Never edited or
+summarized.
+
+- Every batch test verified **individually** against the raising skeleton: fails on its
+  assertion or expected effect, never on an import or fixture error. One that passes is broken.
+- Skeleton stubs **raise** — never a body returning `None`/`0`/empty.
+- Write nothing the batch does not demand.
+- Never touch a test in GREEN outside the amendment protocol: halt, state the defect, amend,
+  re-verify, commit it alone.
+- Milestone commit = prior suite green + passing batch subset only grew + that subset named.
+  Never a long red stretch with nothing committed.
+- Pressure log at every milestone: ugliest thing written, most annoying test. "Nothing" is not
+  a legal answer to a superlative.
+- Log each flat run (no batch test newly passed) here; the runs after an amend or refactor
+  commit are exempt. At three: discard — restore all but this file, log what entangled.
+- Start every refactor step from a clean tree (apart from this file), with no flat lines
+  pending; commit each green step.
+- REVIEW ends with the pressure log empty — fixed, dismissed with a reason, or backlogged.
+- Both per-PR reviews go to a fresh subagent, always.
+- A batch never spans more than one planned PR. Never execute a stale plan item.
+- Suite green at every boundary. Squash only on the user's approval.
+
 ## Session
 - **Feature slug**: <feature-slug>
 - **Test runner**: `<command>`
@@ -102,13 +127,19 @@ The batch for the PR in progress. Rewritten wholesale at each THINK; it describe
 
 ## Pressure Log
 
-Intra-PR only. Appended during GREEN (at each milestone, and whenever a smell bites), drained
-to empty at REVIEW — every entry ends as a fix, a dismissal with a reason, or a backlog item.
-It never outlives the PR; the Backlog below is the only cross-PR notebook.
+Intra-PR only. Appended during GREEN (at each milestone, whenever a smell bites, and at every
+flat run — a full-suite run in which no batch test newly passes, SKILL.md's convergence
+tripwire being the authority on what counts; its counter lives here because GREEN records
+nothing else, and a `count reset` line is written only when a newly passing test ends a flat
+run), drained to empty at REVIEW — every entry ends as a fix, a dismissal with a reason, or a
+backlog item. It never outlives the PR; the Backlog below is the only cross-PR notebook.
 
+- flat run 2 of 3 — nothing new passing
+- count reset — `<test name>` now passing
 - <ugliest thing / most annoying test — one line> — **steer now**: <what was done>
 - <one line> — **hold**: <why it waits for REVIEW>
 - <one line> — **held → backlog**: <entry it became>
+- <what entangled> — **discarded**: <restored to <sha>; drains to the PR Log's Discarded>
 
 ## PR Log
 
@@ -116,6 +147,7 @@ It never outlives the PR; the Backlog below is the only cross-PR notebook.
 - **Behaviors delivered**: <the batch, one line>
 - **Learned**: <design insight from this pass, or "no surprises">
 - **Hypothesis**: <what changed, or "none">
+- **Discarded**: <experiments thrown away and what entangled them, or "none">
 - **Reviews**: RED test-set — <headline findings>; REVIEW whole-diff — <headline findings>,
   <N> round(s)
 
@@ -145,8 +177,27 @@ before the feature is declared complete.
 
 ## Notes on Use
 
+- **Rules in Force is fixed text.** Written once, verbatim from the block above, when the file is
+  created; never rewritten, trimmed, or re-derived from the skill afterwards — a header that
+  drifts is worse than none. It exists because the skill body lives in the compressible part of
+  the context and this file does not: re-reading it both survives compaction and moves the rules
+  back to the end of the context, where attention is strongest. It is re-read at **four**
+  points, because one pass covers a whole PR: at THINK; at every milestone commit in GREEN —
+  GREEN is the longest phase, and the rules it most needs (the amendment protocol, the milestone
+  definition, the discard rules) would otherwise be read once, before RED, and not again until
+  the next PR; at the drop to the ladder, the one stretch of GREEN with no milestone commits;
+  and at the start of each REVIEW round, where every delegated report lands in context. All
+  four are *reads*; GREEN stays dark for writes apart from pressure-log appends. Keep the
+  header short — it is re-read often. On resume, a header that is missing or differs from the
+  block above is replaced wholesale (SKILL.md, Startup).
 - **Keep the diff quiet.** Append entries, tick checkboxes, edit Current Position in place.
   Never re-wrap or re-order prose that has not changed.
+- **State-file writes never commit alone**, except Setup's `begin`. They ride the next commit
+  that already exists (`red batch`, a milestone, a REVIEW fix) — Preflight and plan revisions
+  included. At a PR boundary there is no next commit: the end-of-REVIEW write stays
+  uncommitted, and the squash or the next pass's first commit picks it up.
+- **`Discarded` is the only trace of a thrown-away experiment.** The discard leaves no commit, so
+  the PR Log entry is what shows a discard happened and why. `none` there means none did.
 - **Write points are per-phase, not per-test.** End of THINK, end of RED, end of REVIEW, and at
   SHIP. **GREEN is deliberately dark** apart from pressure-log appends: position during GREEN
   lives in milestone commits, whose messages name the newly passing tests. This is a design
@@ -164,7 +215,10 @@ before the feature is declared complete.
 - **Current Batch is rewritten per PR**, not appended. Its history lives in the PR Log.
 - **Pressure Log must be empty when a PR's REVIEW ends.** A non-empty log at a boundary means
   REVIEW did not finish. Its entries are superlative answers with dispositions — an entry
-  reading "nothing" is malformed; the questions always have answers.
+  reading "nothing" is malformed; the questions always have answers. `flat run N of 3` and
+  `count reset` lines are counter entries, not observations: they are erased with the rest of
+  the log at REVIEW and need no disposition — a discard they triggered is recorded in the PR
+  Log's `Discarded`.
 - **Review rounds** are recorded per PR because the re-entry rule is tag-driven: note what
   triggered each extra round, and note explicitly when the three-round cap was hit and what was
   pushed to the backlog as an open concern.
@@ -177,6 +231,6 @@ before the feature is declared complete.
   reason), `[>]` deferred (with reason and destination). "Dismissed: not needed" is not a
   reason. Deferred items must be surfaced to the user and acknowledged.
 - **Driver Status** defaults to `in-progress` and is kept current at every phase transition. It
-  matters most when phases are delegated (see `references/delegation.md`) — a driver loop reads
-  it to decide whether to continue, run SHIP, stop, or wrap up — but keep it accurate
+  matters most when phases are delegated (see `references/phase-delegation.md`) — a driver loop
+  reads it to decide whether to continue, run SHIP, stop, or wrap up — but keep it accurate
   regardless, so switching execution modes mid-session works without reconstructing state.
