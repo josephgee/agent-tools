@@ -25,6 +25,25 @@ on merge.
 ```markdown
 # TDD Session State
 
+## Rules in Force
+
+Copied verbatim at creation, re-read at the start of every THINK, never edited or summarized.
+
+- One test per RED. Run it. Confirm it fails because the *behavior is missing* — not a typo,
+  import error, or broken fixture.
+- A test that passes the moment you write it drove nothing. Delete it and choose another behavior.
+- GREEN is the simplest thing that passes — a hardcoded value, an `if`. Write nothing the test
+  does not demand.
+- Never modify a test to make GREEN pass. A wrong test is fixed in REFACTOR or before the next
+  RED, never by weakening the assertion.
+- Full suite green before leaving GREEN, and at every PR boundary.
+- Always run REFACTOR — production pass and test pass, one change at a time, tests after each.
+  "Nothing to improve" is a finding you state out loud, not a phase you skip.
+- One commit per cycle: test + implementation + this file together.
+- Never execute a stale plan item — re-read the plan before choosing the next behavior.
+- One sentence per PR, no "and". Work that does not serve it starts the next PR.
+- Squash a PR's cycle commits only after that PR has been reviewed.
+
 ## Session
 - **Feature slug**: <feature-slug>
 - **Test runner**: `<command>`
@@ -64,6 +83,9 @@ to the user before proceeding.
 - **Commit**: <sha of the squashed commit, once shipped/finalized>
 - **Kind**: behavioral
 - **Criteria**: advances <which acceptance criteria>
+- **Merge safety**: live | inert: <what makes it unreachable> — required on PR 01 when it is a
+  steel thread, and on any other PR whose stubs are flag-gated or otherwise unreachable; set
+  when the PR is planned or re-sliced, and reused verbatim in its description at SHIP
 - **Cycles**:
   - [x] <behavior>
   - [x] <behavior>
@@ -126,6 +148,15 @@ before the feature is declared complete.
 
 ## Notes on Use
 
+- **Rules in Force is fixed text.** It is written once, verbatim from the block above, when the
+  file is created, and is never rewritten, trimmed, or re-summarized from the skill afterwards —
+  a header that drifts is worse than none. It exists because the skill body lives in the
+  compressible part of the context and this file does not: re-reading it at every THINK both
+  survives compaction and moves the rules back to the end of the context, where attention is
+  strongest. Keep it short for the same reason — a long header re-read every cycle is just more
+  noise. If you resume a state file whose header is missing or differs in any way from the
+  block below, replace it wholesale and verbatim then — it is fixed text with a single source,
+  so replacing is not the rewriting this rule forbids.
 - **Keep the diff quiet.** This file is committed with each cycle, so it appears in every cycle
   commit's diff (the squash later strips it before the PR — see `references/pr-workflow.md`).
   Append cycle log entries, tick checkboxes, and edit Current Position in place. Never re-wrap or
@@ -165,7 +196,9 @@ before the feature is declared complete.
   same as Current Position. It changes to `needs-user-input` (a decision point requiring the user,
   with a one-sentence `Reason`), `pr-ready` (a PR's cycles are complete — in interactive mode the
   driver runs SHIP; in one-shot it does the boundary steps and continues), or `feature-complete`
-  (all completion conditions in the skill's Progress section are met). It matters most when cycles
+  (Progress conditions 1–3 are met: every planned PR's cycles complete, all criteria covered by
+  passing tests, backlog closed. Condition 4's end-of-feature code-clean review is the driver's
+  and has *not* run at this point). It matters most when cycles
   are executed by a delegated subagent (see the skill's "Delegated Execution" section) — a driver
   loop reads it to decide whether to keep going, run SHIP, stop and surface something, or wrap up
   — but keep it accurate regardless of execution mode, so switching

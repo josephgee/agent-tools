@@ -23,6 +23,13 @@ Design notes for larger efforts live in `docs/designs/`.
   test set before any implementation exists, implement holistically with milestone commits and a
   pressure log, then run a whole-diff refactor and delegated design review. A competing
   alternative to `tdd`, not a replacement — install one or the other and compare.
+- **[slice-plan](skills/slice-plan/SKILL.md)** — Owns the other half of what `tdd` and
+  `tdd-batch` do: cutting a feature into vertically sliced, independently reviewable increments,
+  while leaving *how* each slice gets built to be chosen slice by slice — a test-first loop for
+  one, an agent one-shotting the next, the user writing another by hand. Keeps a strategy-agnostic
+  plan file that outlives every attempt, so a strategy that turns out wrong rolls back to the
+  previous slice with the record of what was tried intact. Its `references/slicing.md` is the
+  slicing doctrine `tdd` and `tdd-batch` both defer to.
 - **[backfill-tests](skills/backfill-tests/SKILL.md)** — Backfills a *trustworthy* regression-test
   net onto existing, poorly-tested code: expected values derived from intent rather than read off
   the implementation, every test proven falsifiable by perturbing the code it claims to pin, and

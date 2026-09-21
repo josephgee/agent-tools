@@ -1,9 +1,9 @@
 ---
 name: tdd-batch
 description: "Batch-mode Test-Driven Development optimized for how agents work, delivered as a stack of small reviewable PRs. Use when building a feature and the user asks for tdd-batch, batch TDD, or agent-optimized TDD; if they ask for strict classic per-test TDD, use the tdd skill instead. Per PR: plan a batch of behaviors, write all their failing tests against a raising skeleton, get the test set reviewed by a fresh subagent, implement holistically with milestone commits and a pressure log, then run a whole-diff refactor and delegated design review before shipping. Also use when asked to break a feature into small, reviewable, incrementally shippable pull requests using batch TDD."
-compatibility: "Requires the design-principles, design-review, and backfill-tests skills to be installed alongside it — the reviews and the MAKE ROOM phase depend on them, with no bundled fallback. Requires a way to delegate a task to an isolated subagent (the two per-PR reviews are delegated by design)."
+compatibility: "Requires the slice-plan, design-principles, design-review, and backfill-tests skills to be installed alongside it — the PR plan is drafted from slice-plan's slicing doctrine, and the reviews and the MAKE ROOM phase depend on the other three, with no bundled fallback. Requires a way to delegate a task to an isolated subagent (the two per-PR reviews are delegated by design)."
 metadata:
-  soft-deps: design-principles design-review backfill-tests
+  soft-deps: slice-plan design-principles design-review backfill-tests
 ---
 
 # TDD Batch
@@ -57,7 +57,8 @@ never-edit rule guards against.
 **Write** it at these points (the phases restate each where it applies): creation; end of
 THINK (behavior list, interface sketch, next phase); end of RED (per-test verification, review
 triage); during GREEN, pressure-log appends only — milestone commits carry the position; end
-of REVIEW (log drained, PR log entry, criteria, hypothesis, backlog, PR description); SHIP
+of REVIEW (log drained, PR log entry, criteria, hypothesis, backlog, PR description, and after
+PR 01 the walk's `Replan walk` line plus any revised PR Plan entries); SHIP
 (branch, squashed sha, statuses); and Driver Status at every phase transition, set to
 `needs-user-input` with a one-sentence Reason the moment you escalate.
 
@@ -100,9 +101,15 @@ list for confirmation.
 declaration — expected to evolve.
 
 **4. PR plan.** Read [references/pr-slicing.md](references/pr-slicing.md) in full before
-drafting it. Each PR: a one-sentence behavior (no "and"), the criteria it advances, and a
-first guess at its batch (the behaviors its tests will cover). Present the ordered list —
-this is the highest-value thing for the user to push back on.
+drafting it, and with it the general slicing doctrine it defers to — `slice-plan`'s
+`references/slicing.md`, also in full, as that file directs. Together they are the source;
+do not draft the decomposition from memory of this summary. Each PR: a one-sentence behavior
+(no "and"), the criteria it advances, and a first guess at its batch (the behaviors its tests
+will cover). For PR 01 whenever it is a steel thread, and for any other PR that ships something
+unreachable, also its `Merge safety`: `live`, or `inert: <what makes it unreachable>`. Test
+Strategy below covers the steel-thread case; the same field carries every other PR that ships a
+stub. Present the ordered list — this is the highest-value
+thing for the user to push back on.
 
 **Alignment gate.** Present feature, criteria, hypothesis, PR plan, and the proposed slug
 (permanent; names the state file and branches). Ask: *"Are we aligned? Shall I proceed?"* Do
@@ -126,12 +133,18 @@ not start until confirmed. A standing go-ahead ("just run it all") selects one-s
 
 ## Test Strategy
 
-**Outside-in, E2E first**: the first PR establishes an end-to-end path; later PRs replace
-stubs with real behavior, then add functionality, then edge cases.
+**Outside-in, E2E first over new ground**: the first PR establishes an end-to-end path; later
+PRs replace stubs with real behavior, then add functionality, then edge cases. Where the
+integration path already exists — a feature added to a mature system — there is no thread to
+pull and the first PR is simply the thinnest behavior (`slicing.md`, §"The first slice: steel
+thread").
 
-**Merge-safe from the first PR**: the first PR is either the thinnest genuinely working
-vertical slice or an **inert** skeleton (unregistered, unmounted, or flag-gated). Decide at
-planning time; record it; say in the PR description what makes it safe.
+**Merge-safe from the first PR**: where PR 01 is a steel thread, it is either a **live thread**
+— the thinnest genuinely working vertical slice — or an **inert thread**, the same structure
+kept unreachable
+(unregistered, unmounted, or flag-gated) — see `slicing.md` §"Merge safety", which is
+authoritative on the choice. Decide at planning time and record it in the PR Plan's
+`Merge safety` field; REVIEW copies it into the PR description.
 
 **Behavioral, not wiring**: assert observable outcomes — return values, state changes, effects
 at the boundary — never that one object called another.
@@ -251,8 +264,11 @@ plan ahead of this one and surface that.
 2. **Create the skeleton.** The batch must fail on assertions, not imports. Add inert stubs
    for the sketched interface: real signatures, bodies that **raise** (`NotImplementedError`
    or the language's equivalent) — never bodies returning `None`/`0`/empty, which can satisfy
-   a test by accident. A raising stub makes every accidental pass loud. Keep the skeleton
-   merge-safe per Test Strategy (inert or flag-gated if it is reachable).
+   a test by accident. A raising stub makes every accidental pass loud. If the skeleton is
+   reachable, keep it inert or flag-gated **for the duration of the pass** — a within-pass
+   device, replaced during GREEN, with no state-file entry. `Merge safety` records only what
+   **ships**: if this PR will still have a stub in place at the boundary and planning set no
+   field, add it now.
 3. **Verify per test, not per batch.** Run the suite. For *each* batch test, record in the
    state file: it fails, and the failure is the missing behavior — an assertion or expected
    effect — not a compile, import, or fixture error. **A test that passes against a raising
@@ -362,9 +378,33 @@ round** — each delegated report lands in context here.
 5. **Write the state file**: PR log entry (behaviors delivered, what was learned, hypothesis
    change if any, experiments discarded), newly satisfied criteria, hypothesis update, backlog
    updates, pressure log emptied, and the **PR description** (what changes, criteria advanced,
-   what is deliberately not here, base branch). Set phase to boundary and leave the write
+   what is deliberately not here, base branch — and, if this PR has a `Merge safety` line in
+   the PR Plan, that line copied verbatim, so the reviewer is told what makes a stubbed flow
+   safe to merge). Run the PR 01 walk below *before* setting phase to boundary — a resume that
+   reads `boundary` goes straight to SHIP, silently losing the walk. Then set phase to boundary
+   and leave the write
    uncommitted: the SHIP squash, or the next pass's first commit, picks it up. If any backlog
    item was marked deferred, surface it to the user now, not at completion.
+
+**If this was PR 01, walk the remaining plan before crossing.** This is the authoritative
+statement of the walk; every other mention of it points here. Re-read
+[references/pr-slicing.md](references/pr-slicing.md) and the doctrine it points to, then check
+every later PR against what PR 01 actually found — each was drawn before those findings existed,
+and this is the highest-yield replanning moment in the feature.
+
+**Always write PR 01's `Replan walk` field**, joining step 5's uncommitted write: what the walk
+changed, with the revised PR Plan entries alongside it, or `plan stands` if nothing changed. The
+field is the evidence in *both* branches — revised entries alone prove nothing, because THINK
+reshapes the plan silently too, so a reader cannot tell a walk that ran from a THINK edit. And
+the revised entries are what actually takes effect: THINK reads the PR Plan as the authority and
+never executes a stale item, so a re-slice written nowhere does not happen.
+
+Surface changes by THINK step 4's rule — minor reshaping is silent, a drop or major resequence
+goes to the user. If that stops the pass, note `REVIEW steps 1–5 complete; resume at the walk` in
+Current Position, or a resume re-enters REVIEW at step 1 and re-runs the self-refactor against
+the round cap. The walk sits here, not in SHIP, because SHIP is interactive-only and one-shot
+needs it more: no user is stopping to reslice. A single-PR feature records `plan stands` and
+moves on.
 
 Then cross the boundary: SHIP (interactive), or record `Ends at` and continue (one-shot).
 

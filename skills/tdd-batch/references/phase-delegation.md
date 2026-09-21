@@ -17,6 +17,14 @@ Preflight, SHIP, Finalization, and Cleanup **always stay local** — they need l
 back-and-forth with the user, or they make git-history decisions and hand work over. THINK
 stays local too: it re-reads the plan, may re-slice it, and can hit decision gates.
 
+**REVIEW after PR 01 does those same three things** — re-reads the plan, may re-slice it, can
+hit a decision gate — because of the replanning walk that closes it. **It may still be
+delegated.** A delegated REVIEW runs the walk itself and writes PR 01's `Replan walk` field (see
+SKILL.md's REVIEW, which is authoritative on the walk): a minor reshape it writes and reports
+with `STATUS: pr-ready`; a dropped PR or major resequence goes through the Escalation Contract
+instead. On return the driver confirms the `Replan walk` field is filled — that field, not the
+revised entries, is what shows the walk happened.
+
 What can be delegated is the work between them, in units of a phase. **GREEN is the natural
 unit** — it is the largest, most mechanical, and most context-hungry. MAKE ROOM and RED can
 also be delegated. Delegating REVIEW as a whole is possible but rarely worth it: its own core

@@ -87,7 +87,9 @@ commit's message body:
 - **What changes** — the observable behavior, one or two sentences.
 - **Criteria advanced** — which acceptance criteria this PR satisfies or moves forward.
 - **What's deliberately not here** — stubs still in place, edge cases left to a later PR,
-  anything inert or flag-gated. For an inert first PR, say exactly what makes it unreachable.
+  anything inert or flag-gated. If this PR has a `Merge safety` line in its plan entry —
+  PR 01 as a steel thread, live or inert, and any other PR whose stubs stay flag-gated or
+  unmounted — reproduce it verbatim here.
 - **Base branch** — the previous PR's branch, or the base branch for PR 01.
 
 **3. Present the PR and stop for review.** Report the one-sentence behavior, branch, base, what

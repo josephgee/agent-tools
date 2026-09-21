@@ -79,7 +79,8 @@ pieces connect>
 ## PR Plan
 
 Ordered sequence of independently reviewable increments, each delivering observable product
-behavior. See `references/pr-slicing.md` for how to decompose and re-slice; dropping a PR or
+behavior. See `references/pr-slicing.md` — and the general doctrine it points to — for how to
+decompose and re-slice. Dropping a PR or
 major resequencing surfaces to the user first.
 
 ### PR 01 — <one-sentence behavior, no "and"> — `ready`
@@ -89,15 +90,20 @@ major resequencing surfaces to the user first.
 - **Commit**: <sha of the squashed commit, once shipped/finalized>
 - **Kind**: behavioral
 - **Criteria**: advances <which acceptance criteria>
+- **Merge safety**: live | inert: <what makes it unreachable> — required on PR 01 when it is a
+  steel thread, and on any other PR whose stubs are flag-gated or otherwise unreachable; set
+  when the PR is planned, copied into the description at REVIEW
 - **Batch**:
   - [x] <behavior> — `<test name>`
   - [x] <behavior> — `<test name>`
 - **Review rounds**: 2 (round 2 triggered by `structural-if-fixed` fix: <what>)
+- **Replan walk**: <PR 01 only, and always present there: what the walk changed, or "plan stands">
 - **Description**:
   - **What changes**: <the observable behavior>
   - **Criteria advanced**: <which>
   - **Not here**: <stubs still in place, edge cases deferred, flags — or "nothing deliberately
     held back">
+  - **Merge safety**: <if this PR has one: live, or inert and what makes it unreachable>
   - **Base**: <branch>
 
 ### PR 02 — <one-sentence behavior> — `in-progress`
