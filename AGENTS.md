@@ -52,6 +52,24 @@ within it. Design notes for larger efforts live in `docs/designs/`.
   vague preferred path beside a sharp fallback gets the fallback taken even when it shouldn't be.
   (Seen for real: a "note the git sha, else copy the file" step got the copy done in a clean git
   repo, because copying was the concrete instruction.)
+- **A skill that runs for a long session needs its rules somewhere other than its own body.**
+  A `SKILL.md` body is read *into the conversation* when the skill triggers, so it lives in the
+  compressible region of context — unlike a system prompt or `CLAUDE.md`, which are re-sent every
+  turn. Over a long session it is diluted by *position* (attention is U-shaped; a body loaded
+  forty turns ago sits in the worst place, and this starts well before the window fills) and then
+  *lost* at compaction, replaced by a summary sentence. The symptom is an agent that follows the
+  skill's shape while missing its specific steps — TDD-ish work that never proves the test failed
+  first. If the skill already keeps a session artifact, that artifact carries *state*; give it a
+  short **rules-in-force header** too — the non-negotiable steps only, ~15 lines, written verbatim
+  at creation and never edited — and have the skill re-read the artifact at the top of each
+  repeating unit (each cycle, pass, or checkpoint), at a fixed point rather than "if unsure".
+  It works for two reasons worth keeping visible in the wording: the artifact is on disk, so it
+  survives compaction, and re-reading relocates the rules to the *end* of context, the other
+  privileged position. Two non-fixes: hoisting the rules into `CLAUDE.md` (durable, but then they
+  load in every unrelated session, and that file is the one that can't afford noise), and telling
+  the agent to re-invoke the skill (reloads the body, loses the position in the workflow — the
+  artifact does both). Keep the header short; a long one re-read every cycle is more of the rot it
+  exists to counter. `tdd`, `tdd-batch`, and `navigator` all do this.
 - Don't run `skill-review` on your own initiative. It's a deliberate, token-expensive pass the
   user triggers when they judge it worth the cost. If a change looks like it warrants one, say
   so in a sentence and let them decide — then treat its output as a checklist, not just advice.

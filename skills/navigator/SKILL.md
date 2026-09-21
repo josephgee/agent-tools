@@ -78,8 +78,14 @@ Detailed history goes in a sibling `history.md` (append-only, read on demand —
 turn). See [references/artifact-format.md](references/artifact-format.md) for the exact structure
 of both files and the rules for keeping `session.md` lean.
 
-**Read** `session.md` at startup and re-read it whenever you're unsure of the current step or
-plan — don't rely on remembering. **Write** it at the cadence in the Loop below.
+`session.md` opens with a **Rules in force** block — the non-negotiable coaching rules, written
+verbatim at creation and never edited. **Read** `session.md` at startup; **re-read** it at each
+step boundary (before the reflection pass, before the write), on resume, after any context
+compaction, and whenever you're unsure of the current step or plan. Don't rely on remembering,
+and don't skip the rules block because you believe you already know it — this skill's body was
+loaded into the conversation once and decays there by position and by compaction, while this
+file does not. Re-reading also puts the rules back at the end of the context, where attention is
+strongest. **Write** `session.md` at the cadence in the Loop below.
 
 ## Startup
 
@@ -108,7 +114,9 @@ fresh start and create the directory when the first effort begins.
   Never assume — the human may have switched worktrees, branches, or come back after a break, and
   silently picking the wrong effort (or duplicating one) is the main failure mode here.
 - **If resuming**, read that effort's `session.md`, report the goal, current hypothesis, current
-  step, and open parking-lot items, then continue from there.
+  step, and open parking-lot items, then continue from there. If it has no `Rules in force`
+  block (written before that section existed), add it now, verbatim from
+  [references/artifact-format.md](references/artifact-format.md).
 - **If starting new**, run the intro conversation below.
 
 ## Intro conversation (new effort)
@@ -220,9 +228,10 @@ space and has to still be true.
   forgetting mid-step, capture it in the parking lot rather than derailing the current step.
   You may *propose* when to fold a parked item back in; the human decides order and priority.
 - **Step completion requires a reflection pass.** A step is not done because the human (or you)
-  says so. Before marking a step done, walk its verification bullets explicitly: state which you
-  checked and how. Agents (and people) skip subtasks and declare victory — the reflection pass
-  exists to catch exactly that. If a bullet isn't actually satisfied, the step isn't done.
+  says so. Re-read `session.md` first — the `Rules in force` block and the step's bullets — then
+  walk those bullets explicitly: state which you checked and how. Agents (and people) skip
+  subtasks and declare victory — the reflection pass exists to catch exactly that. If a bullet
+  isn't actually satisfied, the step isn't done.
 
 ### Write cadence for the artifact
 
@@ -230,6 +239,8 @@ space and has to still be true.
 real pivot. Every write is another tool call competing for the human's ten visible lines, so
 batching them to milestones is what keeps a routine turn down to a single line.
 
+- **Re-read before you write.** A step boundary is both the write point and the re-read point:
+  read `session.md` — `Rules in force` block included — before updating it.
 - **Step checklist**: update as each step completes — mark done, add newly discovered steps.
   Compact the completed step to a one-line summary in `session.md`; move any detail to
   `history.md`.

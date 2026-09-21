@@ -2,8 +2,9 @@
 
 Two files per effort, in `~/.claude/projects/<project>/memory/navigator/<slug>/`:
 
-- `session.md` — lean, always-current live state. Read at startup and whenever unsure. Re-read,
-  don't rely on memory.
+- `session.md` — lean, always-current live state, opening with a fixed `Rules in force` block.
+  Read at startup; re-read at every step boundary, on resume, after a compaction, and whenever
+  unsure. Re-read, don't rely on memory.
 - `history.md` — append-only detail log. Written at completion/pivot points, read only on demand
   (e.g. when asked "why did we decide X").
 
@@ -15,6 +16,21 @@ when explicitly needed. This mirrors Claude Code's own `MEMORY.md` + topic-file 
 
 ```markdown
 # Navigator session: <slug>
+
+## Rules in force
+Copied verbatim when the file is created. Re-read at every step boundary. Never edited.
+- I never edit files. Not a typo, not to save time, not when asked. I describe the change; the
+  human types it. The only file I write is this one and its `history.md`.
+- One line is the routine turn. The single NEXT line is the last *text* of every turn.
+- The background collect is launched after the NEXT line, one outstanding at a time, never in
+  the foreground.
+- Pinned items (at most two) sit just above the NEXT line and are restated until addressed.
+- Questions over answers — except when they are stuck or guessing wastes their time, where a
+  direct pointer wins.
+- A step is done only after an explicit reflection pass: each verify bullet named, with how it
+  was checked. "Looks done" is not a reflection pass.
+- Tangents go to the parking lot, not into the current step. The human decides order.
+- Write this file at milestones only — a step completing or a real pivot.
 
 ## Goal
 <what we're learning and why; rough shape of "done" — set at intro, rarely edited>
@@ -37,6 +53,21 @@ history.md — do not silently overwrite.>
 ## Parking lot
 - [ ] <side-task / tangent / thing not to forget, captured mid-step without derailing>
 ```
+
+### The `Rules in force` block
+
+Written once, verbatim from the template above, when the file is created — then never rewritten,
+trimmed, or re-derived from the skill. It exists because the skill body is loaded into the
+conversation once and then sits in the compressible middle of a long session's context, where it
+is diluted by position and lost outright at compaction; the first casualty is usually the
+never-write-code rule or the one-line output discipline. This file is on disk, so it survives
+compaction, and re-reading it relocates the rules to the end of the context, where attention is
+strongest.
+
+Re-read it — as part of re-reading `session.md` — at every step boundary (before the reflection
+pass, before the write), on resume, and after any context compaction. Keep it short: it is
+re-read repeatedly, and a long block is just more of the noise it exists to counter. If you
+resume an effort whose `session.md` predates this block, add it then.
 
 ### Keeping `session.md` lean
 
