@@ -528,8 +528,8 @@ boundary reports only counted them; on approval run Finalization, then Cleanup.
 ## Cleanup
 
 1. **Verify** criteria, PRs, and backlog are closed and learnings have landed in code (tests,
-   names, structure, or *why* comments for conscious deferrals). If not, run more passes
-   first.
+   names, structure) or, for decision context and conscious deferrals, in the PR descriptions
+   — not in code comments. If not, run more passes first.
 2. **Verify the stack**: report each PR's branch, base, and status; restack if earlier PRs
    merged (see [references/pr-workflow.md](references/pr-workflow.md), §"Restacking").
 3. **Decide the state file's fate** — untracked after the last squash; default is delete, but

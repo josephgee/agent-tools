@@ -18,23 +18,9 @@ obvious cleanup you could have done.
   for booleans (`has_exceeded_limit`, not `flag`). If you must read the body to understand the
   name, rename it. If this pass taught you something new about a concept, check whether the
   names still reflect that understanding.
-- **Comments**: treat needing a comment as an apology — a signal the code didn't manage to say
-  it clearly enough by itself. This is a posture for deciding *whether* to write one and how
-  long it should be; never write the apology into the code, write the *why*. For every comment
-  you are about to write, or find while reviewing, ask:
-  1. **Did I add it because I needed it?** There should be a genuine *why* — a business rule, a
-     non-obvious constraint, an external workaround, a conscious tradeoff — that cannot be
-     recovered from the code itself. "Comments are good practice" is not a reason.
-  2. **Am I repeating myself?** If it restates what the name, the type, or the surrounding code
-     already makes clear — *what* or *how* rather than *why* — delete it.
-  3. **Is the code structure asking for more clarity instead?** If the comment compensates for
-     a function doing too much, a deep conditional, or a name that doesn't fit, that is a
-     design-smell signal (name it via the `design-principles` skill's `design-catalog.md`) —
-     fix the structure instead. The need for the comment usually disappears with it.
-
-  A comment surviving all three earns its keep — kept as short as the apology requires. A long
-  comment is more surface area to fall out of sync, and a stale comment is worse than none.
-  Deferred backlog items often deserve a short *why* comment naming the known limitation.
+- **Comments**: delete every comment in the diff. Where does the code need to be more
+  expressive to make up for it? Do that. Decision context (why this change, what was rejected)
+  goes in the PR description, not back into the code.
 - **Dead weight / speculation**: this is where the batch's scope fence is enforced. Any changed
   code path no batch test exercises is a finding — dead, speculative, or missing a test. Run
   coverage over the diff where the project has tooling; where it does not, walk the diff's

@@ -343,7 +343,7 @@ See [references/delegated-execution.md](references/delegated-execution.md) for t
 
 Once the feature is declared complete:
 
-1. **Verify** all acceptance criteria are checked off, every planned PR has been delivered (shipped in interactive mode, or finalized from the one-shot history) or consciously dropped, and all learnings have landed in code — in tests, naming, structure, or explicit *why* comments for conscious deferrals. If any are unresolved, do not clean up — run the cycles needed to close them first, then return here.
+1. **Verify** all acceptance criteria are checked off, every planned PR has been delivered (shipped in interactive mode, or finalized from the one-shot history) or consciously dropped, and all learnings have landed in code — in tests, naming, structure, or, for decision context and conscious deferrals, in the PR descriptions — not in code comments. If any are unresolved, do not clean up — run the cycles needed to close them first, then return here.
 2. **Verify the stack.** Report each PR's branch, base, and status, so the user knows exactly what is outstanding and in what order it must merge. If earlier PRs have merged while later ones were being built, restack them now — see [references/pr-workflow.md](references/pr-workflow.md).
 3. **Decide the state file's fate.** After the last squash it is untracked in the working tree — there is no cleanup commit to make either way. The choice is only whether to `rm` it or keep it on disk as a record of what was learned. Default is to delete it; the code and tests tell the whole story. Ask; don't assume.
 
