@@ -423,11 +423,17 @@ Re-read the Rules in Force header and the Slices section. Then:
    outside the plans directory. `reset --soft` stages only what was committed, so anything else
    there is work the squash drops and leaves dirty for the next slice to sweep into its history.
 
+   **Before resetting, read the guest's state file for a `Learned` line from this slice's work** (a
+   skill-shaped guest's refactor checklist sends decision context there instead of a PR description
+   it was forbidden to write — see `references/hosted-handoff.md`, *The guest's state file*). Skip
+   this for a `direct` or `hand` slice, which keeps no such file. "No surprises" or empty is nothing
+   to carry; anything else becomes a second `-m` below.
+
    ```bash
    top=$(git rev-parse --show-toplevel)
    git -C "$top" reset --soft <previous-slice-branch>
    git -C "$top" reset -- <plans-dir>/     # unstage the guest's state file
-   git -C "$top" commit -m "<behavior sentence>"
+   git -C "$top" commit -m "<behavior sentence>" -m "<Learned line, if any>"
    ```
 
    The `reset -- <plans-dir>/` unstages the guest's committed state file so it does not ship to the
@@ -436,7 +442,7 @@ Re-read the Rules in Force header and the Slices section. Then:
    before committing — otherwise the change is silently dropped from the shipped commit and left
    dangling in the worktree. Keep the `-C` and give `<plans-dir>` repo-root-relative: from a
    subdirectory a bare `git reset -- plans/` matches nothing, **exits 0 and prints nothing**, and
-   the guest's session notes go straight into the PR. Add a second
+   the guest's session notes go straight into the PR. Add a further
    `-m "<what is deliberately not here>"` only when the slice has an `inert:` Merge safety line.
 5. Update the plan: mark the slice `shipped`, close its attempt line, tick any criteria a passing
    test now satisfies, record hypothesis changes and backlog items, and set **Last updated**.

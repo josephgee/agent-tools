@@ -102,7 +102,9 @@ commit; the user's work on a `navigator` slice is the host's to confirm committe
 > description, and **do not run your own design review of the diff** — even one your instructions
 > mark as mandatory in every execution mode. The host reviews and squashes this slice at its
 > boundary; running yours reviews work the host has not accepted yet and asks the user to approve
-> the same work twice.
+> the same work twice. Decision context your refactor step would otherwise send to a PR
+> description still goes in your state file's `Learned` line, as your own rules already say — the
+> host reads it from there and folds it into the squash commit.
 >
 > **If you cannot finish the slice, hand back `blocked`.** That is the one sanctioned way not to
 > finish one. It needs splitting; it turns out to need an earlier slice's test changed after all;
@@ -139,8 +141,13 @@ and be found by the next slice's guest if left behind. Do not add it to the excl
 needs its own file tracked for its own rollbacks; the host just removes it at the boundary.
 
 So at both transitions off a slice — the boundary and an abandon — drain anything worth keeping out
-of it into the plan, then remove it. The squash's `git reset -- <plans-dir>/` keeps it out of the
-shipped commit; the boundary's step 6 deletes it, and in the abandon it is the first action — the
+of it, then remove it. Most of it goes to the plan; its `Learned` line is the one exception —
+that is decision context the guest's own refactor checklist sent there instead of a PR
+description it was forbidden to write, and the plan is the wrong destination for it (it is not a
+later slice's concern). Read it before the squash and fold it into the squash commit per the
+boundary's step 4 — that is the shipped commit's PR description now, so that is where decision
+context belongs. The squash's `git reset -- <plans-dir>/` keeps the file itself out of the shipped
+commit; the boundary's step 6 deletes it, and in the abandon it is the first action — the
 `git rm -f` at the top of the bash block, before the restore, so the reversion commit carries the
 deletion away. A guest whose artifact lives
 outside the repo by its own design — `navigator`, wherever that skill puts it, under

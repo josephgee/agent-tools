@@ -20,7 +20,12 @@ obvious cleanup you could have done.
   names still reflect that understanding.
 - **Comments**: delete every comment in the diff. Where does the code need to be more
   expressive to make up for it? Do that. Decision context (why this change, what was rejected)
-  goes in the PR description, not back into the code.
+  goes in the state file's `Learned` line, not back into the code — drained into the PR
+  description when this ships, or into the host's squash commit when a host owns the PR.
+  Last chance: if the site you just touched sits inside an existing, repeated convention of
+  one-line comments (e.g. every other member of this enum already carries one), match it with
+  one line rather than leave this the only unlabelled entry — that is surrounding-norm
+  consistency winning, not a general excuse to keep a comment you'd otherwise delete.
 - **Dead weight / speculation**: this is where the batch's scope fence is enforced. Any changed
   code path no batch test exercises is a finding — dead, speculative, or missing a test. Run
   coverage over the diff where the project has tooling; where it does not, walk the diff's
