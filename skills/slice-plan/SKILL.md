@@ -213,6 +213,7 @@ slice's shape is the evidence.
 |---|---|---|
 | `tdd` | skill | is over unproven ground, or where the design *is* the question — one test at a time surfaces it earliest. Never a `refactor`/`scaffolding` slice |
 | `tdd-batch` | skill | has a clear batch of behaviors and a known shape, where per-test pacing is overhead. Never a `refactor`/`scaffolding` slice |
+| `atdd` | skill | needs research and a written design the user signs off on before any code, with human-runnable proof of the behavior — where the design is unsettled *and* worth a review gate, not just a test loop. Never a `refactor`/`scaffolding` slice. Runs in-session |
 | `direct` | you, directly | is one obvious edit, or scaffolding whose design carries no risk |
 | `hand` | the user writes it | the user wants to write themselves — for the learning, or because they hold context you don't |
 | `navigator` | skill; the user still writes | the user writes it and wants an agent coaching, questioning direction and catching skipped steps rather than sitting silent |
@@ -298,8 +299,9 @@ the plan, and for the latter two was handed no contract at all:
 
 **Run a skill-shaped guest in a delegated subagent wherever the session supports it** — a delegated
 slice comes back as a result instead of as context. Keep it in-session when delegation isn't
-available, when it is `navigator` and the user needs to watch it work, **or when you expect to want
-the abandon**, which a delegated guest puts out of reach. The trade-off in full, and the disk
+available, when it is `navigator` and the user needs to watch it work, when it is `atdd`, whose
+human design gate needs the user live and which spawns subagents of its own, **or when you expect
+to want the abandon**, which a delegated guest puts out of reach. The trade-off in full, and the disk
 checks that replace watching a guest work, are in
 [references/hosted-handoff.md](references/hosted-handoff.md) — *Delegated or in-session*,
 *Reading the result*.
@@ -355,7 +357,10 @@ Whatever runs a slice owes exactly five things:
    boundary can see.
 5. **Hand back before the squash**, with a green suite and no boundary review, PR or squash of its
    own. The plan owns all three; a strategy that runs its own asks the user to approve the same
-   work twice.
+   work twice. **One exception, by name: `atdd`** reviews its diff inside its own loop, iterating
+   until clean, and records the result in its state file; the boundary then skips its own review
+   (step 2 below). Its adapted block is in
+   [references/hosted-handoff.md](references/hosted-handoff.md), *Adapting it for `atdd`*.
 
 Obligations 2 and 4 describe a *finished* slice. **The one sanctioned way not to finish one is to
 hand back `blocked`**, and there is no other: the executor stops, gets the suite back to green
@@ -391,7 +396,17 @@ Re-read the Rules in Force header and the Slices section. Then:
    A red suite here is not a boundary: if the guest handed back `blocked`, go to
    [A guest that hands back blocked](#a-guest-that-hands-back-blocked); if it handed back red
    anyway, treat that as `blocked` and read it there too.
-2. **Delegate a design review to a fresh subagent.** Resolve `git rev-parse --show-toplevel`
+2. **Skip this step only if the guest's state file records a completed review.** That means an
+   `# ATDD Session State` file whose `REVIEW` section has `Rounds` filled in and a `Lint` result
+   that is not the template placeholder. Judge by the record on disk, not by the hand-back line;
+   any other guest (`tdd`, `tdd-batch`, `direct`, `hand`), or a missing or unfilled record, means
+   run the review below. When skipping, carry the record's `Dismissed` and `Open at cap` lists
+   into step 3 as the triage you would otherwise have done — the guest triaged its own reviewer's
+   findings, so the user sees each dismissal and its reason — and add its `Backlogged` and
+   `Out of scope` items to the plan's backlog. An earlier-slice test you updated on this branch is
+   in `atdd`'s reviewed diff, and its triage applies the same two backlog rules as below.
+
+   **Otherwise, delegate a design review to a fresh subagent.** Resolve `git rev-parse --show-toplevel`
    **yourself, first**, and paste the resulting absolute path into the prompt — tell it to invoke
    the `design-review` skill over
    `git -C <absolute-repo-path> diff <previous-slice-branch>...HEAD -- . ':(exclude)<plans-dir>/'`
@@ -415,7 +430,9 @@ Re-read the Rules in Force header and the Slices section. Then:
    deadlocks the next slice — [references/slicing.md](references/slicing.md), §"A thread's test
    must survive being thickened"), and one that asks for behavior this slice does not have, such as
    a missing error path (*Kitchen sink*, same file). Never present the slice untriaged.
-3. Present the slice for review and stop. This is where the user rejects the slicing, reorders
+3. Present the slice for review and stop — with, when step 2 was skipped, the guest's dismissed
+   findings and their reasons, and anything left open at its round cap; anything the user wants
+   revisited becomes a named backlog entry. This is where the user rejects the slicing, reorders
    what's left, redirects the design, or calls the feature done early — far cheaper here than
    three slices later.
 4. On approval, squash the slice to one commit, dropping the plan file from it. **First confirm the
@@ -473,7 +490,9 @@ exactly one of three:
   what is green and coherent now, move the rest to a new slice immediately after it, and re-read
   [references/slicing.md](references/slicing.md). Surface the re-slice to the user. Then go to the
   boundary if the narrowed slice is already delivered, or append a new `<strategy> — in progress`
-  line and hand off again if it is not.
+  line and hand off again if it is not. **If the guest was `atdd`, first `git rm -f` its state
+  file and commit that:** its acceptance tests and design were written for the old, wider slice,
+  and a re-invoked `atdd` would offer to resume them.
 - **The strategy has no move on this slice** — a test-first guest on a `refactor` slice is the
   standing example. That is an abandon: propose it and follow the recipe below.
 

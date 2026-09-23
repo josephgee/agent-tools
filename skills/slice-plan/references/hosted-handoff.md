@@ -22,6 +22,22 @@ Give the block verbatim when invoking the guest, with the placeholders filled �
 substitute the strategy name the plan's Attempts line needs. It is written *to* the guest, not
 about it.
 
+### Adapting it for `atdd`
+
+`atdd` reviews its own diff before hand-back, iterating until clean, so the block's ban on a
+guest-side review is reversed for it. Give the block verbatim with **paragraph 5 replaced, whole,
+by this** (nothing else in the block changes; skipping the alignment gate stands — `atdd`'s human
+design gate is not that gate and survives):
+
+> **5. Hand back before the squash.** Do not squash, do not present a PR, and do not write a PR
+> description. Do run your own REVIEW as your rules describe, before you hand back, and record it
+> in your state file: its rounds, every finding you dismissed with its reason, anything you sent
+> to the backlog, and anything still open at your round cap. The host skips its own boundary
+> review when that record exists and shows the user your dismissals, so keep them honest, one line
+> each. Decision context you would otherwise send to a PR description goes in your state file's
+> `Learned` line, as your own rules already say — the host reads it from there and folds it into
+> the squash commit.
+
 ### Adapting it for `navigator`
 
 `navigator` is different — it never edits files and the user writes every line — so hosted it is a
@@ -124,7 +140,8 @@ that stacks on top of this skill's, once per slice, and an abandon is worse — 
 whole body stays in context while its replacement loads on top of it. Delegated, a slice comes back
 as a result instead of as context.
 
-Run a guest in-session when delegation isn't available, when it is `navigator` and the user needs
+Run a guest in-session when delegation isn't available, when it is `atdd` (its human design gate
+needs the user live, and it spawns subagents of its own), when it is `navigator` and the user needs
 to watch it work, **or when you expect to want the abandon**. A delegated guest is invisible until
 it hands back: you cannot watch it throw its own work away and you cannot stop it mid-slice, so the
 abandon is only reachable for an in-session guest. Delegation buys context at the cost of the
@@ -144,7 +161,10 @@ So at both transitions off a slice — the boundary and an abandon — drain any
 of it, then remove it. Most of it goes to the plan; its `Learned` line is the one exception —
 that is decision context the guest's own refactor checklist sent there instead of a PR
 description it was forbidden to write, and the plan is the wrong destination for it (it is not a
-later slice's concern). Read it before the squash and fold it into the squash commit per the
+later slice's concern). `atdd`'s `Dismissed`, `Open at cap`, `Backlogged` and `Out of scope`
+lists are the other exception: `Dismissed` and `Open at cap` are presented to the user at the
+boundary (step 3), whatever the user wants revisited becomes a plan backlog entry, and
+`Backlogged` and `Out of scope` become plan backlog entries directly. Read it before the squash and fold it into the squash commit per the
 boundary's step 4 — that is the shipped commit's PR description now, so that is where decision
 context belongs. The squash's `git reset -- <plans-dir>/` keeps the file itself out of the shipped
 commit; the boundary's step 6 deletes it, and in the abandon it is the first action — the
