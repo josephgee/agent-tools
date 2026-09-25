@@ -35,9 +35,10 @@ every GREEN milestone and ladder drop, before each REVIEW round, and at the star
 - Mutation check (break the code under test, confirm it fails, revert exactly) only for a RED test
   that passes immediately. Never touch a test in GREEN outside the amendment protocol: halt,
   state the defect, amend, re-verify, commit it alone.
-- Full suite only at GREEN's entry and exit; between, run RED's tests only. Milestone commit =
-  RED's passing subset only grew, subset named. Pressure log at every milestone: "nothing" is not
-  an answer. Three flat runs → discard per references/discard.md.
+- Full suite once, at GREEN's exit, plus again only if code changed since; between, run RED's
+  tests only. Milestone commit = RED's passing subset only grew, subset named. Pressure log at
+  every milestone: "nothing" is not an answer. Three flat runs → discard per
+  references/discard.md.
 - REVIEW is delegated and blind (diff and unit tests only). A `structural-if-fixed` fix triggers
   a fresh round, max three; record every dismissal with a reason, and anything open at the cap.
   Backlog, never fix, a finding that tightens an earlier test or asks for behavior this slice lacks.
@@ -51,6 +52,7 @@ every GREEN milestone and ladder drop, before each REVIEW round, and at the star
 - **Slice behavior**: <the one-sentence behavior from slice-plan's plan, copied verbatim>
 - **Criteria advanced**: <which, from slice-plan's plan>
 - **Test runner**: `<command>`
+- **Last full-suite run**: none | green at <sha>
 - **Lint command**: `<command>` | none found
 - **Started**: YYYY-MM-DD
 - **Last updated**: YYYY-MM-DD
@@ -95,7 +97,10 @@ drained to empty at REVIEW step 0 — every `hold` ends as a fix or a dismissal 
 - <one line> — **hold**: <why it waits for REVIEW>
 - <what entangled> — **discarded**: <restored to <sha>>
 
-## REVIEW
+## Review
+
+<!-- Add this whole section when REVIEW starts, not at creation: its presence tells the host a
+review happened. -->
 
 - **Rounds**: <N; what triggered each extra round — a `structural-if-fixed` fix, and which>
 - **Fixed**: <one line each>
@@ -112,7 +117,7 @@ drained to empty at REVIEW step 0 — every `hold` ends as a fix or a dismissal 
 - **Unit tests**: green | <what's still red>
 - **Lint**: clean | <open items>
 - **Review**: all findings fixed or dismissed | see `Open at cap`
-- **Handed back**: `atdd — handed back` | `atdd — blocked: <what stopped it>`
+- **Handed back**: `atdd — handed back: reviewed, suite green at <sha>` | `atdd — blocked: <what stopped it>`
 
 ## Learned
 
@@ -131,8 +136,10 @@ before it squashes.>
 
 - **Rules in Force is fixed text**, written once from the block above, never rewritten. On resume,
   a header that's missing or differs from the block is replaced wholesale.
-- **An unfilled REVIEW section keeps its `<...>` placeholders.** The host treats a placeholder
-  still standing in `Rounds` or `Lint` as no review record and runs its own review.
+- **The `## Review` section is the record the host reads**, alongside the token `reviewed` on the
+  hand-back line, and the host skips its own review only when both exist. So the section is not
+  created at Setup: add it, from the template, when REVIEW starts. Its mere presence claims a
+  review was done.
 - **State-file writes ride the next commit** — ACCEPT's table, the design write, RED's
   verification table, REVIEW's findings, SHIP's gate result. GREEN is dark apart from
   pressure-log appends: position during GREEN lives in milestone commit messages.

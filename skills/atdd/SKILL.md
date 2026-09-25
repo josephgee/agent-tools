@@ -77,7 +77,7 @@ is identifiable by its `# ATDD Session State` heading even if renamed.
 
 - **None found** — start fresh at Setup.
 - **Exactly one** — read it. If its recorded slice behavior sentence differs from the plan's, it
-  is stale (the host re-sliced): delete it and start fresh. Otherwise offer to resume: report the
+  is stale (the host re-sliced): `git rm -f` it, commit that, and start fresh. Otherwise offer to resume: report the
   current phase and behavior sentence, confirm the checked-out branch matches, then continue from
   the recorded phase.
 - **More than one** — list them (slice, last-updated) and ask which, or whether to start fresh.
@@ -209,15 +209,22 @@ Commit: `git add <state-file> && git commit -m "atdd: design for <slice-slug>"`.
 
 - **Implement holistically.** You hold the whole set of RED's tests; design the implementation as
   one piece. Write nothing the tests do not demand.
-- **The full suite runs twice in GREEN: entry and exit, never in between.** It's expensive; the
-  loop below stays cheap on purpose.
-  - **Entry** (once, before implementation starts): the host handed you a green suite, so the set
-    of failing tests now must be exactly RED's still-red tests. Any other failure is drift —
+- **The full suite runs once in GREEN, at exit — never at entry, never in between.** It's
+  expensive; the loop below stays cheap on purpose.
+  - **Entry** (before implementation starts): the previous slice ended green, so run only RED's
+    tests. The failing set must be exactly RED's still-red tests; any other failure is drift —
     most likely a mutation-check revert that didn't land clean — and is fixed before you start.
-  - **Exit**: GREEN does not end until a full-suite run is green. A regression this run turns up
+  - **Exit**: commit first, so the tree is clean. GREEN does not end until a full-suite run is
+    green. A regression this run turns up
     that the loop below never would have (something outside RED's tests broke) is fixed like any
     other red test, then the full suite runs again — it is not a flat run and does not feed the
-    tripwire, which only counts RED's own tests.
+    tripwire, which only counts RED's own tests. Record the result in the state file's Session as
+    `Last full-suite run: green at <sha>` (`git rev-parse HEAD` of the code you ran) — the one state
+    write GREEN allows besides the pressure log. The result stays valid only while
+    `git -C "$top" diff --quiet <sha> -- . ':(exclude)<plans-dir>/'` holds and
+    `git -C "$top" status --short -- . ':(exclude)<plans-dir>/'` prints nothing, with
+    `top=$(git rev-parse --show-toplevel)` and `<plans-dir>` repo-root-relative. That is the one
+    test for reusing it: SHIP applies it, and the host applies it to your hand-back line.
 - **Run only RED's tests at every coherent stopping point during implementation** — this is the
   one check the two bullets below key off of, and it's what stays cheap. Do not run it only when
   you expect a milestone: a run that isn't expected to show progress is exactly the one that
@@ -267,15 +274,16 @@ plan that produced it would.
 1. **Delegate to a fresh subagent.** Prompt and bundle in
    [references/review-prompts.md](references/review-prompts.md), §"REVIEW's blind review" — read it
    before spawning. The diff base is the previous slice's branch, from the plan's Slices section
-   (the Session's base branch, for slice 01). Each finding comes back tagged `structural-if-fixed` (fixing it would move
-   responsibilities, add or merge types, or change contracts) or `local`.
-2. **Triage every finding** into one of three: **fix** and re-run the suite; **dismiss** with a
-   one-line reason; or **backlog** it. The blind reviewer cannot see the plan and will rank two
-   kinds of finding highly; both are backlog entries however cheap. One asks to tighten an
+   (the Session's base branch, for slice 01). Each finding comes back tagged `structural-if-fixed`
+   (fixing it would move responsibilities, add or merge types, or change contracts) or `local`.
+2. **Triage every finding** into one of three: **fix** and re-run RED's tests and any tests
+   touching the change (the full suite waits for SHIP, and runs there only if code changed);
+   **dismiss** with a one-line reason; or **backlog** it. The blind reviewer cannot see the plan
+   and will rank two kinds of finding highly; both are backlog entries however cheap. One asks to tighten an
    earlier slice's or the steel thread's test to assert exactly the current output — that test
    pins the seam, and tightening it deadlocks the next slice. The other asks for behavior this
    slice does not have, such as a missing error path. Record all three dispositions in the state
-   file's REVIEW section; the host shows the user every dismissal. Every fix starts from a clean
+   file's `## Review` section; the host shows the user every dismissal. Every fix starts from a clean
    tree and commits after each green step; a fix that breaks a test that passed before it, and
    survives one repair attempt, is discarded per [references/discard.md](references/discard.md).
 3. **Re-review on structure.** If any fix you applied was tagged `structural-if-fixed`, delegate
@@ -301,15 +309,19 @@ boundary:
 1. **Acceptance tests** — run every row from ACCEPT that has an agent proof, against the finished
    code; mark each `pass`/`fail` in the state file. For every row with a blank agent proof, walk
    the human proof with the user and record their confirmation — do not mark one `pass` yourself.
-2. **Unit tests** — full suite green.
+2. **Unit tests** — full suite green. Reuse `Last full-suite run` if GREEN's reuse test still
+   passes (no code changed since — no review fix, lint fix or SHIP fix); otherwise commit, run the
+   full suite now, and update the field.
 3. **Lint** — clean per REVIEW, or `none found`.
 4. **Review** — REVIEW's findings all fixed, dismissed with a reason, backlogged, or listed under
    `Open at cap`.
 
 A failure here means fix it and re-check all four, since a fix can regress another (acceptance
 proofs included, after the last review fix). Every code change made at SHIP is unreviewed: list it
-under `Open at cap` as unreviewed. Once all four hold, write the SHIP results into the state file
+under `Open at cap` as unreviewed, and re-run the full suite before writing the hand-back line,
+since it moved the code. Once all four hold, write the SHIP results into the state file
 and commit everything (`git add -A`, message `atdd: ship <slice-slug>`), confirm `git status
---short` is clean, write the Attempts line `atdd — handed back` (or
-`atdd — blocked: <what stopped it>`) in the plan slice-plan maintains, and hand back — no squash,
-no PR; the host squashes, and presents your `Dismissed` and `Open at cap` lists to the user.
+--short` is clean, write the Attempts line `atdd — handed back: reviewed, suite green at <sha>` (the
+`Last full-suite run` sha, valid or refreshed above; or `atdd — blocked: <what stopped it>`) in the
+plan slice-plan maintains, keeping any note the host left there, and hand back — no squash, no PR;
+the host squashes, and presents your `Dismissed` and `Open at cap` lists to the user.
