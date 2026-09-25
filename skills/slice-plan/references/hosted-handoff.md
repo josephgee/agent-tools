@@ -22,21 +22,23 @@ Give the block verbatim when invoking the guest, with the placeholders filled �
 substitute the strategy name the plan's Attempts line needs. It is written *to* the guest, not
 about it.
 
-### Adapting it for `atdd`
+### Adapting it for a guest that reviews
 
-`atdd` reviews its own diff before hand-back, iterating until clean, so the block's ban on a
-guest-side review is reversed for it. Give the block verbatim with **paragraph 5 replaced, whole,
-by this** (nothing else in the block changes; skipping the alignment gate stands — `atdd`'s human
-design gate is not that gate and survives):
+A guest whose own flow reviews its diff before hand-back, iterating until clean (`atdd` today),
+gets the block's ban on a guest-side review reversed. Give the block verbatim with **paragraph 5
+replaced, whole, by this** (nothing else in the block changes; a guest's own per-slice gates, such
+as `atdd`'s human design gate, are not the alignment gate the block skips and survive):
 
 > **5. Hand back before the squash.** Do not squash, do not present a PR, and do not write a PR
-> description. Do run your own REVIEW as your rules describe, before you hand back, and record it
-> in your state file: its rounds, every finding you dismissed with its reason, anything you sent
-> to the backlog, and anything still open at your round cap. The host skips its own boundary
-> review when that record exists and shows the user your dismissals, so keep them honest, one line
-> each. Decision context you would otherwise send to a PR description goes in your state file's
-> `Learned` line, as your own rules already say — the host reads it from there and folds it into
-> the squash commit.
+> description. Do run your own review as your rules describe, before you hand back, and record it
+> in a `## Review` section of your state file, with lists headed `Dismissed` (each finding with its
+> reason), `Backlogged`, `Open at cap` (including any change made after your last review, marked
+> unreviewed) and `Out of scope`. Never fix a finding that asks to tighten an earlier slice's or
+> the steel thread's test, or that asks for behavior this slice does not have: those are
+> `Backlogged`, however cheap. Put `reviewed` on your hand-back line. The host then skips its own
+> boundary review and shows the user your dismissals, so keep them honest, one line each. Decision
+> context you would otherwise send to a PR description goes in your state file's `Learned` line, as
+> your own rules already say — the host reads it from there and folds it into the squash commit.
 
 ### Adapting it for `navigator`
 
@@ -85,7 +87,11 @@ commit; the user's work on a `navigator` slice is the host's to confirm committe
 > code, which is the whole of the obligation there: no new behavior, so no new test. Green
 > mid-slice is a checkpoint; green when you hand back is what the host's next rollback rests on.
 > If an earlier slice's test turns out to need changing after all, it is the host's to change —
-> hand back `blocked` rather than changing it, and never hand back with the suite red.
+> hand back `blocked` rather than changing it, and never hand back with the suite red. If you ran
+> the full suite green on your final code, say so on your hand-back line — `handed back: suite
+> green at <sha>` (after any note the host left there, comma-separated) — and the boundary will
+> not re-run it. Commit first and give the sha of the code you actually tested; the host checks
+> it against your worktree.
 >
 > **3. Write only your designated plan fields, and build only your own slice.** In `<plan-file>`
 > write only these: your slice's `Attempts` line, set to `<your name> — handed back` (or
@@ -161,10 +167,10 @@ So at both transitions off a slice — the boundary and an abandon — drain any
 of it, then remove it. Most of it goes to the plan; its `Learned` line is the one exception —
 that is decision context the guest's own refactor checklist sent there instead of a PR
 description it was forbidden to write, and the plan is the wrong destination for it (it is not a
-later slice's concern). `atdd`'s `Dismissed`, `Open at cap`, `Backlogged` and `Out of scope`
-lists are the other exception: `Dismissed` and `Open at cap` are presented to the user at the
-boundary (step 3), whatever the user wants revisited becomes a plan backlog entry, and
-`Backlogged` and `Out of scope` become plan backlog entries directly. Read it before the squash and fold it into the squash commit per the
+later slice's concern). A reviewing guest's `## Review` lists are the other exception:
+`Dismissed` and `Open at cap` are presented to the user at the boundary (step 3), whatever the user
+wants revisited becomes a plan backlog entry, and `Backlogged` and `Out of scope` become plan
+backlog entries directly. Read it before the squash and fold it into the squash commit per the
 boundary's step 4 — that is the shipped commit's PR description now, so that is where decision
 context belongs. The squash's `git reset -- <plans-dir>/` keeps the file itself out of the shipped
 commit; the boundary's step 6 deletes it, and in the abandon it is the first action — the
@@ -179,7 +185,7 @@ outside the repo by its own design — `navigator`, wherever that skill puts it,
 *Hand off*). So judge it by what it left on disk, not by how it behaved. At the boundary, before
 the design review:
 
-- the suite is green and no PR was presented;
+- the suite is green (or its result reused, per the boundary's step 1) and no PR was presented;
 - the commits are on the branch you cut, and `git branch --list` shows no branch the plan does not
   name, other than one left behind by a dropped slice;
 - `ls <plans-dir>` shows nothing new but the guest's own state file — no second plan — and in

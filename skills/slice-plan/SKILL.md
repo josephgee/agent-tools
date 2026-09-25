@@ -343,7 +343,8 @@ Whatever runs a slice owes exactly five things:
    is the only one. There is none for an earlier slice's test: the host updates any this slice
    invalidates before handing off, at step 2 of Running a slice, so an executor never meets a red
    suite it did not cause. If one turns up anyway it hands back **blocked**, changing no test and
-   never handing back red.
+   never handing back red. An executor that has run the full suite green on its final code may say
+   so on its hand-back line as `suite green at <sha>`, which spares the boundary a re-run.
 3. **Write only its designated plan fields, and build only its own slice.** The fields are its
    slice's Attempts line, hypothesis deltas that change a later slice, and backlog items, the last
    in its own state file instead if it keeps one with a backlog of its own. The host owns Strategy,
@@ -357,10 +358,12 @@ Whatever runs a slice owes exactly five things:
    boundary can see.
 5. **Hand back before the squash**, with a green suite and no boundary review, PR or squash of its
    own. The plan owns all three; a strategy that runs its own asks the user to approve the same
-   work twice. **One exception, by name: `atdd`** reviews its diff inside its own loop, iterating
-   until clean, and records the result in its state file; the boundary then skips its own review
-   (step 2 below). Its adapted block is in
-   [references/hosted-handoff.md](references/hosted-handoff.md), *Adapting it for `atdd`*.
+   work twice. **One exception: a guest whose own flow reviews its diff, iterating until clean,
+   before it hands back** (`atdd` is the one today). It records the result in a `## Review` section
+   of its state file and says `reviewed` on its hand-back line, and the boundary then skips its own
+   review (step 2 below). Such a guest is given the adapted block in
+   [references/hosted-handoff.md](references/hosted-handoff.md), *Adapting it for a guest that
+   reviews*.
 
 Obligations 2 and 4 describe a *finished* slice. **The one sanctioned way not to finish one is to
 hand back `blocked`**, and there is no other: the executor stops, gets the suite back to green
@@ -393,18 +396,26 @@ Re-read the Rules in Force header and the Slices section. Then:
 
 1. Confirm the suite is green and the slice's behavior is actually observable — for a slice whose
    `Kind` is `refactor` or `scaffolding`, that behavior is *unchanged* and the suite proves it.
+   **Skip the run when the newest Attempts line carries the token `suite green at <sha>`** and both
+   of these hold, with `top=$(git rev-parse --show-toplevel)` and `<plans-dir>` repo-root-relative:
+   `git -C "$top" diff --quiet <sha> -- . ':(exclude)<plans-dir>/'` (the worktree matches the
+   tested commit) and `git -C "$top" status --short -- . ':(exclude)<plans-dir>/'` prints nothing
+   (no untracked or dirty files). The guest then already ran the full suite on this exact code. A
+   line without the token, a sha that does not resolve, any failure of either command, or code
+   changed since means run it. (Guests that run the suite themselves may report it; nothing
+   requires them to.)
    A red suite here is not a boundary: if the guest handed back `blocked`, go to
    [A guest that hands back blocked](#a-guest-that-hands-back-blocked); if it handed back red
    anyway, treat that as `blocked` and read it there too.
-2. **Skip this step only if the guest's state file records a completed review.** That means an
-   `# ATDD Session State` file whose `REVIEW` section has `Rounds` filled in and a `Lint` result
-   that is not the template placeholder. Judge by the record on disk, not by the hand-back line;
-   any other guest (`tdd`, `tdd-batch`, `direct`, `hand`), or a missing or unfilled record, means
-   run the review below. When skipping, carry the record's `Dismissed` and `Open at cap` lists
+2. **Skip this step only if the newest Attempts line carries the whole token `reviewed` and the
+   guest's state file has a `## Review` section.** Both are required: the line is the claim, the
+   section is the record. A note like `not reviewed` does not count. Anything else — no `reviewed`, no section, a guest that keeps neither — means run the
+   review below. When skipping, read the section and carry its `Dismissed` and `Open at cap` lists
    into step 3 as the triage you would otherwise have done — the guest triaged its own reviewer's
    findings, so the user sees each dismissal and its reason — and add its `Backlogged` and
    `Out of scope` items to the plan's backlog. An earlier-slice test you updated on this branch is
-   in `atdd`'s reviewed diff, and its triage applies the same two backlog rules as below.
+   in the diff the guest reviewed, and its adapted block applies the same two backlog rules as
+   below.
 
    **Otherwise, delegate a design review to a fresh subagent.** Resolve `git rev-parse --show-toplevel`
    **yourself, first**, and paste the resulting absolute path into the prompt — tell it to invoke
@@ -490,9 +501,12 @@ exactly one of three:
   what is green and coherent now, move the rest to a new slice immediately after it, and re-read
   [references/slicing.md](references/slicing.md). Surface the re-slice to the user. Then go to the
   boundary if the narrowed slice is already delivered, or append a new `<strategy> — in progress`
-  line and hand off again if it is not. **If the guest was `atdd`, first `git rm -f` its state
-  file and commit that:** its acceptance tests and design were written for the old, wider slice,
-  and a re-invoked `atdd` would offer to resume them.
+  line and hand off again if it is not. **On the hand-off-again branch, if the guest kept a state
+  file in the plans directory, first drain and delete it, per
+  [The guest's state file](#the-guests-state-file), and commit the deletion:** its plan and notes
+  were written for the old, wider slice, and a re-invoked guest would offer to resume them. On the
+  boundary branch leave it: step 4 reads its `Learned` line and step 6 deletes it. A guest whose
+  file lives outside the repo keeps it.
 - **The strategy has no move on this slice** — a test-first guest on a `refactor` slice is the
   standing example. That is an abandon: propose it and follow the recipe below.
 
