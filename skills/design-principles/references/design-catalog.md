@@ -106,13 +106,16 @@ the full list there is considerably longer and much of it restates Fowler.
 The function-size rules from that chapter are deliberately **not** reproduced here. See "When a
 unit feels too big" above, which carries what they were proxying for.
 
-**Comments** — the governing idea is that a comment is compensation for code that failed to say
-it itself. That makes a comment a place to look, not automatically a defect.
+**Comments** — a comment is compensation for code that failed to say it itself, so every
+comment is a design defect: report it and name the code that should have carried the meaning
+(a name, an extracted function, a type, a test). Decision context belongs in the commit or PR
+description, not in the code. The kinds below are diagnoses of *how* it failed, not a list of
+the bad ones.
 - *Redundant comment* — restates what the code already says; a name or an extracted function would have carried it. The real finding is usually the unclear code beneath it.
 - *Commented-out code* — dead code that version control already remembers.
 - *Journal comment* — a change log accumulating at the top of a file, duplicating history.
 - *Misleading comment* — no longer matches the code it describes. Worse than no comment.
-- Comments that do earn their place: intent behind a non-obvious decision, a warning of consequences, a legal notice, an amplification of something a reader would otherwise dismiss as trivial.
+- *Explanatory comment* — intent, a warning, or an amplification. It survives only because the code around it does not yet say the same thing; the finding is that gap.
 
 **Names**
 - *Obscured Intent* — a name or expression that hides its meaning rather than revealing it.

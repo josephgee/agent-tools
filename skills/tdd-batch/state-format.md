@@ -48,6 +48,7 @@ summarized.
   pending; commit each green step.
 - REVIEW ends with the pressure log empty — fixed, dismissed with a reason, or backlogged.
 - Both per-PR reviews go to a fresh subagent, always.
+- Comments are design defects: delete every one in the diff; decision context goes in `Learned`.
 - A batch never spans more than one planned PR. Never execute a stale plan item.
 - Suite green at every boundary. Squash only on the user's approval.
 

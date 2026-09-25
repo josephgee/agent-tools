@@ -22,10 +22,8 @@ obvious cleanup you could have done.
   expressive to make up for it? Do that. Decision context (why this change, what was rejected)
   goes in the state file's `Learned` line, not back into the code — drained into the PR
   description when this ships, or into the host's squash commit when a host owns the PR.
-  Last chance: if the site you just touched sits inside an existing, repeated convention of
-  one-line comments (e.g. every other member of this enum already carries one), match it with
-  one line rather than leave this the only unlabelled entry — that is surrounding-norm
-  consistency winning, not a general excuse to keep a comment you'd otherwise delete.
+  If a hazard can only be flagged at the edit site and no name, type, or failing test can carry it, do not keep a comment —
+  list it (file:line, why) in the boundary report for the user to decide.
 - **Dead weight / speculation**: this is where the batch's scope fence is enforced. Any changed
   code path no batch test exercises is a finding — dead, speculative, or missing a test. Run
   coverage over the diff where the project has tooling; where it does not, walk the diff's
