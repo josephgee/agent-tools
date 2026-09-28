@@ -482,6 +482,12 @@ Re-read the Rules in Force header and the Slices section. Then:
 7. **If this was the steel thread, re-slice the rest before continuing** — re-read
    [references/slicing.md](references/slicing.md) and walk the remaining plan against what the
    thread found. Every slice behind it was drawn before those findings existed.
+8. **Verify the session can hand off cleanly here** — the boundary is where a session most often
+   ends. Run the same two checks Startup runs on resume, now, while a miss is a one-line fix rather
+   than next session's diagnosis: `git -C "$top" status --short` shows nothing outside
+   `<plans-dir>`, and `git -C "$top" check-ignore -q <plan-path>` still succeeds. If either fails,
+   fix it before stopping — a stray file or a dropped exclude line here is a dirty tree or a
+   committed plan for whoever resumes next.
 
 Then start the next slice at step 1 — including the strategy question.
 
