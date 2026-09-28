@@ -32,10 +32,10 @@ step is already a delegation, and the triage decisions in it are yours.
 
 Note what changes versus a per-cycle flow: **a delegated GREEN is the entire implementation of
 a PR.** The driver cannot meaningfully spot-check it mid-flight. What the driver verifies on
-return is therefore concrete and checkable: the full suite is green, the batch tests all pass,
+return is therefore concrete and checkable: the targeted tests are green, the batch tests all pass,
 the milestone commits exist with named subsets, every observation in the pressure log has a
 disposition (counter lines aside), and no test was modified outside an `amend batch` commit.
-Verify those before proceeding — `git log --oneline` and one suite run answers all of them.
+Verify those before proceeding — `git log --oneline` and one targeted run answers all of them.
 
 **A delegated RED owns a delegation of its own** — Review 1, which runs as two turns
 ([review-prompts.md](review-prompts.md), §"Review 1"). A subagent often cannot send a follow-up
@@ -101,7 +101,8 @@ state file and the commits are the record.
 - `phase-complete`: verify the return checks above if the phase was GREEN, report briefly, and
   delegate the next phase.
 - `pr-ready`: **interactive** — run SHIP locally (present, wait, squash on approval, open the
-  next PR). **One-shot** — record the PR's `Ends at` sha and start the next pass; no stop, no
+  next PR). **One-shot** — run the full suite (the PR's one full run; fix and commit anything it turns
+  up), then record the PR's `Ends at` sha and start the next pass; no stop, no
   squash, no branch.
 - `needs-user-input`: stop looping, surface the Reason and the relevant state-file detail,
   resolve with the user, then resume.

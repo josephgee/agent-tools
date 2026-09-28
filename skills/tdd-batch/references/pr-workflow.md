@@ -61,13 +61,13 @@ plus the batch position (`green 4/7 of PR 02`). This is not decoration: mid-GREE
 the position off these messages, because the state file is intentionally not tracking it.
 
 In **one-shot mode** these commits are all that exist until Finalization: no per-PR squash, no
-per-PR branch, one linear history on the current branch. As you cross each PR boundary, record
-the last commit's sha — REVIEW fix commits included — in that PR's plan entry's `Ends at`;
+per-PR branch, one linear history on the current branch. As you cross each PR boundary, run the
+full suite — the PR's one full run — and commit any fix it needs, then record the last commit's sha — REVIEW and suite fix commits included — in that PR's plan entry's `Ends at`;
 Finalization needs it. A fix left past a stale `Ends at` would ship in the *next* PR.
 
 ## SHIP: closing out a PR (interactive mode)
 
-Run this only after REVIEW is complete and the full suite is green. One-shot mode does not run
+Run this only after REVIEW is complete. Its step 1 is the PR's one full-suite run. One-shot mode does not run
 SHIP — see [Finalization](#finalization-one-shot-mode).
 
 **SHIP does not review the diff.** REVIEW already did, with both the self-refactor pass and the
@@ -76,7 +76,8 @@ happen at SHIP because nothing earlier ever saw the whole increment. Here the wh
 exactly what REVIEW looks at, so re-reviewing here would be a second pass over the same diff at
 the point of most accumulated bias. SHIP is gate, squash, and handover.
 
-**1. Confirm shippable.** Full suite green; working tree clean apart from the state file; the PR
+**1. Confirm shippable.** Full suite run and green (fix and commit anything it turns up, and name
+the fix at step 2 — REVIEW never saw it); working tree clean apart from the state file; the PR
 changes observable behavior; nothing in it depends on a later PR; anything stubbed underneath is
 inert or flag-gated. Raising stubs from RED that are still reachable are not shippable — they
 were a within-pass device, and by SHIP they must be either implemented or made inert.

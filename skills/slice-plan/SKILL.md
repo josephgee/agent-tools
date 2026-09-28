@@ -43,8 +43,9 @@ differs from the fence under *The Rules in Force header* in [plan-format.md](pla
 replace **the `## Rules in Force` section alone**, verbatim, leaving every other section of that
 plan untouched — the Attempts history under Slices is the record no rollback recovers.
 
-**Write** the plan at six points at least — before the alignment gate, at Setup, on choosing a
-strategy, on cutting the branch, at the slice boundary, and at an abandon — setting **Last
+**Write** the plan at seven points at least — before the alignment gate, at Setup, on choosing a
+strategy, on cutting the branch, at the slice boundary, on reading a background suite run's
+result, and at an abandon — setting **Last
 updated** at each, and at any other write too. Each step below says what it writes;
 [plan-format.md](plan-format.md), *When the host writes*, lists them together. Which of those
 fields an executor writes instead of the host is obligation 3 of
@@ -69,8 +70,9 @@ a second planning session over a live feature.
 - **More than one** — list them (feature, last-updated) and ask which, or whether to start new.
 
 **If resuming:** read the plan; report the feature, the current slice and its position, its
-strategy and attempts so far, remaining criteria and slices, and the current hypothesis; confirm
-the checked-out branch matches. **Confirm the plan is still excluded** —
+strategy and attempts so far, any slice whose **Suite** is still `running:` (read its status
+file now, per [references/background-suite.md](references/background-suite.md)), remaining
+criteria and slices, and the current hypothesis; confirm the checked-out branch matches. **Confirm the plan is still excluded** —
 `git -C "$(git rev-parse --show-toplevel)" check-ignore -q <plan-path>` — and if it is not, append
 it with the same one-liner Setup uses, before handing off to any guest; the next `git add -A` would
 otherwise commit it. Give `<plan-path>` repo-root-relative and under the name the file actually has
@@ -83,6 +85,11 @@ the user never agreed to; it is written before the gate on purpose, so a session
 between leaves exactly this. Present the feature, criteria, hypothesis and slices at the alignment
 gate as if newly drafted, then run [Setup](#setup), before any of the routing below. Do not cut a
 branch from a placeholder base.
+
+**A shipped slice whose Suite reads `red:` comes first**: a reopen was interrupted, and its fix
+may sit uncommitted on that slice's branch. Finish it —
+[references/background-suite.md](references/background-suite.md), *Red after the squash*, whose
+steps say how to tell where it stopped — before the branch check or any routing below.
 
 **The current slice** is the first slice in list order that is not `shipped`. If every slice is
 shipped, go to [Feature complete](#feature-complete) instead. The branch you expect to be on is its
@@ -116,6 +123,10 @@ Then re-enter [Running a slice](#running-a-slice) by that slice's status:
     The count cannot tell a re-entry from a first pass, so when you re-enter the boundary this way,
     say at its step 3 that the slice may already have been presented and this review is a re-run
     after an interruption. Do not silently ask the user to approve the same slice twice.
+  - `atdd — paused: design agreed` → the previous slice's run was still going when `atdd`
+    reached code. Wait on it ([references/background-suite.md](references/background-suite.md),
+    *Waiting on it*), then *Hand off*'s resume: any earlier-test update step 2 held back, a
+    fresh `atdd — in progress` line, and the block without the pause paragraph.
   - `<strategy> — blocked: …` →
     **[A guest that hands back blocked](#a-guest-that-hands-back-blocked)**. Deal with what
     stopped it first; re-invoking it on an unchanged slice stops it in the same place.
@@ -171,7 +182,7 @@ compaction before Setup loses the whole planning session. So now, before the gat
    `plans/` only if none does; ask if several do.
 2. Create the plan file: the Rules in Force header copied verbatim from *The Rules in Force
    header* in [plan-format.md](plan-format.md), then the **Session block** with the feature slug
-   and start date filled in and Base branch and Test runner left as their placeholders — Startup
+   and start date filled in and Base branch, Test runner and Suite setup left as their placeholders — Startup
    reads a still-placeholder value as "Setup never ran", so omitting the block resumes into the
    routing with no base branch — then the feature, criteria, hypothesis and slices.
 
@@ -185,8 +196,12 @@ that was never agreed.
 
 ### Setup
 
-1. Record the test runner command **and** the base branch — what slice 01 is reviewed against —
-   in the plan, in one write. Both are placeholders until now, and the resume path reads either
+1. Record the test runner command, the suite setup **and** the base branch — what slice 01 is
+   reviewed against — in the plan, in one write. The suite setup is whatever a fresh checkout
+   needs before the runner works in it (installing dependencies, copying ignored local config),
+   or `none`; the full suite runs in one at every boundary
+   ([The background suite run](#the-background-suite-run)). Ask the user if it is not plain. The
+   runner and base branch are placeholders until now, and the resume path reads either
    one still being a placeholder as "Setup never ran"; filling them separately opens a window
    where a resume re-presents an alignment gate the user already approved.
 2. **Exclude it from git**:
@@ -246,9 +261,12 @@ base.
 be told this one, because the abandon recipe restores from it by name.
 
 **Then, before handing off, update any earlier slice's test this slice invalidates — yourself, on
-this branch.** Read the behavior sentence against the tests earlier slices left: if delivering it
+this branch, once the previous slice's suite run reads `0`** (it is code, and no code starts
+before that — [references/background-suite.md](references/background-suite.md), *Waiting on it*;
+for `atdd`, it waits until the pause, per *Hand off*).
+Read the behavior sentence against the tests earlier slices left: if delivering it
 makes one of them assert something no longer true, that test is yours to change, because no
-executor can both deliver the behavior and leave the suite green. Change the **fixture**, not the
+executor can both deliver the behavior and leave its tests green. Change the **fixture**, not the
 expectation, wherever you can — an earlier test edited down to agree with the new behavior stops
 pinning its own slice's rule and starts double-pinning this one under its old name. Get to green,
 **commit the change on this branch** — the handoff promises the guest a clean tree, and the squash
@@ -282,10 +300,21 @@ criteria it advances, the branch, and the obligations of
 | You, directly (`direct`) | Build the slice. Nothing else is prescribed — the obligations are the whole spec. |
 | The user, by hand | Say what the slice is and that the branch is cut, then stop and wait. Do not write code for a slice the user has taken. |
 
+**Hand off only once the previous slice's suite run reads `0`**
+([references/background-suite.md](references/background-suite.md), *Waiting on it*) — no
+executor sees that run, so the hold is yours alone. **The one exception is `atdd`**, whose ACCEPT
+and design write no code: hand it off at once, with the *pause* paragraph from
+[references/hosted-handoff.md](references/hosted-handoff.md) added to its block while the run is
+still going. If step 2 found an earlier-test update, hold it back — it is code. `atdd` hands back
+`atdd — paused: design agreed` after its design commit; wait for `0`, make the held-back update
+(committed, noted on the Attempts line), append a fresh `atdd — in progress` line, and invoke it
+again with the block and no pause paragraph — its state file resumes it at RED. Whoever waits, the user's review of the previous
+slice and the strategy choice for this one overlap the run.
+
 **What the host carries for `direct`, `hand` and `navigator`** — the executor there cannot write
 the plan, and for the latter two was handed no contract at all:
 
-- **Close the Attempts line yourself.** When the work is done and the suite is green, set it to
+- **Close the Attempts line yourself.** When the work is done and the targeted tests are green, set it to
   `<strategy> — handed back`, or `<strategy> — blocked: <what stopped it>` if it could not be
   finished. Leave it open and a resume routes back to step 3 — which for `direct` means rebuilding
   a slice you already finished.
@@ -334,17 +363,21 @@ numbering is for.
 Whatever runs a slice owes exactly five things:
 
 1. **Stay on the branch the host cut**, and create no others.
-2. **Leave the suite green at the boundary, with a passing test for the slice's behavior.**
-   Green mid-slice is a checkpoint; green at the boundary is the precondition for the next slice's
-   rollback to mean anything. The test is not optional even for `direct`: the boundary ticks an
-   acceptance criterion only where a passing test satisfies it. **For a slice whose `Kind` is
-   `refactor` or `scaffolding`** the obligation is instead that the existing suite stays green over
-   the restructured code — no new behavior, so no new test and no criterion to tick. That carve-out
-   is the only one. There is none for an earlier slice's test: the host updates any this slice
-   invalidates before handing off, at step 2 of Running a slice, so an executor never meets a red
-   suite it did not cause. If one turns up anyway it hands back **blocked**, changing no test and
-   never handing back red. An executor that has run the full suite green on its final code may say
-   so on its hand-back line as `suite green at <sha>`, which spares the boundary a re-run.
+2. **Leave the targeted tests green at the boundary, with a passing test for the slice's
+   behavior.** The *targeted tests* are the slice's own tests plus the existing tests nearest the
+   code it changed, picked with the runner's own file or directory filter. The executor never
+   owes a full-suite run: that is the host's, once per slice, in the background from the
+   boundary's step 3 ([The background suite run](#the-background-suite-run)), because it is
+   expensive and almost always changes nothing. Green mid-slice is a checkpoint; green at the
+   boundary is the precondition for the next slice's rollback to mean anything. The test is not
+   optional even for `direct`: the boundary ticks an acceptance criterion only where a passing
+   test satisfies it. **For a slice whose `Kind` is `refactor` or `scaffolding`** the obligation is
+   instead that the existing tests over the restructured code stay green — no new behavior, so no
+   new test and no criterion to tick. That carve-out is the only one. There is none for an earlier
+   slice's test: the host updates any this slice invalidates before handing off, at step 2 of
+   Running a slice, so an executor never meets a red test it did not cause. If one turns up anyway
+   it hands back **blocked**, changing no test and never handing back red.
+
 3. **Write only its designated plan fields, and build only its own slice.** The fields are its
    slice's Attempts line, hypothesis deltas that change a later slice, and backlog items, the last
    in its own state file instead if it keeps one with a backlog of its own. The host owns Strategy,
@@ -356,7 +389,7 @@ Whatever runs a slice owes exactly five things:
    squash's `git commit` fails — "no changes added to commit", or "nothing added to commit but
    untracked files present". The work is in the worktree, but nothing has been built as far as the
    boundary can see.
-5. **Hand back before the squash**, with a green suite and no boundary review, PR or squash of its
+5. **Hand back before the squash**, with green targeted tests and no boundary review, PR or squash of its
    own. The plan owns all three; a strategy that runs its own asks the user to approve the same
    work twice. **One exception: a guest whose own flow reviews its diff, iterating until clean,
    before it hands back** (`atdd` is the one today). It records the result in a `## Review` section
@@ -366,7 +399,7 @@ Whatever runs a slice owes exactly five things:
    reviews*.
 
 Obligations 2 and 4 describe a *finished* slice. **The one sanctioned way not to finish one is to
-hand back `blocked`**, and there is no other: the executor stops, gets the suite back to green
+hand back `blocked`**, and there is no other: the executor stops, gets its tests back to green
 (reverting or simply not committing whatever turned it red), commits whatever complete work it has
 or nothing if there is none, sets its Attempts line to `<strategy> — blocked: <what stopped it>`,
 and says the same when it hands back. A slice that needs splitting, an earlier slice's test that
@@ -394,17 +427,11 @@ and its block is adapted to match (see the reference's *Adapting it for `navigat
 
 Re-read the Rules in Force header and the Slices section. Then:
 
-1. Confirm the suite is green and the slice's behavior is actually observable — for a slice whose
-   `Kind` is `refactor` or `scaffolding`, that behavior is *unchanged* and the suite proves it.
-   **Skip the run when the newest Attempts line carries the token `suite green at <sha>`** and both
-   of these hold, with `top=$(git rev-parse --show-toplevel)` and `<plans-dir>` repo-root-relative:
-   `git -C "$top" diff --quiet <sha> -- . ':(exclude)<plans-dir>/'` (the worktree matches the
-   tested commit) and `git -C "$top" status --short -- . ':(exclude)<plans-dir>/'` prints nothing
-   (no untracked or dirty files). The guest then already ran the full suite on this exact code. A
-   line without the token, a sha that does not resolve, any failure of either command, or code
-   changed since means run it. (Guests that run the suite themselves may report it; nothing
-   requires them to.)
-   A red suite here is not a boundary: if the guest handed back `blocked`, go to
+1. Confirm the targeted tests are green and the slice's behavior is actually observable — for a
+   slice whose `Kind` is `refactor` or `scaffolding`, that behavior is *unchanged* and the tests
+   over the restructured code prove it. **Do not run the full suite here**; step 3 starts it in the
+   background, once review fixes can no longer move the code.
+   A red test here is not a boundary: if the guest handed back `blocked`, go to
    [A guest that hands back blocked](#a-guest-that-hands-back-blocked); if it handed back red
    anyway, treat that as `blocked` and read it there too.
 2. **Skip this step only if the newest Attempts line carries the whole token `reviewed` and the
@@ -431,7 +458,7 @@ Re-read the Rules in Force header and the Slices section. Then:
    legitimately changed goes unreviewed too — mention it at step 3 if so. The diff also carries any
    earlier-slice test you updated at step 2 of Running a slice: leave it in, as this is the only
    second pair of eyes that change gets.
-   **You triage the result** — fix what is cheap while the suite is green, **committing the fixes
+   **You triage the result** — fix what is cheap while the tests are green, **committing the fixes
    on the branch** (step 4 squashes *commits*, so an uncommitted fix is dropped from the shipped
    commit and left dirty for the next slice), and turn the rest into named backlog entries.
    **Triage is scoped to this slice's own diff, and cheapness is not the only test.** Two findings
@@ -441,12 +468,18 @@ Re-read the Rules in Force header and the Slices section. Then:
    deadlocks the next slice — [references/slicing.md](references/slicing.md), §"A thread's test
    must survive being thickened"), and one that asks for behavior this slice does not have, such as
    a missing error path (*Kitchen sink*, same file). Never present the slice untriaged.
-3. Present the slice for review and stop — with, when step 2 was skipped, the guest's dismissed
-   findings and their reasons, and anything left open at its round cap; anything the user wants
+3. **Start the full-suite run in the background**, per
+   [The background suite run](#the-background-suite-run), first committing any step-2 fix — the
+   code is final now, since anything the user asks for below becomes a backlog entry, not an edit.
+   Then present the slice for review and stop, saying the suite is running — with, when step 2
+   was skipped, the guest's dismissed findings and their reasons, and anything left open at its round cap; anything the user wants
    revisited becomes a named backlog entry. This is where the user rejects the slicing, reorders
    what's left, redirects the design, or calls the feature done early — far cheaper here than
    three slices later.
-4. On approval, squash the slice to one commit, dropping the plan file from it. **First confirm the
+4. On approval, squash the slice to one commit, dropping the plan file from it. **First read the
+   run's status file** — red here is *Red before the squash* in
+   [references/background-suite.md](references/background-suite.md); absent is fine, squash
+   anyway. **Then confirm the
    tree is clean**: `git -C "$(git rev-parse --show-toplevel)" status --short` should show nothing
    outside the plans directory. `reset --soft` stages only what was committed, so anything else
    there is work the squash drops and leaves dirty for the next slice to sweep into its history.
@@ -490,6 +523,17 @@ Re-read the Rules in Force header and the Slices section. Then:
    committed plan for whoever resumes next.
 
 Then start the next slice at step 1 — including the strategy question.
+
+### The background suite run
+
+The full suite runs once per slice, in the background, in a detached checkout of the slice's final
+commit — the squash keeps the tree, so the result holds for the squashed commit too. Launch it at
+the boundary's step 3; `<dir>/status` is the result and stays until Cleanup: absent means running,
+`0` green, `setup-failed` a broken checkout, anything else red. No executor sees it: you hold the
+next slice's code until it reads `0` (*Hand off*). The one start-or-restart recipe, waiting and
+liveness, resuming, and fixing a red run before or after the squash are in
+[references/background-suite.md](references/background-suite.md) — read it at every launch, at
+every wait, and on any red.
 
 ### A guest that hands back blocked
 
@@ -544,12 +588,14 @@ mechanism. Do it as one uninterrupted step; there is no half-abandoned state to 
 
 ## Feature complete
 
-Declare it when every slice is `shipped`, every acceptance criterion is ticked by a passing test,
+Declare it when every slice is `shipped` with its **Suite** `green` — wait for the last slice's
+run — every acceptance criterion is ticked by a passing test,
 and the backlog is drained — each item fixed, dismissed with a reason, or carried somewhere the
 user names. **An item that needs a change to tracked code is not fixed here: it is a new slice**,
 appended to the plan and run through Running a slice like any other — strategy, branch, boundary,
 review — which un-declares the feature until it ships. Never an amendment to a slice already
-squashed and presented, at any size; that slice's review is spent.
+squashed and presented, at any size; that slice's review is spent. (A red background run is the
+one exception, handled in [references/background-suite.md](references/background-suite.md).)
 
 Report the slice sequence as delivered, the strategies each slice ended up using, and every
 abandoned attempt with what entangled it — the abandoned attempts are the part worth reading, being
@@ -563,7 +609,11 @@ what the feature taught about which approach suits which slice. Then run Cleanup
    abandoned slice later deleted from the plan; nothing is based on it.
 2. **Pushing and opening PRs is the user's call.** This skill produces a stack of local branches
    and stops there. Ask before publishing any of it.
-3. **Settle the plan file.** It is untracked, as it has been all along. Offer to delete it — and
+3. **Remove this feature's suite runs** — each `<dir>` a Slices **Suite** field names:
+   `git worktree remove --force "<dir>/tree"` where `git worktree list` still shows it, then
+   `rm -rf "<dir>"`. Runs of other features and repos share the parent `slice-suite` directory;
+   touch nothing there you did not read from this plan.
+4. **Settle the plan file.** It is untracked, as it has been all along. Offer to delete it — and
    only then, open the exclude file (`"$(git rev-parse --git-path info/exclude)"`) and delete that
    one line, leaving every other pattern alone. If the user keeps the plan for the record of which
    strategy suited which slice, **leave the exclude in place** or move the file out of the repo:

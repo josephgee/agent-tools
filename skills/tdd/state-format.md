@@ -36,7 +36,8 @@ Copied verbatim at creation, re-read at the start of every THINK, never edited o
   does not demand.
 - Never modify a test to make GREEN pass. A wrong test is fixed in REFACTOR or before the next
   RED, never by weakening the assertion.
-- Full suite green before leaving GREEN, and at every PR boundary.
+- Targeted tests (new test + those nearest the change) green before leaving GREEN; the full
+  suite once per PR, at the boundary (SHIP, or the one-shot crossing).
 - Always run REFACTOR — production pass and test pass, one change at a time, tests after each.
   "Nothing to improve" is a finding you state out loud, not a phase you skip.
 - One commit per cycle: test + implementation + this file together.

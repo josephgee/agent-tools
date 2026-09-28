@@ -165,7 +165,7 @@ on the new diff. Fixes of `local` findings never re-enter. **Cap: three rounds.*
 structural still open at the cap goes to the backlog and is surfaced at the boundary as an open
 concern — never silently absorbed.
 
-**Triage locally — the reviewer diagnoses, you decide.** Fix (suite green after; commit
+**Triage locally — the reviewer diagnoses, you decide.** Fix (targeted tests green after; commit
 each green step per SKILL.md's *Discarding an experiment*), dismiss with a stated reason, or
 record in the backlog as a named entry. The report itself is not kept; the backlog entries and
 the PR Log's review line are the durable record.

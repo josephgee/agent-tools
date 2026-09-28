@@ -55,7 +55,7 @@ trigger — the review could not converge because the direction, not the code, i
    revision is a decision gate, not a review gate.
 4. Restructure to match. Tests that still describe valid behavior are kept; implementation
    changes freely.
-5. Confirm the suite is green, update the state file's hypothesis and PR plan, begin the next
+5. Confirm the targeted tests are green, update the state file's hypothesis and PR plan, begin the next
    THINK.
 
 **Restructuring is bounded by what has already shipped.** A PR handed over — and especially one

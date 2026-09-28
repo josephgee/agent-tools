@@ -19,8 +19,7 @@ not obligations and are not counted.
 
 Give the block verbatim when invoking the guest, with the placeholders filled — except
 `<your name>`, which is the guest's own name in its own voice; leave it for the guest, or
-substitute the strategy name the plan's Attempts line needs. It is written *to* the guest, not
-about it.
+substitute the strategy name the plan's Attempts line needs. It is written *to* the guest, not about it.
 
 ### Adapting it for a guest that reviews
 
@@ -40,6 +39,17 @@ as `atdd`'s human design gate, are not the alignment gate the block skips and su
 > context you would otherwise send to a PR description goes in your state file's `Learned` line, as
 > your own rules already say — the host reads it from there and folds it into the squash commit.
 
+### The pause paragraph, for `atdd`
+
+While the previous slice's suite run is still going, `atdd` is handed off with this paragraph
+added after paragraph 5 (SKILL.md, *Hand off*); it is the only guest handed off before that run is
+green. Leave it out once the run reads `0`, and when invoking a paused `atdd` again.
+
+> **Pause before code.** After your design commit, before writing any test, set your phase to
+> RED in your state file, commit it, set your slice's `Attempts` line to
+> `atdd — paused: design agreed`, and hand back. The host invokes you again when you may go on;
+> your state file resumes you at RED.
+
 ### Adapting it for `navigator`
 
 `navigator` is different — it never edits files and the user writes every line — so hosted it is a
@@ -49,7 +59,8 @@ commit; the user's work on a `navigator` slice is the host's to confirm committe
 *Hand off*, and the contract's per-shape table). The changes:
 
 - **In paragraph 2, replace the stop condition** with: *"Coach the user through this slice. Write
-  no code. Stop when they say the slice is done and the suite is green, then hand back."*
+  no code. Stop when they say the slice is done and the tests nearest their change are green,
+  then hand back."*
 - **Reduce paragraph 3 to its scope half** — coach only this slice, and treat work the plan has
   given to a later slice as not this slice's. Drop the plan write-back list and the state-file
   detail that follows it: navigator writes nothing but its own session file, which lives at its own
@@ -81,17 +92,16 @@ commit; the user's work on a `navigator` slice is the host's to confirm committe
 > **1. Stay on the branch the host cut, and create no others.** It is already cut and checked out:
 > **`<branch>`**. Do not create, rename or switch branches.
 >
-> **2. Leave the suite green when you hand back, with a passing test for this slice's behavior.**
-> Stop when the suite is green and the behavior is observable — or, on a slice recording a `Kind`
-> of `refactor` or `scaffolding`, when the existing suite is still green over the restructured
-> code, which is the whole of the obligation there: no new behavior, so no new test. Green
-> mid-slice is a checkpoint; green when you hand back is what the host's next rollback rests on.
-> If an earlier slice's test turns out to need changing after all, it is the host's to change —
-> hand back `blocked` rather than changing it, and never hand back with the suite red. If you ran
-> the full suite green on your final code, say so on your hand-back line — `handed back: suite
-> green at <sha>` (after any note the host left there, comma-separated) — and the boundary will
-> not re-run it. Commit first and give the sha of the code you actually tested; the host checks
-> it against your worktree.
+> **2. Leave your targeted tests green when you hand back, with a passing test for this slice's
+> behavior.** Your *targeted tests* are this slice's own tests plus the existing tests nearest the
+> code you changed, picked with the runner's own file or directory filter. **Do not run the full
+> suite**, even where your own rules say to: it is expensive, and the host runs it once after you
+> hand back. Stop when the targeted tests are green and the behavior is observable — or, on a slice
+> recording a `Kind` of `refactor` or `scaffolding`, when the existing tests over the restructured
+> code are still green, which is the whole of the obligation there: no new behavior, so no new
+> test. Green mid-slice is a checkpoint; green when you hand back is what the host's next rollback
+> rests on. If an earlier slice's test turns out to need changing after all, it is the host's to
+> change — hand back `blocked` rather than changing it, and never hand back with a test red.
 >
 > **3. Write only your designated plan fields, and build only your own slice.** In `<plan-file>`
 > write only these: your slice's `Attempts` line, set to `<your name> — handed back` (or
@@ -130,10 +140,10 @@ commit; the user's work on a `navigator` slice is the host's to confirm committe
 >
 > **If you cannot finish the slice, hand back `blocked`.** That is the one sanctioned way not to
 > finish one. It needs splitting; it turns out to need an earlier slice's test changed after all;
-> your own rules leave you no move on it — all the same outcome. Leave the suite green, commit any
+> your own rules leave you no move on it — all the same outcome. Leave your tests green, commit any
 > complete work (or nothing, if there is none), set your slice's `Attempts` line to
 > `<your name> — blocked: <what stopped you>`, and say the same when you hand back. Do not
-> re-slice, do not change another slice's test, and do not hand back with the suite red: the first
+> re-slice, do not change another slice's test, and do not hand back with a test red: the first
 > two are the host's, and the third is nobody's.
 
 ---
@@ -185,7 +195,7 @@ outside the repo by its own design — `navigator`, wherever that skill puts it,
 *Hand off*). So judge it by what it left on disk, not by how it behaved. At the boundary, before
 the design review:
 
-- the suite is green (or its result reused, per the boundary's step 1) and no PR was presented;
+- the targeted tests are green and no PR was presented;
 - the commits are on the branch you cut, and `git branch --list` shows no branch the plan does not
   name, other than one left behind by a dropped slice;
 - `ls <plans-dir>` shows nothing new but the guest's own state file — no second plan — and in

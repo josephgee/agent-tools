@@ -67,14 +67,18 @@ before every abandon. Never edited or summarized.
 - The feature hypothesis is the plan's; a slice's internal design is the executor's.
 - A slice the user has taken by hand is theirs — write no code in it; close its attempt line and
   confirm its work committed yourself.
-- No boundary over a red suite. Review, then present; squash only on the user's approval.
+- No boundary over a red test. Review, commit fixes, start the full suite in the background,
+  then present; squash only on the user's approval.
+- No code starts on a slice — its earlier-test update, its handoff, a paused `atdd`'s resume —
+  until the previous slice's suite run reads `0`. No executor sees the run; the hold is yours.
+  Red after the squash: reopen that slice, fix, amend, rebase the next one onto it.
 ```
 
 ## The rest of the file
 
 A template, filled in as you go — not copied verbatim. **Write the Session block at creation,
-along with the header**, with the feature slug and start date filled in and Base branch and Test
-runner left as the placeholders below: SKILL.md, *Startup*, reads a still-placeholder value as
+along with the header**, with the feature slug and start date filled in and Base branch, Test
+runner and Suite setup left as the placeholders below: SKILL.md, *Startup*, reads a still-placeholder value as
 "Setup never ran", so the placeholders are load-bearing and a plan created without a Session block
 disables that detector.
 
@@ -83,6 +87,7 @@ disables that detector.
 - **Feature slug**: <feature-slug>
 - **Base branch**: <branch slice 01 is reviewed against — filled in at Setup>
 - **Test runner**: `<command>` — filled in at Setup, once, so each executor need not rediscover it
+- **Suite setup**: `<command>` | none — what a fresh checkout needs before the runner works in it
 - **Started**: YYYY-MM-DD
 - **Last updated**: YYYY-MM-DD
 
@@ -112,6 +117,7 @@ skill executing it. Superseded versions stay; they are why the later slices are 
 - **Behavior**: <one sentence, no "and">
 - **Advances**: AC2
 - **Merge safety**: live
+- **Suite**: green: /home/me/.cache/slice-suite/myrepo-<feature-slug>-01
 - **Strategy**: tdd-batch
 - **Attempts**:
   - tdd-batch — shipped
@@ -119,6 +125,7 @@ skill executing it. Superseded versions stay; they are why the later slices are 
 ### 02 — <slice-slug> — in progress
 - **Behavior**: <one sentence, no "and">
 - **Advances**: AC1, AC3
+- **Suite**: running: /home/me/.cache/slice-suite/myrepo-<feature-slug>-02
 - **Strategy**: hand
 - **Attempts**:
   - tdd-batch — abandoned: <what entangled, one line>
@@ -149,15 +156,17 @@ Set **Last updated** at each of these:
 
 - **Before the alignment gate** — create the file: the Rules in Force header, the Session block's
   feature slug and start date, the feature, criteria, hypothesis and slices.
-- **Setup** — the test runner command and the base branch.
+- **Setup** — the test runner command, the suite setup and the base branch.
 - **Choosing a strategy** — the slice's `Strategy` field and its first `Attempts` line.
 - **Cutting the branch** — the slice's status to `in progress`, and any earlier slice's test the
   host updated there, noted on the `Attempts` line.
-- **The slice boundary** — slice status, its `Attempts` line closed, criteria ticked, hypothesis
-  changes, and backlog items.
+- **The slice boundary** — `Suite` set to `running: <dir>` at step 3, then slice status, its
+  `Attempts` line closed, criteria ticked, hypothesis changes, and backlog items.
+- **A background run's result** — `Suite` set to `green: <dir>`, `setup-failed: <dir>` or
+  `red: …, <dir>` when you read it, and back to `running: <dir>` at every restart.
 - **An abandon** — the abandoned `Attempts` line and the new strategy.
 
-These six are the scheduled writes, not the only ones: the blocked path appends a fresh attempt
+These seven are the scheduled writes, not the only ones: the blocked path appends a fresh attempt
 line or re-slices, and Feature complete may append a whole new slice. Set **Last updated** on those
 too.
 
@@ -173,8 +182,9 @@ obligation 3.
 | Advances | The acceptance criteria this slice moves. `none` for a slice that moves no criterion — which must then carry a `Kind`. |
 | Kind | `behavioral` by default, and then omitted entirely. `refactor` or `scaffolding` is written out with a one-sentence reason on the same line, and is the only thing that excuses a slice from shipping a new passing test. A slice whose `Advances` is `none` must carry one. A test-first strategy cannot run such a slice — see SKILL.md, *Running a slice* step 1. |
 | Strategy | What is running the slice *now*. A skill name (`tdd`, `tdd-batch`, `navigator`), `direct` for the agent building it itself, or `hand` for the user writing it themselves. Chosen before the branch is cut. |
+| Suite | The slice's full-suite run, started at the boundary's step 3 (`references/background-suite.md`): `running: <dir>`, then `green: <dir>`, `setup-failed: <dir>`, `red: <failing tests>, <dir>`, or `green: fixed — <what>, <dir>` after a reopen — the directory always kept, since its status file is what the host's hold on the next slice reads and Cleanup deletes it. Absent until the boundary. A plan from before this field existed has none on its shipped slices; treat those as `green`. |
 | Merge safety | Present on the steel thread always — `live`, or `inert: <what makes it unreachable>` — and on any other slice that ships something unreachable. Decided when the slice is planned; an `inert:` value is what the squash message says is deliberately not there. |
-| Attempts | An indented list, one line per attempt, never removed; `none yet` is the placeholder for a slice with no strategy chosen and is replaced by the list at the first attempt. A line is **closed in place** as its state changes — `in progress` → `handed back`, `shipped`, `blocked: …`, or `abandoned: …`; only a genuinely new attempt adds a line. Values: `<strategy> — <in progress \| handed back \| shipped \| blocked: <what stopped it> \| abandoned: <what entangled>>`. `in progress`, `handed back` and `shipped` may carry a `: <note>` — used to record an earlier slice's test the host updated on this branch before handing off; `blocked` and `abandoned` already spend their colon, so their note goes in that text. A guest may also add the whole tokens `reviewed` and `suite green at <sha>` to a `handed back` line, comma-separated after any note the host left there (SKILL.md, the executor contract's obligations 2 and 5); the host reads them as whole tokens. `handed back` means the work is done and the host has not yet run the boundary; a skill-shaped guest writes it, and for `direct`, `hand` and `navigator` the host writes it. `blocked` means the executor stopped without delivering the slice — see SKILL.md, *A guest that hands back blocked*. The host closes the line to `shipped` at the boundary. |
+| Attempts | An indented list, one line per attempt, never removed; `none yet` is the placeholder for a slice with no strategy chosen and is replaced by the list at the first attempt. A line is **closed in place** as its state changes — `in progress` → `handed back`, `shipped`, `blocked: …`, or `abandoned: …`; only a genuinely new attempt adds a line. Values: `<strategy> — <in progress \| handed back \| shipped \| blocked: <what stopped it> \| abandoned: <what entangled>>`, plus `atdd — paused: design agreed` (SKILL.md, *Hand off*), closed in place and followed by a fresh `in progress` line when the host resumes it. `in progress`, `handed back` and `shipped` may carry a `: <note>` — used to record an earlier slice's test the host updated on this branch before handing off; `blocked` and `abandoned` already spend their colon, so their note goes in that text. A reviewing guest may also add the whole token `reviewed` to a `handed back` line, comma-separated after any note the host left there (SKILL.md, the executor contract's obligation 5); the host reads it as a whole token. `handed back` means the work is done and the host has not yet run the boundary; a skill-shaped guest writes it, and for `direct`, `hand` and `navigator` the host writes it. `blocked` means the executor stopped without delivering the slice — see SKILL.md, *A guest that hands back blocked*. The host closes the line to `shipped` at the boundary. |
 
 The Attempts list is the reversibility record. Everything else about the slice is recoverable
 from git; the fact that a strategy was tried and why it was abandoned is not.

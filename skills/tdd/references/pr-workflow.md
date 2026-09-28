@@ -61,7 +61,7 @@ git diff <PR-(NN-1)-end>...HEAD -- . ':(exclude)<state-file>'
 
 ## SHIP: closing out a PR (interactive mode)
 
-Run this only after the PR's last cycle is complete and the full suite is green. One-shot mode
+Run this only after the PR's last cycle is complete; SHIP's full-suite step is the PR's one full run. One-shot mode
 does not run SHIP — see [Finalization](#finalization-one-shot-mode).
 
 **1. PR-level review pass.** Review the whole PR diff, not just the last cycle's changes —

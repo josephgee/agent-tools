@@ -38,7 +38,8 @@ summarized.
 - Write nothing the batch does not demand.
 - Never touch a test in GREEN outside the amendment protocol: halt, state the defect, amend,
   re-verify, commit it alone.
-- Milestone commit = prior suite green + passing batch subset only grew + that subset named.
+- Targeted tests only (batch + tests nearest the change); the full suite once per PR, at SHIP (one-shot: at each boundary).
+- Milestone commit = prior targeted tests green + passing batch subset only grew + subset named.
   Never a long red stretch with nothing committed.
 - Pressure log at every milestone: ugliest thing written, most annoying test. "Nothing" is not
   a legal answer to a superlative.
@@ -50,7 +51,7 @@ summarized.
 - Both per-PR reviews go to a fresh subagent, always.
 - Comments are design defects: delete every one in the diff; decision context goes in `Learned`.
 - A batch never spans more than one planned PR. Never execute a stale plan item.
-- Suite green at every boundary. Squash only on the user's approval.
+- Full suite green at every boundary (its one run). Squash only on the user's approval.
 
 ## Session
 - **Feature slug**: <feature-slug>
@@ -135,7 +136,7 @@ The batch for the PR in progress. Rewritten wholesale at each THINK; it describe
 ## Pressure Log
 
 Intra-PR only. Appended during GREEN (at each milestone, whenever a smell bites, and at every
-flat run — a full-suite run in which no batch test newly passes, SKILL.md's convergence
+flat run — a targeted run in which no batch test newly passes, SKILL.md's convergence
 tripwire being the authority on what counts; its counter lives here because GREEN records
 nothing else, and a `count reset` line is written only when a newly passing test ends a flat
 run), drained to empty at REVIEW — every entry ends as a fix, a dismissal with a reason, or a

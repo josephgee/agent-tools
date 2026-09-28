@@ -35,8 +35,9 @@ every GREEN milestone and ladder drop, before each REVIEW round, and at the star
 - Mutation check (break the code under test, confirm it fails, revert exactly) only for a RED test
   that passes immediately. Never touch a test in GREEN outside the amendment protocol: halt,
   state the defect, amend, re-verify, commit it alone.
-- Full suite once, at GREEN's exit, plus again only if code changed since; between, run RED's
-  tests only. Milestone commit = RED's passing subset only grew, subset named. Pressure log at
+- Never the full suite — the host runs it after hand-back. GREEN runs RED's tests; its exit and
+  every later fix add the targeted tests nearest the change. A block with a pause paragraph:
+  after the design commit, set phase RED, commit, hand back `paused: design agreed`. Milestone commit = RED's passing subset only grew, subset named. Pressure log at
   every milestone: "nothing" is not an answer. Three flat runs → discard per
   references/discard.md.
 - REVIEW is delegated and blind (diff and unit tests only). A `structural-if-fixed` fix triggers
@@ -52,7 +53,6 @@ every GREEN milestone and ladder drop, before each REVIEW round, and at the star
 - **Slice behavior**: <the one-sentence behavior from slice-plan's plan, copied verbatim>
 - **Criteria advanced**: <which, from slice-plan's plan>
 - **Test runner**: `<command>`
-- **Last full-suite run**: none | green at <sha>
 - **Lint command**: `<command>` | none found
 - **Started**: YYYY-MM-DD
 - **Last updated**: YYYY-MM-DD
@@ -117,7 +117,7 @@ review happened. -->
 - **Unit tests**: green | <what's still red>
 - **Lint**: clean | <open items>
 - **Review**: all findings fixed or dismissed | see `Open at cap`
-- **Handed back**: `atdd — handed back: reviewed, suite green at <sha>` | `atdd — blocked: <what stopped it>`
+- **Handed back**: `atdd — handed back: reviewed` | `atdd — blocked: <what stopped it>`
 
 ## Learned
 

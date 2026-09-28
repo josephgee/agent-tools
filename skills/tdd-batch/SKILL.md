@@ -167,8 +167,10 @@ The pass is identical in both modes; only the PR boundary differs.
 review before the next pass.
 
 **One-shot** (on a standing go-ahead): run the whole plan as continuous passes, reviewed once
-at the end. No per-PR SHIP, no per-PR branches; history stays linear. At each boundary, record
-the PR's `Ends at` sha (its last commit, REVIEW fixes included) and continue — the PR
+at the end. No per-PR SHIP, no per-PR branches; history stays linear. At each boundary, run
+the full suite — the PR's one full run, as SHIP's is in interactive mode — fixing and committing
+anything it turns up, then record the PR's `Ends at` sha (its last commit, REVIEW and suite fixes
+included) and continue — the PR
 description was already written at REVIEW. When the completion conditions in
 [Progress](#progress) are met, take the user's single review, then run Finalization
 ([references/pr-workflow.md](references/pr-workflow.md), §"Finalization") to build the squashed
@@ -248,8 +250,9 @@ When it fires, in this order:
    `backfill-tests` skill; it carries the quality bar (intent-derived expectations, proven
    falsifiable). Commit separately: `tddb: pin <what> before PR NN`.
 2. **Then preparatory refactoring**: make the change easy before making the easy change.
-   Behavior-preserving only; full suite green after each step. Commit separately:
-   `tddb: make room for PR NN`. A step the suite rejects and one repair does not fix is a
+   Behavior-preserving only; targeted tests (see GREEN) green after each step, the pins
+   included. Commit separately:
+   `tddb: make room for PR NN`. A step the targeted tests reject and one repair does not fix is a
    failed experiment — [discard it](#discarding-an-experiment).
 
 If the preparatory refactor grows beyond a few commits, stop — it is its own PR; add it to the
@@ -269,7 +272,7 @@ plan ahead of this one and surface that.
    device, replaced during GREEN, with no state-file entry. `Merge safety` records only what
    **ships**: if this PR will still have a stub in place at the boundary and planning set no
    field, add it now.
-3. **Verify per test, not per batch.** Run the suite. For *each* batch test, record in the
+3. **Verify per test, not per batch.** Run the batch. For *each* batch test, record in the
    state file: it fails, and the failure is the missing behavior — an assertion or expected
    effect — not a compile, import, or fixture error. **A test that passes against a raising
    skeleton is broken** — it is not exercising what it claims; fix it or delete it. This
@@ -294,9 +297,14 @@ Set phase to GREEN — the last state write until REVIEW, apart from pressure-lo
   piece. The scope fence is the batch: **write nothing the batch does not demand.** The
   anticipation was already written down as tests; code serving no test is speculation and will
   be flagged in REVIEW.
-- **Milestones, not order.** Run the suite at coherent stopping points of your choosing and
-  commit at each *green milestone*. Green in this phase means: **every test that passed before
-  this PR still passes, and the set of passing batch tests only grows.** Name the newly
+- **Run the targeted tests, never the full suite.** The *targeted tests* are the batch plus the
+  existing tests nearest the code this PR touches, picked with the runner's own file or
+  directory filter. The full suite runs once per PR, at SHIP (in one-shot mode, at the boundary
+  crossing): it is expensive, it is the point where the code stops changing, and a regression it
+  catches there is still caught.
+- **Milestones, not order.** Run the targeted tests at coherent stopping points of your choosing
+  and commit at each *green milestone*. Green in this phase means: **every targeted test that
+  passed before this PR still passes, and the set of passing batch tests only grows.** Name the newly
   passing tests in the message: `tddb: green <tests or count> of PR NN`. Never a long stretch
   where everything is red and nothing is committed. A milestone commit is the base a failed
   experiment gets thrown back to (see Discarding an experiment), so it belongs after a
@@ -315,7 +323,7 @@ Set phase to GREEN — the last state write until REVIEW, apart from pressure-lo
   moment it bites, too — a growing switch, a third repetition, hurting setup — don't wait for
   the milestone.
 - **Convergence tripwire — count it in writing.** This bullet is the rule; the header, Phase
-  Discipline, and *Discarding an experiment* only point at it. A **flat run** is a full-suite
+  Discipline, and *Discarding an experiment* only point at it. A **flat run** is a targeted
   run in which **no batch test newly passes** — append `flat run <N> of 3 — nothing new
   passing` to the pressure log. Do not hold the count in your head: GREEN is long, its runs are
   spread across it, and an uncounted tripwire never fires. Two exemptions, because neither is
@@ -340,7 +348,7 @@ Set phase to GREEN — the last state write until REVIEW, apart from pressure-lo
   backlog. If an amendment reflects a misspecified *acceptance criterion*, that is never
   yours to decide — surface it to the user immediately (see Design Evolution).
 
-GREEN ends when the full suite is green, batch included.
+GREEN ends when every targeted test is green, batch included.
 
 ### REVIEW — Refactor and Converge
 
@@ -349,8 +357,8 @@ experiment](#discarding-an-experiment): clean tree before, commit after each gre
 **Re-read the Rules in Force header at the start of REVIEW and again before every re-entry
 round** — each delegated report lands in context here.
 
-1. **Drain the pressure log.** Every held item gets a terminal disposition: **fix now** (suite
-   green after), **dismiss** with a reason, or **promote to the backlog** (real, but not this
+1. **Drain the pressure log.** Every held item gets a terminal disposition: **fix now** (targeted
+   tests green after), **dismiss** with a reason, or **promote to the backlog** (real, but not this
    PR's work). An entry logged at a discard instead drains into the PR Log's `Discarded` field.
    Counter lines (`flat run N of 3`, `count reset`) are not observations and need no
    disposition — erase them with the rest. The pressure log must be empty when this phase
@@ -415,7 +423,9 @@ re-review the diff here. Read §"SHIP: closing out a PR" in
 [references/pr-workflow.md](references/pr-workflow.md) for the git mechanics; the rest of that
 file is for Setup, restacking, and Finalization.
 
-- Confirm the full suite is green and the tree is clean apart from the state file.
+- **Run the full suite** — the PR's one full run — and confirm it green, with the tree clean
+  apart from the state file. A failure is fixed on the branch and committed, the suite re-run,
+  and the fix named when you present, since REVIEW never saw it.
 - Confirm the PR is genuinely mergeable alone: observable behavior, no dependence on a later
   PR, anything stubbed is inert or flag-gated.
 - **Present the PR and stop.** One-sentence behavior, branch, base, what is deliberately left
@@ -436,8 +446,8 @@ file is for Setup, restacking, and Finalization.
 
 The state file records the phase; within GREEN it deliberately records nothing else. To resume
 in GREEN: the last milestone commit is the position — its message names the passing subset —
-and the pressure log holds the in-flight observations and the flat-run count. Re-run the suite
-to re-establish which batch tests remain red, then continue the holistic pass. Do not
+and the pressure log holds the in-flight observations and the flat-run count. Re-run the
+targeted tests to re-establish which batch tests remain red, then continue the holistic pass. Do not
 reconstruct position from memory; the commits are the record.
 
 ---
@@ -473,8 +483,9 @@ since it is re-read every pass.
   skeleton.** A test that passes against the skeleton is broken.
 - **Never touch a test in GREEN outside the amendment protocol.** Amendments are separate,
   visible commits with stated reasons — never folded into implementation commits.
-- **Green in GREEN means: prior suite green, passing-batch subset monotonically growing,
-  subset named in the commit.** Full green is required only to leave the phase.
+- **Green in GREEN means: prior targeted tests green, passing-batch subset monotonically
+  growing, subset named in the commit.** The full suite runs once per PR, at SHIP (one-shot: at
+  the boundary crossing).
 - **Write nothing the batch does not demand.** REVIEW's uncovered-path check enforces it;
   RED's trace rule keeps the batch itself honest.
 - **No checkpoint accepts "nothing to report" as an answer to a superlative question.**
