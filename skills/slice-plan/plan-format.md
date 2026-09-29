@@ -20,7 +20,7 @@ The slice plan outlives every attempt, which is what lets the strategy change.
   Create `plans/` only if none exists. If more than one exists, ask rather than guessing.
 - **`<feature-slug>`** — a short kebab-case name for the effort, derived from the confirmed
   feature definition (`csv-export`, `session-timeout`). Confirm it at the alignment gate: it is
-  permanent and also names the branches (`slice/<feature-slug>/NN-<slice-slug>`).
+  permanent and also names the branches (`<feature-slug>/NN-<slice-slug>`).
 
 The `slices-` prefix and the `# Slice Plan` heading keep these files distinct from an executing
 skill's own state file. Naming files after the effort lets several efforts run in parallel.
@@ -302,5 +302,5 @@ Then start the new strategy. Its state file is created fresh.
 ## What the record buys
 
 Everything a rollback needs is a branch name. A slice 02 abandoned from `tdd-batch` and redone by
-hand restores from `slice/<slug>/01-<slice-slug>` — no sha anywhere, and the abandoned attempt is
+hand restores from `<slug>/01-<slice-slug>` — no sha anywhere, and the abandoned attempt is
 still legible in the plan after the restore that produced it.

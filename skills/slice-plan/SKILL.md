@@ -249,7 +249,7 @@ not pick a default when the user hasn't answered: per-slice choice is the reason
 
 ### 2. Cut the branch
 
-`git switch -c slice/<feature-slug>/NN-<slice-slug> <previous-slice-branch>` — naming the start
+`git switch -c <feature-slug>/NN-<slice-slug> <previous-slice-branch>` — naming the start
 point rather than trusting `HEAD`.
 
 **`<previous-slice-branch>` means the previous slice's branch** — the base branch, for slice 01.
