@@ -114,6 +114,16 @@ skill is, and there is no bundled substitute for its catalogs. If it is genuinel
 stop and say so rather than reviewing from memory: an assessment not grounded in the
 catalog's named entries is not what this skill promises.
 
+**Then load the user's coding standards, if they keep any.** Run
+`cat "${XDG_CONFIG_HOME:-$HOME/.config}/agent-tools/coding-standards.md"`. If the file is
+absent, skip this paragraph — the catalog alone is the lens, and a missing file is not
+worth mentioning in the report. If it exists, read it in full and follow any pointers it
+gives to further files that apply to what step 2 found in scope (e.g. "for Python, see
+`~/standards/python.md`"); skip pointers for stacks the scope doesn't touch. Sweep the
+scope against those standards with the same detection posture as the catalog. Where a
+standard and a catalog entry disagree, the standard wins — it is the user's deliberate
+choice for their code — and a catalog finding it overrides is dropped, not reported.
+
 ### 4. Report a rated assessment
 
 **Before ranking, apply the finding gate.** Size, length, and branching-density observations
@@ -129,7 +139,9 @@ more honest than either forcing a match or reporting the code as clean.
 Produce findings **ranked most-severe first**. For each:
 - **Name** the smell/principle (the precise term from the catalog), at the altitude it
   actually lives at. A symptom visible in one function may have its cause at the component
-  level; name the cause, since that is what a fix has to address.
+  level; name the cause, since that is what a fix has to address. For a violation of the
+  user's coding standards, name it as `standard: <the rule, quoted or paraphrased>`, with
+  the file it came from.
 - **Location** — file and line/region.
 - **Severity** — one of **high** / **medium** / **low**, judged by how much it costs *here*:
   high = actively causing rigidity/fragility or will soon; medium = a real cost, but
