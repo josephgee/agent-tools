@@ -1,53 +1,66 @@
 # The background suite run
 
-The full suite runs once per slice, on the slice's final code, in a detached checkout of the
-slice's branch, while the user reviews the slice. The squash changes no code — `reset --soft`
-plus `commit` rebuilds the same tree under a new sha — so a run on the pre-squash commit proves
-the squashed one too. No executor runs the full suite, and **no executor ever sees this run**:
-you start it, you watch it, and you decide when the next slice's code may start (SKILL.md, *Hand
-off*).
+The full suite runs once per slice, on the slice's final code, **in the working tree itself**,
+while the user reviews the slice. The squash changes no code — `reset --soft` plus `commit`
+rebuilds the same tree under a new sha — so a run on the pre-squash commit proves the squashed one
+too. No executor runs the full suite, and **no executor ever sees this run**: you start it, you
+watch it, and you decide when the next slice's code may start (SKILL.md, *Hand off*).
+
+The tree is idle while it runs — the next slice's code is held until the run reads `0` — and that
+idleness is what the result rests on:
+
+**While the run is going, nothing outside the plans directory changes.** No code edit, no `git
+switch` to a branch with a different tree, no `git restore` or `clean` — by you, an executor, or
+the user. The squash, plan writes, the guest's state-file deletion, and cutting the next slice's
+branch from the shipped one all leave the code untouched and are fine. Anything else — a fix for a
+red run, a change the user asks for — **stops the run first**, and the recipe below restarts it
+once the change is committed. Tell the user the tree is in use when you present the slice.
 
 ## Starting it
 
-One recipe starts the run, and the same recipe restarts it — after a dead run, a setup fix, or a
-red run's fix. Each start first stops whatever run is recorded there and deletes its old status,
-so a stale result or an orphaned run can never be read as the new one.
+One recipe starts the run, and the same recipe restarts it — after a dead run or a red run's fix.
+Each start first stops whatever run is recorded there and deletes its old status, so a stale
+result or an orphaned run can never be read as the new one. **Kill only what the pid file proves is
+this run** — the recorded pid, and only while its command line is still this directory's `run.sh`;
+a dead run's pid can be reused by anything. `run.sh` starts the runner in a process group of its
+own and takes that group down with it, so the one `kill` stops everything the run started and
+nothing else.
 
-**The run's directory** is chosen once, at the first start:
-`${XDG_CACHE_HOME:-$HOME/.cache}/slice-suite/<repo-dir-name>-<feature-slug>-<NN>`, expanded to an
-absolute path. Record it in the slice's **Suite** field, and from then on copy it from there.
-Shell variables do not survive between tool calls, so every start writes the path literally.
+**To stop a run without restarting** — the user asked to, or chose "treat it as red" — run the
+recipe's first two lines, then `echo stopped > "<dir>/status"`, so the stop reads as red rather
+than as a run that died and wants restarting.
 
-At the boundary's step 3 (SKILL.md), from a clean tree — `status --short` shows nothing outside
-the plans directory — so the checkout holds exactly what ships:
+**The run's directory** holds its pid, log and status. It is chosen once, at the
+first start: `${XDG_CACHE_HOME:-$HOME/.cache}/slice-suite/<repo-dir-name>-<feature-slug>-<NN>`,
+expanded to an absolute path. Record it in the slice's **Suite** field, and from then on copy it
+from there. Shell variables do not survive between tool calls, so every start writes the path
+literally.
+
+At the boundary's step 3 (SKILL.md), on the slice's branch, from a clean tree — `status --short`
+shows nothing outside the plans directory — so the run tests exactly what ships:
 
 ```bash
 dir="<the run's directory, absolute>"
-top=$(git rev-parse --show-toplevel)
-[ -f "$dir/pid" ] && kill "$(cat "$dir/pid")" 2>/dev/null
-git -C "$top" worktree remove --force "$dir/tree" 2>/dev/null; rm -rf "$dir"; git -C "$top" worktree prune
-mkdir -p "$dir" && git -C "$top" worktree add --detach "$dir/tree" <slice-branch>
+p=$(cat "$dir/pid" 2>/dev/null) && ps -p "$p" -o args= | grep -qF "$dir/run.sh" && kill "$p"
+rm -rf "$dir"; mkdir -p "$dir"
 cat > "$dir/run.sh" <<'EOF'
-cd "$1/tree" || { echo setup-failed > "$1/status"; exit 1; }
-if ! ( <suite setup> ); then s=setup-failed; else ( <test runner> ); s=$?; fi
+cd "$2" || exit 1
+set -m
+trap 'kill -- -"$c" 2>/dev/null; exit 143' TERM
+( <test runner> ) & c=$!
+wait "$c"; s=$?
 echo "$s" > "$1/status.tmp" && mv "$1/status.tmp" "$1/status"
 EOF
-nohup bash "$dir/run.sh" "$dir" > "$dir/log" 2>&1 & echo $! > "$dir/pid"
+nohup bash "$dir/run.sh" "$dir" "$(git rev-parse --show-toplevel)" > "$dir/log" 2>&1 & echo $! > "$dir/pid"
 ```
 
-Substitute the Session's `<test runner>` and `<suite setup>` literally — the quoted heredoc
-passes them through untouched, quotes included — using `true` for a setup of `none`. Both run in
-`bash`, each in its own subshell, so the runner's exit status is the one recorded; where the
-runner is a pipeline, put `set -o pipefail;` in front. `<slice-branch>` is the slice's branch by
-name: before the squash it is the reviewed code, after it the same tree, after a reopen's fix the
-fixed one. A plan with no `Suite setup` field predates it: ask the user what a fresh checkout
-needs and record the answer in the Session first. The checkout lives outside the repo, so it
-never shows in the worktree's `status`; `nohup` keeps the run alive past this session. After
-every start, set **Suite** to `running: <dir>`.
+Substitute the Session's `<test runner>` literally — the quoted heredoc passes it through
+untouched, quotes included. It runs in `bash`, in its own subshell — `set -m` gives that subshell
+its own process group, which the trap kills — so the runner's exit status is the one recorded; where the runner is a pipeline, put `set -o pipefail;` in front. `nohup` keeps
+the run alive past this session. After every start, set **Suite** to `running: <dir>`.
 
 **The result is `<dir>/status`**, kept until Cleanup: absent means running (or dead — see below),
-`0` means green, `setup-failed` means the checkout never got as far as the tests, anything else
-means red, with the reason in `<dir>/log`.
+`0` means green, anything else means red, with the reason in `<dir>/log`.
 
 ## Waiting on it
 
@@ -57,26 +70,34 @@ when a paused `atdd` hands back. Slice 01 has no previous run — the planning s
 stands in for it — so nothing waits there.
 
 While the status is absent, check the run is alive and is this run:
-`p=$(cat "<dir>/pid"); kill -0 "$p" && ps -p "$p" -o args= | grep -q run.sh`. If so, tell the
+`p=$(cat "<dir>/pid"); ps -p "$p" -o args= | grep -qF "<dir>/run.sh"`. If so, tell the
 user you are waiting and check again every few minutes — with a scheduled wake-up or background
 wait where your harness blocks a foreground `sleep`. If it runs well past what the user expects
 the suite to take, show them the tail of `log` and ask: keep waiting, stop it and treat it as red,
 or start it again. On a resume, do all of this before anything else in the slice.
 
-- **`0`** — set **Suite** to `green: <dir>` and remove the checkout alone, keeping `status` and
-  `log`: `git -C "$(git rev-parse --show-toplevel)" worktree remove --force "<dir>/tree"`.
+- **`0`** — set **Suite** to `green: <dir>`. Then clear the run's leftovers below; the tree is
+  free once they are gone.
 - **Absent and not alive** — the run died (a reaped background job, a restarted machine). Start
   it again.
-- **`setup-failed`** — the checkout, not the slice. Set **Suite** to `setup-failed: <dir>`, read
-  `log`, fix the Session's `Suite setup` with the user, and start it again. Not a reopen.
-- **Anything else** — red. Which branch below depends on whether the squash has run.
+- **Anything else** — red. Clear the run's leftovers below first; which section after that
+  depends on whether the squash has run.
+
+**Clearing the run's leftovers.** The tree was clean when the run started and nothing else has
+changed it since, so anything `git -C "$(git rev-parse --show-toplevel)" status --short` now shows
+outside the plans directory is the runner's own output — coverage, reports, caches, rewritten
+snapshots. Show it to the user. Output the runner will write every time goes into
+`"$(git rev-parse --git-path info/exclude)"`, by pattern; a tracked file the runner rewrote is
+restored with `git restore`, and the user should know a run changes tracked files; anything else
+is deleted. Do this before any of the next slice's code starts: an executor's `git add -A` would
+otherwise commit it. Until the run finishes, leave its output alone — it is still writing.
 
 ## Red before the squash
 
 The boundary's step 4 reads the status before squashing, so this is the user still at step 3.
-Fix it on this branch, as step 2's review fixes are, commit, start the run again, and tell the
-user what changed, since no reviewer saw it. Squash once they approve; the new run is waited on
-like any other.
+Fix it on this branch, as step 2's review fixes are, commit, start the run again, and tell the user
+what changed, since no reviewer saw it. Squash once they approve; the new run is waited on like any
+other.
 
 ## Red after the squash
 
@@ -108,5 +129,5 @@ call as each command below.
    non-code commits — a guest's state-file commits — onto the fixed slice and leaves you on the
    next slice's branch.
 4. The foreground run proved the fix, so record it as the result rather than running it twice:
-   `echo 0 > "<dir>/status"` and remove the checkout as for any `0`. Set **Suite** to
+   `echo 0 > "<dir>/status"`. Set **Suite** to
    `green: fixed — <what>, <dir>` and carry on with the next slice where its hold left it.

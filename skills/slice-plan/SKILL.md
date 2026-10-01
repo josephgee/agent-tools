@@ -182,7 +182,7 @@ compaction before Setup loses the whole planning session. So now, before the gat
    `plans/` only if none does; ask if several do.
 2. Create the plan file: the Rules in Force header copied verbatim from *The Rules in Force
    header* in [plan-format.md](plan-format.md), then the **Session block** with the feature slug
-   and start date filled in and Base branch, Test runner and Suite setup left as their placeholders — Startup
+   and start date filled in and Base branch and Test runner left as their placeholders — Startup
    reads a still-placeholder value as "Setup never ran", so omitting the block resumes into the
    routing with no base branch — then the feature, criteria, hypothesis and slices.
 
@@ -196,11 +196,9 @@ that was never agreed.
 
 ### Setup
 
-1. Record the test runner command, the suite setup **and** the base branch — what slice 01 is
-   reviewed against — in the plan, in one write. The suite setup is whatever a fresh checkout
-   needs before the runner works in it (installing dependencies, copying ignored local config),
-   or `none`; the full suite runs in one at every boundary
-   ([The background suite run](#the-background-suite-run)). Ask the user if it is not plain. The
+1. Record the test runner command **and** the base branch — what slice 01 is reviewed against —
+   in the plan, in one write. The runner is what the full suite runs with at every boundary
+   ([The background suite run](#the-background-suite-run)). The
    runner and base branch are placeholders until now, and the resume path reads either
    one still being a placeholder as "Setup never ran"; filling them separately opens a window
    where a resume re-presents an alignment gate the user already approved.
@@ -305,7 +303,8 @@ criteria it advances, the branch, and the obligations of
 executor sees that run, so the hold is yours alone. **The one exception is `atdd`**, whose ACCEPT
 and design write no code: hand it off at once, with the *pause* paragraph from
 [references/hosted-handoff.md](references/hosted-handoff.md) added to its block while the run is
-still going. If step 2 found an earlier-test update, hold it back — it is code. `atdd` hands back
+still going — it changes nothing outside its state file until resumed, so the tree the run is
+testing stays put. If step 2 found an earlier-test update, hold it back — it is code. `atdd` hands back
 `atdd — paused: design agreed` after its design commit; wait for `0`, make the held-back update
 (committed, noted on the Attempts line), append a fresh `atdd — in progress` line, and invoke it
 again with the block and no pause paragraph — its state file resumes it at RED. Whoever waits, the user's review of the previous
@@ -471,7 +470,8 @@ Re-read the Rules in Force header and the Slices section. Then:
 3. **Start the full-suite run in the background**, per
    [The background suite run](#the-background-suite-run), first committing any step-2 fix — the
    code is final now, since anything the user asks for below becomes a backlog entry, not an edit.
-   Then present the slice for review and stop, saying the suite is running — with, when step 2
+   Then present the slice for review and stop, saying the suite is running in this tree, so
+   nothing in it should change until it finishes — with, when step 2
    was skipped, the guest's dismissed findings and their reasons, and anything left open at its round cap; anything the user wants
    revisited becomes a named backlog entry. This is where the user rejects the slicing, reorders
    what's left, redirects the design, or calls the feature done early — far cheaper here than
@@ -483,6 +483,8 @@ Re-read the Rules in Force header and the Slices section. Then:
    tree is clean**: `git -C "$(git rev-parse --show-toplevel)" status --short` should show nothing
    outside the plans directory. `reset --soft` stages only what was committed, so anything else
    there is work the squash drops and leaves dirty for the next slice to sweep into its history.
+   While the run is still going, anything new there is its output — leave it, as *Clearing the
+   run's leftovers* in [references/background-suite.md](references/background-suite.md) says.
 
    **Before resetting, read the guest's state file for a `Learned` line from this slice's work** (a
    skill-shaped guest's refactor checklist sends decision context there instead of a PR description
@@ -519,18 +521,20 @@ Re-read the Rules in Force header and the Slices section. Then:
    ends. Run the same two checks Startup runs on resume, now, while a miss is a one-line fix rather
    than next session's diagnosis: `git -C "$top" status --short` shows nothing outside
    `<plans-dir>`, and `git -C "$top" check-ignore -q <plan-path>` still succeeds. If either fails,
-   fix it before stopping — a stray file or a dropped exclude line here is a dirty tree or a
+   fix it before stopping — unless the run is still going and the stray files are its output,
+   which its leftovers step clears — a stray file or a dropped exclude line here is a dirty tree or a
    committed plan for whoever resumes next.
 
 Then start the next slice at step 1 — including the strategy question.
 
 ### The background suite run
 
-The full suite runs once per slice, in the background, in a detached checkout of the slice's final
-commit — the squash keeps the tree, so the result holds for the squashed commit too. Launch it at
-the boundary's step 3; `<dir>/status` is the result and stays until Cleanup: absent means running,
-`0` green, `setup-failed` a broken checkout, anything else red. No executor sees it: you hold the
-next slice's code until it reads `0` (*Hand off*). The one start-or-restart recipe, waiting and
+The full suite runs once per slice, in the background, **in the working tree itself**, on the
+slice's final commit — the squash keeps the tree, so the result holds for the squashed commit too.
+Launch it at the boundary's step 3; `<dir>/status` is the result and stays until Cleanup: absent
+means running, `0` green, anything else red. **While it runs, nothing outside the plans directory
+changes** — stop it before any fix. No executor sees it: you hold the next slice's code until it
+reads `0` (*Hand off*). The one start-or-restart recipe, waiting and
 liveness, resuming, and fixing a red run before or after the squash are in
 [references/background-suite.md](references/background-suite.md) — read it at every launch, at
 every wait, and on any red.
@@ -609,9 +613,8 @@ what the feature taught about which approach suits which slice. Then run Cleanup
    abandoned slice later deleted from the plan; nothing is based on it.
 2. **Pushing and opening PRs is the user's call.** This skill produces a stack of local branches
    and stops there. Ask before publishing any of it.
-3. **Remove this feature's suite runs** — each `<dir>` a Slices **Suite** field names:
-   `git worktree remove --force "<dir>/tree"` where `git worktree list` still shows it, then
-   `rm -rf "<dir>"`. Runs of other features and repos share the parent `slice-suite` directory;
+3. **Remove this feature's suite runs** — `rm -rf "<dir>"` for each `<dir>` a Slices **Suite**
+   field names. Runs of other features and repos share the parent `slice-suite` directory;
    touch nothing there you did not read from this plan.
 4. **Settle the plan file.** It is untracked, as it has been all along. Offer to delete it — and
    only then, open the exclude file (`"$(git rev-parse --git-path info/exclude)"`) and delete that

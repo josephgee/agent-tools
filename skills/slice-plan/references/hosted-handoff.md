@@ -45,7 +45,9 @@ While the previous slice's suite run is still going, `atdd` is handed off with t
 added after paragraph 5 (SKILL.md, *Hand off*); it is the only guest handed off before that run is
 green. Leave it out once the run reads `0`, and when invoking a paused `atdd` again.
 
-> **Pause before code.** After your design commit, before writing any test, set your phase to
+> **Pause before code.** Until you are invoked again, change no file outside your state file and
+> run no tests: the host's full-suite run is using this tree. After your design commit, before
+> writing any test, set your phase to
 > RED in your state file, commit it, set your slice's `Attempts` line to
 > `atdd — paused: design agreed`, and hand back. The host invokes you again when you may go on;
 > your state file resumes you at RED.
