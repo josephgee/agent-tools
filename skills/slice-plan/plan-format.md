@@ -84,7 +84,7 @@ disables that detector.
 - **Feature slug**: <feature-slug>
 - **Base branch**: <branch slice 01 is reviewed against — filled in at Setup>
 - **Test runner**: `<command>` — filled in at Setup, once, so each executor need not rediscover it
-- **Spec**: <plans-dir>/spec-<feature-slug>.md — the spec this plan adopted, or `none`
+- **Spec**: <plans-dir>/spec-<name>.md — the spec this plan adopted, or `none`
 - **Started**: YYYY-MM-DD
 - **Last updated**: YYYY-MM-DD
 

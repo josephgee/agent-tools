@@ -89,8 +89,8 @@ things in order — each builds on the previous.
 **Planning from a signed-off spec** replaces steps 1–2 with adoption: its Problem and Out of Scope
 become the Feature; its Acceptance Criteria are copied verbatim with their IDs and examples — gaps
 included — each given a checkbox; its Constraints become the plan's Constraints; its Design
-Hypothesis is step 3's starting point, free to discard. Its slug is the feature slug, and the plan's
-**Spec** field names the file. Present what was adopted for confirmation — don't re-interview, and
+Hypothesis is step 3's starting point, free to discard. Choose the feature slug as usual — the spec
+doesn't set it — and name the spec's path in the plan's **Spec** field. Present what was adopted for confirmation — don't re-interview, and
 never edit the spec: from here on the criteria live in the plan. Its Deferred and Assumptions are
 not adopted; name any assumption the slicing leans on in the hypothesis.
 

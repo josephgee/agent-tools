@@ -11,13 +11,13 @@ outside the exclude makes the working tree unclean for whatever runs next, and a
 
 ## Location and name
 
-`<plans-dir>/spec-<feature-slug>.md`
+`<plans-dir>/spec-<name>.md`
 
 - **`<plans-dir>`** — whichever of `plans/`, `docs/plans/`, or `.plans/` the repo already has.
   Create `plans/` only if none exists. If more than one exists, ask rather than guessing.
-- **`<feature-slug>`** — a short kebab-case name (`csv-export`, `session-timeout`). Propose it when
-  creating the file; confirm it at sign-off. A downstream plan reuses it, so it is permanent after
-  that.
+- **`<name>`** — a short kebab-case form of the feature's title (`csv-export`), chosen when you
+  create the file. It names the file and nothing else: it is not part of the feature's definition,
+  and a downstream plan names its own work however it likes.
 
 ## Rules-in-force header
 
@@ -45,7 +45,6 @@ survive context compaction, and re-reading puts them at the end of your context,
 ```markdown
 # Feature Spec: <feature name>
 
-- **Slug**: <feature-slug>
 - **Kind**: feature | bug fix
 - **Status**: drafting | signed off YYYY-MM-DD
 - **Sources**: <tickets, docs, threads drawn on — or "conversation only">

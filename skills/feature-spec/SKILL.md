@@ -47,12 +47,12 @@ judge by the output, not the exit status. Never use an ignore-aware search (ripg
 built on it): spec files are in `.git/info/exclude`, so it skips them silently and you start a
 duplicate.
 
-- **Drafting specs** — list them (title, slug) and ask whether this request continues one. To
+- **Drafting specs** — list them (title, file) and ask whether this request continues one. To
   resume: read it in full; if its rules-in-force header is missing or differs from
   [spec-format.md](spec-format.md), replace it verbatim; then continue the interview from the first
   exit-check item it fails.
 - **A signed-off spec the user wants changed** — check whether a plan has adopted it:
-  `find plans docs/plans .plans -maxdepth 1 -name '*.md' -exec grep -l 'spec-<feature-slug>.md' {} + 2>/dev/null`
+  `find plans docs/plans .plans -maxdepth 1 -name '*.md' -exec grep -l '<spec file name>' {} + 2>/dev/null`
   — any file it lists other than the spec itself is a plan that adopted it. If one
   has, the spec is frozen and the change belongs in that plan — say so, and don't edit the spec. If
   none has, reopen it: Status back to `drafting`, the header restored, and resume.
@@ -73,10 +73,10 @@ Note where each fact came from; it gets cited next to the item it supports. Don'
 create branches, or change any file but the spec.
 
 Then **create the spec file** per [spec-format.md](spec-format.md), which sets where it goes and
-how it is named: propose a slug, write the rules-in-force header verbatim, set Kind and Status
+how it is named: name it from the feature's title, write the rules-in-force header verbatim, set Kind and Status
 (`drafting`), fill Problem and Sources from what you gathered, and add the path to
 `.git/info/exclude`:
-`printf '%s\n' "<plans-dir>/spec-<feature-slug>.md" >> "$(git rev-parse --git-path info/exclude)"`.
+`printf '%s\n' "<plans-dir>/spec-<name>.md" >> "$(git rev-parse --git-path info/exclude)"`.
 
 ## 2. Interview
 
@@ -128,7 +128,7 @@ completeness. More questions always exist; this list is the definition of enough
 
 ## 4. Sign-off
 
-1. Present the whole spec and the slug. The slug is permanent once a plan adopts it.
+1. Present the whole spec.
 2. On the user's yes: delete the rules-in-force header and the (now empty) Scope Candidates
    section, and set Status to `signed off YYYY-MM-DD`. The file is now frozen; Startup says when it
    may reopen.

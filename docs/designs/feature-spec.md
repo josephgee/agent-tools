@@ -76,8 +76,9 @@ also why the interview is built into the skill rather than delegating to `grill-
 
 ## Spec file
 
-`<plans-dir>/spec-<feature-slug>.md`, `<plans-dir>` chosen by `slice-plan`'s rule, slug confirmed
-at sign-off and reused by `slice-plan`. Untracked: the skill adds it to `.git/info/exclude` at
+`<plans-dir>/spec-<name>.md`, `<plans-dir>` chosen by `slice-plan`'s rule. `<name>` only names the
+file: a slug is a planning concern (it names branches), not part of defining the feature, so the
+spec carries none and `slice-plan` picks its own at its gate; the link is the plan's **Spec** field. Untracked: the skill adds it to `.git/info/exclude` at
 creation, or `slice-plan`'s clean-tree check trips on it, or a guest's `git add -A` sweeps it into
 slice 01. Durable record, if wanted, is the ticket system.
 
