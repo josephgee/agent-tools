@@ -76,8 +76,8 @@ commit; the user's work on a `navigator` slice is the host's to confirm committe
 ---
 
 > You are executing **one slice** of an existing plan. The plan file is `<plan-file>` and this is
-> slice **`<NN>`**. Read its Session, Feature, Acceptance Criteria, Design Hypothesis and Slices
-> sections for context — Session records the test runner command, so you need not rediscover it.
+> slice **`<NN>`**. Read its Session, Feature, Acceptance Criteria, Constraints, Design Hypothesis
+> and Slices sections for context — Constraints bind your slice too — Session records the test runner command, so you need not rediscover it.
 >
 > **Do not run your own planning, and do not run your own setup** — except for creating your
 > state file, if your flow keeps one; that step survives, wherever it sits in your setup.

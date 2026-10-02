@@ -69,6 +69,11 @@ a second planning session over a live feature.
 - **Exactly one** — offer to resume it.
 - **More than one** — list them (feature, last-updated) and ask which, or whether to start new.
 
+Whichever case, also look for specs: `find plans docs/plans .plans -maxdepth 1 -name 'spec-*.md'
+2>/dev/null`, quoted for the same reason. A spec whose `Status` reads `signed off` and that no plan's
+**Spec** field names is a feature ready to plan — offer it alongside the choices above. One still
+`drafting` is not ready: mention it, and don't adopt it.
+
 **If resuming**, read [references/resume.md](references/resume.md) and follow it before anything
 else: it reports where the feature stands, runs the checks a resume needs, and routes you back into
 the slice where it stopped.
@@ -81,13 +86,25 @@ pre-existing failure needs the user's confirmation before you plan around it. Fi
 *after* the alignment gate invalidates a plan the user has already approved. Then establish four
 things in order — each builds on the previous.
 
+**Planning from a signed-off spec** replaces steps 1–2 with adoption: its Problem and Out of Scope
+become the Feature; its Acceptance Criteria are copied verbatim with their IDs and examples — gaps
+included — each given a checkbox; its Constraints become the plan's Constraints; its Design
+Hypothesis is step 3's starting point, free to discard. Its slug is the feature slug, and the plan's
+**Spec** field names the file. Present what was adopted for confirmation — don't re-interview, and
+never edit the spec: from here on the criteria live in the plan. Its Deferred and Assumptions are
+not adopted; name any assumption the slicing leans on in the hypothesis.
+
 **1. Feature definition.** What is being built, why, for whom; what is explicitly out of scope.
-Sharpen a vague definition before moving on — it produces vague criteria otherwise.
+Sharpen a vague definition before moving on — it produces vague criteria otherwise. Note any
+constraint mandated from outside — compatibility, regulation, a contract — with who imposed it.
 
 **2. Acceptance criteria.** Behavioral, specific, testable, scoped — they describe what the feature
 does from the outside, and any valid implementation could satisfy them. Derive candidates if not
 provided; push back on criteria that describe internals or that no observation would settle.
-Present the final list for confirmation.
+**Each criterion names who observes it and where** — an actor at the system boundary, or a
+measurement taken from outside. One only a reader of the code or schema could observe ("add a `tz`
+column") is design: ask what breaks, for whom, without it — that answer is the criterion, and the
+mechanism goes to the hypothesis. Present the final list for confirmation.
 
 **3. Design hypothesis.** Feature-level only: the seams the slicing depends on — key modules, where
 responsibilities divide, what each slice will find already in place. A proposal, not a declaration;
@@ -548,3 +565,8 @@ what the feature taught about which approach suits which slice. Then run Cleanup
    strategy suited which slice, **leave the exclude in place** or move the file out of the repo:
    stripping the exclude from a file that stays hands the next feature's guest, on its first
    `git add -A`, a plan file to commit.
+5. **Settle the spec**, if the Session's **Spec** names one. First list its Deferred and
+   Assumptions entries: the plan never adopted them, so the spec is their only record — ask where
+   the user wants them carried. Then offer to delete the spec and its exclude line, or move it out
+   of the plans directory. It cannot stay where it is: once this plan is gone, Startup would offer
+   it as a feature ready to plan.

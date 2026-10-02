@@ -40,8 +40,8 @@ rot it exists to counter.
 
 **This section is the only part of a plan file that is ever replaced wholesale.** If a resumed
 plan's header is missing or has drifted from the fence below, replace the `## Rules in Force`
-section and leave every other section of that plan — Session, Feature, Acceptance Criteria, Design
-Hypothesis, Slices, Backlog — exactly as it stands. The Attempts history under Slices is the one
+section and leave every other section of that plan — Session, Feature, Acceptance Criteria,
+Constraints, Design Hypothesis, Slices, Backlog — exactly as it stands. The Attempts history under Slices is the one
 thing no rollback recovers.
 
 ```markdown
@@ -84,6 +84,7 @@ disables that detector.
 - **Feature slug**: <feature-slug>
 - **Base branch**: <branch slice 01 is reviewed against — filled in at Setup>
 - **Test runner**: `<command>` — filled in at Setup, once, so each executor need not rediscover it
+- **Spec**: <plans-dir>/spec-<feature-slug>.md — the spec this plan adopted, or `none`
 - **Started**: YYYY-MM-DD
 - **Last updated**: YYYY-MM-DD
 
@@ -96,7 +97,15 @@ disables that detector.
 Behavioral, outside-observable, the fixed target. Status is set only by a passing test.
 
 - [ ] AC1 — <criterion>
+  - e.g. <concrete example, carried from the spec when there is one>
 - [x] AC2 — <criterion> — satisfied in slice 01
+
+## Constraints
+
+Mandates from outside the team that slicing and every executor must respect, each with its source.
+`None.` when there are none.
+
+- <mandate> — <who imposed it, and where it's recorded>
 
 ## Design Hypothesis
 
@@ -151,7 +160,7 @@ Cross-slice notebook. Every item reaches a closed state before the feature is co
 Set **Last updated** at each of these:
 
 - **Before the alignment gate** — create the file: the Rules in Force header, the Session block's
-  feature slug and start date, the feature, criteria, hypothesis and slices.
+  feature slug, spec and start date, the feature, criteria, constraints, hypothesis and slices.
 - **Setup** — the test runner command and the base branch.
 - **Choosing a strategy** — the slice's `Strategy` field and its first `Attempts` line.
 - **Cutting the branch** — the slice's status to `in progress`, and any earlier slice's test the

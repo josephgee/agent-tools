@@ -30,6 +30,12 @@ Design notes for larger efforts live in `docs/designs/`.
   plan file that outlives every attempt, so a strategy that turns out wrong rolls back to the
   previous slice with the record of what was tried intact. Its `references/slicing.md` is the
   slicing doctrine `tdd` and `tdd-batch` both defer to.
+- **[feature-spec](skills/feature-spec/SKILL.md)** — The step before `slice-plan`: interviews the
+  user to settle a feature's or bug fix's correct behavior and scope, and writes a spec of
+  acceptance criteria with concrete examples, constraints, scope rulings and a non-binding design
+  hypothesis. Holds the line between criteria and design with an observer test — a criterion only
+  a reader of the code could observe is design. `slice-plan` adopts a signed-off spec in place of
+  its own definition steps; each works without the other.
 - **[backfill-tests](skills/backfill-tests/SKILL.md)** — Backfills a *trustworthy* regression-test
   net onto existing, poorly-tested code: expected values derived from intent rather than read off
   the implementation, every test proven falsifiable by perturbing the code it claims to pin, and
