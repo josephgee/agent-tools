@@ -206,8 +206,7 @@ the design review:
   directory.
 
 The in-flight tells — a guest re-planning, a guest drifting towards shipping — are visible only to
-a host running the guest in-session, which is the exception. Do not write a check that assumes
-them.
+a host running the guest in-session, which is the exception.
 
 **The disk checks are necessary but not sufficient, and the gap is structural.** A guest that
 writes its own rules to disk and re-reads them each cycle — as `tdd` and `tdd-batch` both do, by

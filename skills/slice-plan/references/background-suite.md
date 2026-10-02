@@ -104,7 +104,7 @@ other.
 This reopens a shipped slice — the one exception to *Feature complete*'s rule against amending
 one. The review is spent, but a slice that breaks the suite never met the bar it was approved
 against. The next slice's code has not started (you held it), so the reopen is cheap. Every step
-below can be re-entered after an interruption; SKILL.md's *Startup* sends a resume here whenever a
+below can be re-entered after an interruption; `resume.md` sends a resume here whenever a
 shipped slice's **Suite** reads `red:`. Set `top=$(git rev-parse --show-toplevel)` in the same
 call as each command below.
 
