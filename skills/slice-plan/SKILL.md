@@ -113,12 +113,15 @@ Then re-enter [Running a slice](#running-a-slice) by that slice's status:
       boundary's step 5;
     - one commit with any other subject → that is the guest's own work (a `direct` or `hand` slice
       is one commit by construction), or the host's own *Running a slice* step-2 update to an
-      earlier slice's test, which means the guest built nothing — the boundary from step 1 in the
-      first case, step 3 in the second. Counting commits alone would skip the design review and the
-      user's approval and ship the slice under the guest's commit message;
+      earlier slice's test, which means the guest built nothing. It is the update when the
+      Attempts line notes one and the commit's diff touches only that test. The guest's work →
+      the boundary from step 1; the update → *Running a slice* step 3, hand off. Counting commits
+      alone would skip the design review and the user's approval and ship the slice under the
+      guest's commit message;
     - more than one → the ordinary `tdd` handback, squash not yet run: the boundary from step 1;
     - **none at all** → the guest built nothing, or built it and never committed: re-enter at
-      step 3. Re-invoking a guest with commits present would rerun a slice already built.
+      *Running a slice* step 3. Re-invoking a guest with commits present would rerun a slice
+      already built.
 
     The count cannot tell a re-entry from a first pass, so when you re-enter the boundary this way,
     say at its step 3 that the slice may already have been presented and this review is a re-run
