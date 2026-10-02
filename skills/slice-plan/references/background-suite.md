@@ -92,12 +92,18 @@ restored with `git restore`, and the user should know a run changes tracked file
 is deleted. Do this before any of the next slice's code starts: an executor's `git add -A` would
 otherwise commit it. Until the run finishes, leave its output alone — it is still writing.
 
+## A change before the squash
+
+Covers both a red run and a change the user asks for at the boundary's step 3 — the user is still
+reviewing, so the slice is still open. Stop the run (the recipe's first two lines), make the change
+on this branch, rerun the affected tests, commit, start the run again, and tell the user what
+changed. Squash once they approve; the new run is waited on like any other.
+
 ## Red before the squash
 
 The boundary's step 4 reads the status before squashing, so this is the user still at step 3.
-Fix it on this branch, as step 2's review fixes are, commit, start the run again, and tell the user
-what changed, since no reviewer saw it. Squash once they approve; the new run is waited on like any
-other.
+Fix it per *A change before the squash* above, and tell the user what changed, since no reviewer
+saw it.
 
 ## Red after the squash
 

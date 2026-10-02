@@ -411,13 +411,20 @@ Re-read the Rules in Force header and the Slices section. Then:
    must survive being thickened"), and one that asks for behavior this slice does not have, such as
    a missing error path (*Kitchen sink*, same file). Never present the slice untriaged.
 3. **Start the full-suite run in the background**, per
-   [The background suite run](#the-background-suite-run), first committing any step-2 fix — the
-   code is final now, since anything the user asks for below becomes a backlog entry, not an edit.
+   [The background suite run](#the-background-suite-run), first committing any step-2 fix.
    Then present the slice for review and stop, telling the user the suite is running in this tree — with, when step 2
-   was skipped, the guest's dismissed findings and their reasons, and anything left open at its round cap; anything the user wants
-   revisited becomes a named backlog entry. This is where the user rejects the slicing, reorders
-   what's left, redirects the design, or calls the feature done early — far cheaper here than
-   three slices later.
+   was skipped, the guest's dismissed findings and their reasons, and anything left open at its round cap. This is where the user changes the slice's design, rejects the slicing, reorders
+   what's left, or calls the feature done early — far cheaper here than three slices later.
+
+   **A change the user asks for here is an edit to this slice, on its branch — make it.** Changing
+   the design is what this review is for; do not answer it with "that's another slice." Stop the
+   run, make the change, rerun the tests it touches, commit, and restart the run, per *A change
+   before the squash* in [references/background-suite.md](references/background-suite.md). If the
+   change is structural — a signature, a moved responsibility, a new type or module — send the new
+   diff through one design-review round as in step 2 before re-presenting; a local change needs
+   none. It is a re-slice instead only when it pulls in work another slice in the plan owns — then
+   say which slice and ask. Widening the behavior sentence alone is not that test. Something the
+   user wants revisited *later* is still a named backlog entry.
 4. On approval, squash the slice to one commit, dropping the plan file from it. **First read the
    run's status file** — red here is *Red before the squash* in
    [references/background-suite.md](references/background-suite.md); absent is fine, squash

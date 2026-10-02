@@ -53,7 +53,8 @@ Copied verbatim at creation. Re-read at the start of every slice, at every slice
 before every abandon. Never edited or summarized.
 
 - One slice = one branch off the previous slice's branch (base branch for slice 01); never two.
-- A behavior sentence narrows or splits freely; widening one is a re-slice, not an edit.
+- A behavior sentence narrows or splits freely; widening it into another slice's work is a
+  re-slice. A change the user asks for at the boundary is an edit on this slice's branch.
 - Choose the strategy per slice, before its branch is cut; record it before any code. State the
   executor's obligations at every handoff, in the form its shape takes.
 - No code on a slice — the earlier-slice test update (yours alone: this branch, fixture first,
@@ -183,7 +184,7 @@ obligation 3.
 | Field | Rule |
 |---|---|
 | Heading | `### NN — <slice-slug> — <status>`. Status is `planned`, `in progress`, or `shipped`. A slice you decide not to build is deleted from the plan, not marked — see SKILL.md, *Running a slice* step 2. |
-| Behavior | One sentence, no "and". Narrowing or splitting it is ordinary re-slicing; widening it is a new slice. |
+| Behavior | One sentence, no "and". Narrowing or splitting it is ordinary re-slicing; widening it into another slice's work is a re-slice. |
 | Advances | The acceptance criteria this slice moves. `none` for a slice that moves no criterion — which must then carry a `Kind`. |
 | Kind | `behavioral` by default, and then omitted entirely. `refactor` or `scaffolding` is written out with a one-sentence reason on the same line, and is the only thing that excuses a slice from shipping a new passing test. A slice whose `Advances` is `none` must carry one. A test-first strategy cannot run such a slice — see SKILL.md, *Running a slice* step 1. |
 | Strategy | What is running the slice *now*. A skill name (`tdd`, `tdd-batch`, `navigator`), `direct` for the agent building it itself, or `hand` for the user writing it themselves. Chosen before the branch is cut. |
