@@ -172,11 +172,18 @@ slice's shape is the evidence.
 | Strategy | Shape | Suits a slice that |
 |---|---|---|
 | `tdd` | skill | is over unproven ground, or where the design *is* the question — one test at a time surfaces it earliest. Never a `refactor`/`scaffolding` slice |
-| `tdd-batch` | skill | has a clear batch of behaviors and a known shape, where per-test pacing is overhead. Never a `refactor`/`scaffolding` slice |
-| `atdd` | skill | needs research and a written design the user signs off on before any code, with human-runnable proof of the behavior — where the design is unsettled *and* worth a review gate, not just a test loop. Never a `refactor`/`scaffolding` slice. Runs in-session |
+| `atdd` | skill | delivers behavior a user can observe — the default for such a slice. Its proof is the external, user-facing behavior, run the way a user would meet it, so it is validated where the value actually lands. Never a `refactor`/`scaffolding` slice. Runs in-session |
+| `tdd-batch` | skill | is mostly edge cases and internal rules, where setting up external proof of each would cost more than that proof is worth. Never a `refactor`/`scaffolding` slice |
 | `direct` | you, directly | is one obvious edit, or scaffolding whose design carries no risk |
 | `hand` | the user writes it | the user wants to write themselves — for the learning, or because they hold context you don't |
 | `navigator` | skill; the user still writes | the user writes it and wants an agent coaching, questioning direction and catching skipped steps rather than sitting silent |
+
+**Rank `atdd` above `tdd-batch` for a user-facing slice even when its design is settled.** `atdd`
+buys two things a settled design doesn't remove: validation through the behavior a user sees, and a
+design pass at the moment it pays most — a meaningful functionality change is when simplifications
+and new abstractions surface, however settled the design looked beforehand. "The unknowns are
+settled" is not a reason to recommend `tdd-batch`; "external proof of these cases costs more than
+it proves" is.
 
 **A test-first guest is not a legal strategy for a slice whose `Kind` is `refactor` or
 `scaffolding`.** Its loop opens with a failing test for new behavior and such a slice has none to
