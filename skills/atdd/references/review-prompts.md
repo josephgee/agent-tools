@@ -9,21 +9,23 @@ drafter because the session that produced the design is the least likely to see 
 **What the subagent receives**:
 
 - The draft design doc from RESEARCH & DESIGN step 1.
+- ACCEPT's acceptance tests — the requirements the design must deliver.
 - Pointers into the codebase paths the design touches or extends — handed off from that same
   step's research, not rediscovered from scratch.
 - Access to `design-principles`' vocabulary (SOLID, component boundaries, Simple Design
   priorities, the design-rot symptom catalog).
 
-**What it does not receive**: ACCEPT's acceptance tests, or any pressure toward a particular
-answer — its job is to judge the design on its merits and against this codebase's existing
-patterns, not to bless it.
+**What it does not receive**: any pressure toward a particular answer — its job is to judge the
+design against the acceptance tests, on its merits and against this codebase's existing patterns,
+not to bless it.
 
 **Prompt shape**:
 
-> Review this design draft before it goes to the user for sign-off. You have the draft and
-> pointers into the parts of the codebase it touches or extends — read what you need there to
-> judge fit. Assess it against `design-principles`' vocabulary: does it respect existing
-> boundaries and conventions in this codebase, does it hold up against SOLID and the
+> Review this design draft before it goes to the user for sign-off. You have the draft, the
+> acceptance tests it must satisfy, and pointers into the parts of the codebase it touches or
+> extends — read what you need there to judge fit. First: does the design deliver every
+> acceptance test? Then assess it against `design-principles`' vocabulary: does it respect
+> existing boundaries and conventions in this codebase, does it hold up against SOLID and the
 > component-cohesion/coupling principles, does Simple Design's priority order (tests pass >
 > intention clear > no duplication > fewest elements) suggest a smaller design. Report findings
 > ranked by severity, each with what's wrong and why it matters — including "no findings, this

@@ -1,7 +1,7 @@
 ---
 name: atdd
 description: "Executes one slice-plan slice acceptance-test-first, with a human design gate before any code. Use when a slice delivers behavior a user can observe and should be proven through that external behavior — the default for user-facing slices, settled design or not, since a meaningful functionality change is when a design should be re-examined — or when asked for ATDD or acceptance-test-driven development. Flow: acceptance tests (human-executable proof first, agent-runnable where that doesn't weaken it), research and a reviewed design doc, user sign-off, unit tests then implementation, a blind code review iterated to clean, lint, then a final gate on acceptance tests, unit tests, lint and review. Runs in-session, hosted by slice-plan (with no plan file, use slice-plan first). Prefer tdd-batch for slices that are mostly edge cases, where external proof of each costs more to set up than it validates."
-compatibility: "Requires slice-plan as host (it executes one slice and does no feature-level planning), plus design-principles and design-review, whose vocabulary RED's tests and both reviews use. Requires a way to delegate to an isolated subagent: research, the design review and the code review each run outside the session that wrote what they review, with no in-session fallback. Requires git."
+compatibility: "Requires slice-plan as host (it executes one slice and does no feature-level planning), plus design-principles and design-review, whose vocabulary RED's tests and both reviews use. Requires a way to delegate to an isolated subagent: research, the design review and the code review each run outside the session that wrote what they review, and RED and GREEN run delegated to keep their churn out, with no in-session fallback. Requires git."
 metadata:
   soft-deps: slice-plan design-principles design-review
 ---
@@ -45,7 +45,7 @@ What that means here:
   needs splitting; an earlier slice's test needs changing; or the user rejects the design at the
   gate and no revision converges. If RED already committed failing tests, get back to green first:
   delete RED's still-failing tests, keep the passing ones, and commit; the state file stays as the
-  record. The host re-slices or abandons from there.
+  record. (Inside RED and GREEN the delegate does this before it returns `blocked`.) The host re-slices or abandons from there.
 - **Keep decision context in the state file's `Learned` line**, which the host folds into the
   squash commit. Keep the design doc in the state file too, never a second file: the host's disk
   checks expect nothing new in the plans directory but your one state file.
@@ -66,8 +66,8 @@ continuing.
 
 **Write** the state file at: creation; end of ACCEPT (the acceptance-test table); end of
 RESEARCH & DESIGN (design summary, review findings, gate outcome); end of RED (per-test
-verification and mutation check results); during GREEN, pressure-log appends only — milestone
-commits carry the position; end of REVIEW (findings triaged, lint result); SHIP (hand-back line).
+verification and mutation check results); during GREEN, appends only, committed by GREEN's exit —
+milestone commits carry the position; end of REVIEW (findings triaged, lint result); SHIP (hand-back line).
 Keep the diff quiet: append entries and tick checkboxes, never reflow unchanged prose.
 
 ---
@@ -137,7 +137,7 @@ Commit: `git add <state-file> && git commit -m "atdd: acceptance tests for <slic
 
 Research and the design doc iterate on each other — a design question sends you back to the
 codebase or a web search, a research finding reshapes the design — so step 1 delegates them as one
-unit. Step 5 needs the user live, so it stays in the host session.
+unit. Step 4 needs the user live, so it stays in the host session.
 
 1. **Research and draft, delegated as one unit.** Hand a subagent the slice's behavior sentence,
    its criteria, and ACCEPT's acceptance tests, and let it run the research-design loop to a
@@ -152,9 +152,10 @@ unit. Step 5 needs the user live, so it stays in the host session.
 2. **Delegate a design review of the draft to a second, fresh subagent** — not the one that
    drafted it, which is the wrong session to grade its own work. Prompt and bundle in
    [references/review-prompts.md](references/review-prompts.md), §"Design review" — read that
-   section before spawning. It gets the draft doc, `design-principles`' vocabulary, and step 1's
-   codebase pointers, and checks the design against both: does it fit established patterns here,
-   does it hold up against SOLID / component-boundary / simple-design doctrine.
+   section before spawning. It gets the draft doc, ACCEPT's acceptance tests, `design-principles`'
+   vocabulary, and step 1's codebase pointers, and checks the design against all of them: does it
+   deliver every acceptance test, does it fit established patterns here, does it hold up against
+   SOLID / component-boundary / simple-design doctrine.
 3. **Read the draft and the review findings into the host session, then triage** — fix, or
    dismiss with a stated reason, recorded in the state file. These are the only pieces of the
    research-and-design work that enter the orchestrator's context. If a finding demands more
@@ -179,81 +180,34 @@ Commit: `git add <state-file> && git commit -m "atdd: design for <slice-slug>"`.
 
 ---
 
-## RED — Unit Tests, Mutation-Checking Only the Ones That Pass Immediately
+## RED & GREEN — Delegated as One Unit
 
-**Re-read the Rules in Force header first.**
+RED and GREEN are where the context goes: test runs, mutation checks, implementation attempts,
+discards. None of it needs the user — amendments, out-of-scope gaps and the pressure log all land in
+the state file, and position lives in commits — so the host hands both phases to one subagent and
+keeps only what comes back. One subagent, not one per phase: GREEN's amendment protocol edits RED's
+tests, and the session that wrote them knows what they were meant to pin; a resumed delegate gets
+that from RED's per-test table instead. The phases themselves are in
+[references/red-green.md](references/red-green.md), written for the subagent.
 
-1. **Write unit tests** against the agreed design, one per behavior the implementation needs,
-   following `design-principles`' test-quality doctrine (FIRST, behavioral-not-wiring — assert
-   observable outcomes, never that one object called another), plus any acceptance proofs the user
-   chose to persist as suite tests at the gate. Everything below treats the two alike.
-2. **Run each test against current code.** Two outcomes, and they're handled differently:
-   - **Fails on the missing behavior** (not an import or fixture error) — this is the normal
-     case. Record it and move on; a test proven to fail needs no further proof it can fail.
-   - **Passes immediately** — the test never went red, so nothing has proven it actually
-     exercises the behavior it claims to. This is the *only* case the mutation check below is
-     for. It is not owed to every test, and it is not owed again later — a test that failed here
-     and is made to pass in GREEN already has its proof, from having been seen red.
-3. **Mutation check — immediately-passing tests only.** Temporarily edit the code the test
-   targets so the behavior it claims to check is broken, run the test, confirm it now fails, then
-   revert the edit exactly so the tree returns to its prior state. Record the result per test; one
-   that doesn't fail under the mutation is not exercising what it claims — fix it or delete it
-   before moving on. This is a manual edit/run/revert; no tool dependency.
-4. Set the state file's phase to GREEN, then commit with
-   `git add -A && git commit -m "atdd: red for <slice-slug>"`. That is the last state write until
-   REVIEW, apart from pressure-log appends.
-
----
-
-## GREEN — Implement
-
-"RED's tests" below means every test written in RED, persisted acceptance proofs included.
-
-- **Implement holistically.** You hold the whole set of RED's tests; design the implementation as
-  one piece. Write nothing the tests do not demand.
-- **This skill never runs the full suite.** It's expensive, and the host runs it once, in the
-  background, after you hand back — while the user reviews the slice. What you run instead:
-  - **Entry** (before implementation starts): run only RED's tests. The failing set must be
-    exactly RED's still-red tests; any other failure is drift — most likely a mutation-check
-    revert that didn't land clean — and is fixed before you start.
-  - **Exit**: GREEN ends when RED's tests and the **targeted tests** are green — the existing
-    tests nearest the code you changed, picked with the runner's own file or directory filter.
-    Run them once RED's tests all pass. A regression they turn up (something outside RED's tests
-    broke) is fixed like any other red test; that run is not a flat run and does not feed the
-    tripwire, which only counts RED's own tests.
-- **Run only RED's tests at every coherent stopping point during implementation** — this is the
-  one check the two bullets below key off of, and it's what stays cheap. Do not run it only when
-  you expect a milestone: a run that isn't expected to show progress is exactly the one that
-  catches a flat run, and it only gets caught if you look. Every such run lands in one of the two
-  bullets below, never neither.
-- **Milestones.** If the run shows the set of passing RED tests grew, commit:
-  `atdd: green <tests or count> for <slice-slug>`. Re-read the state file's Rules in Force header
-  at every milestone commit.
-- **Convergence tripwire.** If the run shows nothing new passing, that's a flat run — log it in
-  the pressure log the moment it happens, don't wait for a milestone to notice in hindsight. A
-  milestone resets the count; the run after an amend or a refactor commit is exempt. At the third
-  flat run since the last milestone, discard the experiment
-  ([references/discard.md](references/discard.md)) and drop to a ladder — one failing test at a
-  time — until the tests that entangled are passing, then return to holistic. Re-read the header
-  as you drop.
-- **Pressure log at every milestone**: append *ugliest thing you wrote since the last milestone?*
-  and *most annoying test to satisfy so far?* — "nothing" is not a legal answer. Each gets a
-  disposition: **steer now** (refactor immediately, never while flat lines are pending) or
-  **hold** (REVIEW forces a decision).
-- **Two lists take appends in GREEN** besides the pressure log, since a gap or a mis-specified
-  test can surface at any moment: `Out of scope` and RED's `Amendments`. Never file either in the
-  pressure log, where REVIEW step 0 would dismiss it.
-- **Amendment protocol.** If a RED test turns out mis-specified, or a genuinely missing behavior
-  within the slice's scope surfaces: halt, state the defect in one line, amend or add the test,
-  re-verify it fails for the right reason, commit it alone — `atdd: amend — <reason>` (stage the
-  test change by path; if implementation work is uncommitted, stash it first and pop it after).
-  Never weaken a test inside an implementation commit. A gap outside the slice's scope is not this
-  slice's to fix — add it to the state file's `Out of scope` list, which the host turns into plan
-  backlog entries; don't act on it here.
-- **Discarding.** Start every refactor step from a clean tree and commit each step that leaves
-  every previously passing test passing. A refactor step that breaks a test that passed before it,
-  and survives one repair attempt, is discarded per
-  [references/discard.md](references/discard.md) — read it before the first refactor.
+1. **Delegate to a fresh subagent** after the design commit, and whenever a resume lands in RED or
+   GREEN (Startup, or a paused slice invoked again). Give it only: the absolute repo path, stated
+   as its working directory; the state file's absolute path; and the absolute path of
+   `references/red-green.md`, as its instructions. Do not hand it this file. It returns one line —
+   `exit`, `departure` or `blocked`, each `at <sha>` — with the tree clean and committed.
+2. **Back in the host, read the state file, never the diff.** Re-read the Rules in Force header,
+   and confirm `git status --short` is clean and `HEAD` is the returned sha. If either check fails,
+   send a fresh subagent once more with the same bundle (it resumes from the state file); a second
+   failure stops the slice — tell the user what you found, and do not hand back over a dirty tree.
+3. **Act on the return.**
+   - **`exit`** — go on to REVIEW. The code itself is read only by REVIEW's subagent.
+   - **`departure`** — the implementation needs something the agreed design doesn't cover. Take
+     it to the user as a re-run of the human gate (RESEARCH & DESIGN step 4), scoped to the
+     departure. Agreed: record it in the state file's Design section, commit, and delegate again.
+     Rejected: delegate again with the user's constraint added to the Design section; if no
+     implementation fits it, the delegate returns `blocked`.
+   - **`blocked`** — the delegate has already got back to green. Write the Attempts line
+     `atdd — blocked: <what stopped it>` and hand back per *Hosted by slice-plan*.
 
 ---
 

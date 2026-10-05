@@ -25,27 +25,24 @@ colliding.
 ## Rules in Force
 
 Copied verbatim at creation, never edited. Re-read before the human gate, at the start of RED, at
-every GREEN milestone and ladder drop, before each REVIEW round, and at the start of SHIP.
+every GREEN milestone and ladder drop, on the RED/GREEN delegate's return, before each REVIEW round,
+and at the start of SHIP.
 
-- Acceptance tests come first, human proof first, never weakened to pass. Agent proof is additive
-  and never a narrower substitute. A row with no agent proof is confirmed by the user walking the
-  human proof at SHIP. At least one suite test must exercise the slice's behavior sentence.
+- Acceptance tests first, human proof first, never weakened; agent proof is additive, never a
+  narrower substitute. Rows without one are confirmed by the user at SHIP. At least one suite test
+  exercises the slice's behavior sentence.
 - A fresh subagent reviews the design draft, never its author. No RED until the user agrees at the
-  human gate; silence is not agreement.
-- Mutation check (break the code under test, confirm it fails, revert exactly) only for a RED test
-  that passes immediately. Never touch a test in GREEN outside the amendment protocol: halt,
-  state the defect, amend, re-verify, commit it alone.
-- Never the full suite — the host runs it after hand-back. GREEN runs RED's tests; its exit and
-  every later fix add the targeted tests nearest the change. A block with a pause paragraph:
-  after the design commit, set phase RED, commit, hand back `paused: design agreed`. Milestone commit = RED's passing subset only grew, subset named. Pressure log at
-  every milestone: "nothing" is not an answer. Three flat runs → discard per
-  references/discard.md.
-- REVIEW is delegated and blind (diff and unit tests only). A `structural-if-fixed` fix triggers
-  a fresh round, max three; record every dismissal with a reason, and anything open at the cap.
-  Backlog, never fix, a finding that tightens an earlier test or asks for behavior this slice lacks.
-  Code changed after the last review is listed unreviewed.
-- Hosted: own state file and Attempts line only, no new branch, no second file, commit as you go,
-  no squash or PR — hand back.
+  gate; silence is not agreement. Paused block: after the design commit, set phase RED, commit,
+  hand back `paused: design agreed`.
+- RED and GREEN run as one delegated unit, which returns `exit`, `departure` or `blocked` with the
+  tree clean and committed. Its delegator reads that line and this file, never the diff.
+- Mutation-check only a RED test that passes immediately. Touch a test in GREEN only by the
+  amendment protocol, committed alone. Never the full suite. Milestone = RED's passing set grew;
+  pressure log then, "nothing" is not an answer. Three flat runs → discard per discard.md.
+- REVIEW is delegated and blind; a `structural-if-fixed` fix earns a fresh round, max three. Every
+  dismissal has a reason; backlog, never fix, a finding that tightens an earlier test or asks for
+  behavior this slice lacks. Code changed after the last review is listed unreviewed.
+- Hosted: own state file and Attempts line only, commit as you go, no squash or PR — hand back.
 - SHIP gates on all four together: acceptance tests, unit tests, lint, review.
 
 ## Session
@@ -127,7 +124,7 @@ before it squashes.>
 ## Current Position
 - **Phase**: <ACCEPT | RESEARCH-DESIGN | RED | GREEN | REVIEW | SHIP>
 - **Notes**: <anything needed to resume — in GREEN this stays empty by design; the last
-  milestone commit is the position>
+  milestone commit is the position. A `departure` is recorded here as one line.>
 ```
 
 ---
@@ -141,8 +138,9 @@ before it squashes.>
   created at Setup: add it, from the template, when REVIEW starts. Its mere presence claims a
   review was done.
 - **State-file writes ride the next commit** — ACCEPT's table, the design write, RED's
-  verification table, REVIEW's findings, SHIP's gate result. GREEN is dark apart from
-  pressure-log appends: position during GREEN lives in milestone commit messages.
+  verification table, REVIEW's findings, SHIP's gate result. GREEN is dark apart from appends
+  (pressure log, `Amendments`, `Out of scope`), committed by GREEN's exit at the latest: position
+  during GREEN lives in milestone commit messages.
 - **Acceptance Tests is written once at ACCEPT and only its Status column changes after**, at
   SHIP. The Behavior/Human proof/Agent proof columns don't change mid-slice — a change there means
   the slice's scope moved, which goes back through the host, not a silent table edit.
