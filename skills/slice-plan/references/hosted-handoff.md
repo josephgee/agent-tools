@@ -1,6 +1,6 @@
 # Handing a slice to a skill
 
-Skills like `tdd` and `tdd-batch` plan a whole feature, manage their own branches, and ship at
+Skills like `tdd` plan a whole feature, manage their own branches, and ship at
 their own boundaries. Hosted here they run **one slice** and the plan keeps the rest.
 
 ## The override block
@@ -23,10 +23,10 @@ substitute the strategy name the plan's Attempts line needs. It is written *to* 
 
 ### Adapting it for a guest that reviews
 
-A guest whose own flow reviews its diff before hand-back, iterating until clean (`atdd` today),
+A guest whose own flow reviews its diff before hand-back, iterating until clean (`slice-tdd` today),
 gets the block's ban on a guest-side review reversed. Give the block verbatim with **paragraph 5
 replaced, whole, by this** (nothing else in the block changes; a guest's own per-slice gates, such
-as `atdd`'s human design gate, are not the alignment gate the block skips and survive):
+as `slice-tdd`'s human design gate in `atdd` mode, are not the alignment gate the block skips and survive):
 
 > **5. Hand back before the squash.** Do not squash, do not present a PR, and do not write a PR
 > description. Do run your own review as your rules describe, before you hand back, and record it
@@ -39,18 +39,26 @@ as `atdd`'s human design gate, are not the alignment gate the block skips and su
 > context you would otherwise send to a PR description goes in your state file's `Learned` line, as
 > your own rules already say — the host reads it from there and folds it into the squash commit.
 
-### The pause paragraph, for `atdd`
+### The mode paragraph, for `slice-tdd`
 
-While the previous slice's suite run is still going, `atdd` is handed off with this paragraph
-added after paragraph 5 (SKILL.md, *Hand off*); it is the only guest handed off before that run is
-green. Leave it out once the run reads `0`, and when invoking a paused `atdd` again.
+`slice-tdd` serves two strategies, `atdd` and `tdd-batch`. Add this paragraph after paragraph 5,
+always, with `<strategy>` filled in — it is also the `<your name>` the block's Attempts lines use:
+
+> **Mode.** You run in **`<strategy>`** mode: `atdd` is acceptance on, `tdd-batch` is acceptance
+> off. Write `<strategy>` as the name on every Attempts line.
+
+### The pause paragraph, for `slice-tdd`
+
+While the previous slice's suite run is still going, `slice-tdd` (either mode) is handed off with
+this paragraph added after the mode paragraph (SKILL.md, *Hand off*); it is the only guest handed
+off before that run is green. Leave it out once the run reads `0`, and when invoking a paused
+`slice-tdd` again.
 
 > **Pause before code.** Until you are invoked again, change no file outside your state file and
 > run no tests: the host's full-suite run is using this tree. After your design commit, before
-> writing any test, set your phase to
-> RED in your state file, commit it, set your slice's `Attempts` line to
-> `atdd — paused: design agreed`, and hand back. The host invokes you again when you may go on;
-> your state file resumes you at RED.
+> any pinning or test, set your slice's `Attempts` line to `<strategy> — paused: design done` and
+> hand back. The host invokes you again when you may go on; your state file's recorded phase
+> resumes you at BUILD.
 
 ### Adapting it for `navigator`
 
@@ -158,8 +166,8 @@ that stacks on top of this skill's, once per slice, and an abandon is worse — 
 whole body stays in context while its replacement loads on top of it. Delegated, a slice comes back
 as a result instead of as context.
 
-Run a guest in-session when delegation isn't available, when it is `atdd` (its human design gate
-needs the user live, and it spawns subagents of its own), when it is `navigator` and the user needs
+Run a guest in-session when delegation isn't available, when it is `slice-tdd` (its `atdd`
+design gate needs the user live, and in both modes it spawns subagents of its own), when it is `navigator` and the user needs
 to watch it work, **or when you expect to want the abandon**. A delegated guest is invisible until
 it hands back: you cannot watch it throw its own work away and you cannot stop it mid-slice, so the
 abandon is only reachable for an in-session guest. Delegation buys context at the cost of the
@@ -170,7 +178,7 @@ result* below.
 ## The guest's state file
 
 The plan itself needs no handling at a transition — it is excluded and untracked throughout. A
-skill-shaped guest's state file does: `tdd` and `tdd-batch` keep one in the plans directory and
+skill-shaped guest's state file does: `tdd` and `slice-tdd` keep one in the plans directory and
 **commit it with every cycle**, so it is tracked, and it would ship to the reviewer in the squash
 and be found by the next slice's guest if left behind. Do not add it to the exclude — the guest
 needs its own file tracked for its own rollbacks; the host just removes it at the boundary.
@@ -209,7 +217,7 @@ The in-flight tells — a guest re-planning, a guest drifting towards shipping �
 a host running the guest in-session, which is the exception.
 
 **The disk checks are necessary but not sufficient, and the gap is structural.** A guest that
-writes its own rules to disk and re-reads them each cycle — as `tdd` and `tdd-batch` both do, by
+writes its own rules to disk and re-reads them each cycle — as `tdd` and `slice-tdd` both do, by
 design, to survive compaction — is re-teaching itself the frame this block just removed, from a
 more durable position than this block occupies. Over a slice of more than a few cycles the disk
 wins. Keep hosted slices short, which the sizing test already requires, and treat drift found at

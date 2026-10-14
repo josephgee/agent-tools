@@ -17,19 +17,19 @@ Design notes for larger efforts live in `docs/designs/`.
 - **[tdd](skills/tdd/SKILL.md)** — Guides strict Test-Driven Development (TDD) as a learning
   loop, via THINK-RED-GREEN-REFACTOR cycles with a persistent state file for tracking design
   evolution and backlog.
-- **[tdd-batch](skills/tdd-batch/SKILL.md)** — The same PR-stack delivery as `tdd`, with the
-  inner loop rebuilt for how agents work rather than how humans do: per PR, plan a batch of
-  behaviors, write all their tests against a raising skeleton, have a fresh subagent review the
-  test set before any implementation exists, implement holistically with milestone commits and a
-  pressure log, then run a whole-diff refactor and delegated design review. A competing
-  alternative to `tdd`, not a replacement — install one or the other and compare.
-- **[slice-plan](skills/slice-plan/SKILL.md)** — Owns the other half of what `tdd` and
-  `tdd-batch` do: cutting a feature into vertically sliced, independently reviewable increments,
+- **[slice-tdd](skills/slice-tdd/SKILL.md)** — Executes one `slice-plan` slice test-first, with
+  every heavy step delegated so a long slice list fits one host session. Two modes, chosen per
+  slice by the host: `atdd` proves the slice through acceptance tests a human can run and holds a
+  human design gate before any code; `tdd-batch` targets a behavior list with no gate, for slices
+  that are mostly edge cases. Both: a reviewed design, pinning of untested code before changing it,
+  a batch of failing tests then holistic implementation, a refactor-and-coverage pass, a blind code
+  review, and lint.
+- **[slice-plan](skills/slice-plan/SKILL.md)** — Owns the other half of what `tdd` does: cutting a feature into vertically sliced, independently reviewable increments,
   while leaving *how* each slice gets built to be chosen slice by slice — a test-first loop for
   one, an agent one-shotting the next, the user writing another by hand. Keeps a strategy-agnostic
   plan file that outlives every attempt, so a strategy that turns out wrong rolls back to the
   previous slice with the record of what was tried intact. Its `references/slicing.md` is the
-  slicing doctrine `tdd` and `tdd-batch` both defer to.
+  slicing doctrine `tdd` defers to.
 - **[feature-spec](skills/feature-spec/SKILL.md)** — The step before `slice-plan`: interviews the
   user to settle a feature's or bug fix's correct behavior and scope, and writes a spec of
   acceptance criteria with concrete examples, constraints, scope rulings and a non-binding design

@@ -1,4 +1,4 @@
-# ATDD Review Prompts
+# Slice TDD Review Prompts
 
 ## Design review
 
@@ -8,31 +8,37 @@ drafter because the session that produced the design is the least likely to see 
 
 **What the subagent receives**:
 
-- The draft design doc from RESEARCH & DESIGN step 1.
-- ACCEPT's acceptance tests — the requirements the design must deliver.
-- Pointers into the codebase paths the design touches or extends — handed off from that same
+- The slice's behavior sentence — what every row of the target must trace to.
+- The plan's Constraints — a design that breaks one is a finding however well it fits otherwise.
+- The draft from DESIGN step 1: interface sketch, design doc, and the files it will modify.
+- The target the design must deliver — ACCEPT's acceptance tests in `atdd` mode, the draft's
+  behavior list in `tdd-batch` mode.
+- Pointers into the codebase paths the design touches, extends or read — handed off from that same
   step's research, not rediscovered from scratch.
 - Access to `design-principles`' vocabulary (SOLID, component boundaries, Simple Design
   priorities, the design-rot symptom catalog).
 
 **What it does not receive**: any pressure toward a particular answer — its job is to judge the
-design against the acceptance tests, on its merits and against this codebase's existing patterns,
-not to bless it.
+design against its target, on its merits and against this codebase's existing patterns, not to
+bless it. It reads *beyond* the files the design modifies: a review held to the changed files
+misses duplication of something the codebase already has, and patterns the neighbouring code
+already set.
 
 **Prompt shape**:
 
-> Review this design draft before it goes to the user for sign-off. You have the draft, the
-> acceptance tests it must satisfy, and pointers into the parts of the codebase it touches or
-> extends — read what you need there to judge fit. First: does the design deliver every
-> acceptance test? Then assess it against `design-principles`' vocabulary: does it respect
+> Review this design draft before any code is written against it. You have the draft, the target
+> it must satisfy (acceptance tests or a behavior list), and pointers into the parts of the
+> codebase it touches or extends — read what you need there to judge fit, including the code
+> *around* the files it modifies. First: does the design deliver every row of the target, and in
+> a behavior list, does every row trace to the slice's behavior sentence? Does it break any of the
+> plan's Constraints? Then: does the codebase
+> already have something this duplicates — a helper, a type, a pattern for this kind of problem —
+> that the design should reuse or follow instead? Then assess it against `design-principles`' vocabulary: does it respect
 > existing boundaries and conventions in this codebase, does it hold up against SOLID and the
 > component-cohesion/coupling principles, does Simple Design's priority order (tests pass >
 > intention clear > no duplication > fewest elements) suggest a smaller design. Report findings
 > ranked by severity, each with what's wrong and why it matters — including "no findings, this
 > fits" if that's the honest read.
-
-**Triage** (back in the host session): fix and revise the draft, or dismiss with a stated reason.
-Record both in the state file's Design section, under **Design review**.
 
 ## REVIEW's blind review
 
@@ -43,16 +49,17 @@ produced it. It checks whether the diff holds up on its own, to someone who neve
 
 - The diff for this slice:
   `git -C <absolute-repo-path> diff <previous-slice-branch>...HEAD -- . ':(exclude)<plans-dir>/'`,
-  where `<previous-slice-branch>` is the base branch for slice 01. Resolve
+  where `<previous-slice-branch>` is the previous slice's branch — or, for slice 01, the state
+  file's Session `Base branch`. Resolve
   `git rev-parse --show-toplevel` yourself and paste the absolute path in; state it as the
   subagent's working directory, since a `$(...)` left unexpanded is evaluated in the subagent's own
   directory, possibly a different repository. The diff includes any earlier-slice test the host
   updated on this branch — that change gets no other review.
-- The unit tests from RED, as part of that diff.
+- The unit tests from RED, and any pins from MAKE ROOM, as part of that diff.
 - Access to `design-principles` and `design-review`'s vocabulary for naming what it finds.
 
-**What it must not receive**: the design doc, the RESEARCH & DESIGN section of the state file,
-ACCEPT's table of acceptance proofs (a persisted one appears as a suite test in the diff and is
+**What it must not receive**: the design doc, the Design section of the state file (behavior
+list included), ACCEPT's table of acceptance proofs (a persisted one appears as a suite test in the diff and is
 fine), or any framing of what this slice is "supposed to" do beyond what the
 diff and tests say for themselves.
 
@@ -67,7 +74,5 @@ diff and tests say for themselves.
 > or change contracts) or `local`. Do not speculate about intent you weren't given — review
 > what's in front of you.
 
-**Triage and re-entry** (back in the host session): follow SKILL.md's REVIEW steps 2 and 3, which
-own the dispositions, the two always-backlog findings and the three-round cap. Each re-review
-round is a *new* fresh subagent with the same bundle over the new diff; never reuse the previous
-reviewer.
+Each re-review round is a *new* fresh subagent with the same bundle over the new diff; never
+reuse the previous reviewer.

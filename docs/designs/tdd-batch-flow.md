@@ -1,5 +1,10 @@
 # tdd batch flow: TDD's invariants without its pacing
 
+> **Superseded (2026-10-14).** `tdd-batch` no longer exists as a skill. Its per-slice flow merged
+> with `atdd` into `skills/slice-tdd/`, where `tdd-batch` is the acceptance-off mode and runs only
+> as a `slice-plan` guest; the PR stack, one-shot mode and feature-level reviews went to
+> `slice-plan`. Kept as the record of why the batch flow looks as it does.
+
 **What was decided.** A **new skill, `tdd-batch`, competing with `tdd` — the existing skill
 is not changed.** `tdd` remains the strict per-test flow; `tdd-batch` reworks the inner loop
 from per-test RED–GREEN–REFACTOR cycles to a per-PR batch flow: a make-room phase on unpinned existing code, RED as a whole-PR test batch

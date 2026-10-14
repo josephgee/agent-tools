@@ -66,7 +66,7 @@ the run alive past this session. After every start, set **Suite** to `running: <
 
 Read it at every plan write, and **before any of the next slice's code can start**: before
 *Running a slice* step 2's earlier-test update, before handing off a slice that waits for it, and
-when a paused `atdd` hands back. Slice 01 has no previous run — the planning session's baseline
+when a paused `slice-tdd` hands back. Slice 01 has no previous run — the planning session's baseline
 stands in for it — so nothing waits there.
 
 While the status is absent, check the run is alive and is this run:

@@ -69,7 +69,7 @@ within it. Design notes for larger efforts live in `docs/designs/`.
   load in every unrelated session, and that file is the one that can't afford noise), and telling
   the agent to re-invoke the skill (reloads the body, loses the position in the workflow — the
   artifact does both). Keep the header short; a long one re-read every cycle is more of the rot it
-  exists to counter. `tdd`, `tdd-batch`, and `navigator` all do this.
+  exists to counter. `tdd`, `slice-tdd`, and `navigator` all do this.
 - Don't run `skill-review` on your own initiative. It's a deliberate, token-expensive pass the
   user triggers when they judge it worth the cost. If a change looks like it warrants one, say
   so in a sentence and let them decide — then treat its output as a checklist, not just advice.

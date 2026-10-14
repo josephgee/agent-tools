@@ -1,7 +1,8 @@
 # Discarding an Experiment
 
-Any of three things triggers this: GREEN's convergence tripwire (three flat runs), a GREEN refactor
-step, or a REVIEW fix or lint fix. Uncommitted work is an experiment, and refactors most often
+Any of these triggers this: GREEN's convergence tripwire (three flat runs), or a failed refactor or
+fix step — MAKE ROOM's preparatory refactor, GREEN's steer-now, TIDY's refactor, or the fix
+delegate's review or lint fix. Uncommitted work is an experiment, and refactors most often
 fail. The rule that makes throwing one away cheap: **start every refactor or fix step from a
 clean tree** (clean apart from the state file), and commit each step that leaves every previously
 passing test passing. The discard then removes exactly one step, never good work beside it.
@@ -15,7 +16,7 @@ git -C "$top" restore --source=HEAD --staged --worktree -- . ':(exclude)<state-f
 git -C "$top" clean -fd -- <source dirs>
 ```
 
-- `<state-file>` is the repo-root-relative path of the ATDD state file; it is left alone, so
+- `<state-file>` is the repo-root-relative path of the slice-tdd state file; it is left alone, so
   pressure-log entries and any uncommitted state write survive.
 - `<source dirs>` are the repo-root-relative directories holding this slice's implementation and
   tests (for example `src/` and `tests/`). Never the plans directory, and never a directory holding
@@ -27,4 +28,6 @@ git -C "$top" clean -fd -- <source dirs>
 Then append one line to the pressure log saying what entangled — it is the only trace the
 experiment leaves — and resume. After the tripwire, drop to the ladder: pick one failing test,
 make it pass, run, commit, repeat. After a failed refactor or fix, retry it in smaller steps once;
-if that fails too, note it in the state file and move on.
+if that fails too, give it up and record it: a REVIEW or lint fix goes to `## Review`'s `Open at
+cap` as `fix discarded: <finding> — <what entangled>`, so the finding keeps a disposition; any
+other refactor stays as its pressure-log line.
