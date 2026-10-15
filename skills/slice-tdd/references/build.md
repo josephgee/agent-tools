@@ -181,8 +181,9 @@ and commit the state file.
    behavior sentence, a criterion, or a target row; never a trivial test to silence the tool.
    Where there is no tooling, walk the diff's branches and say so — never claim the mechanical
    check ran when it didn't.
-3. Record in the state file's `TIDY` line what changed and how coverage was checked (tool, or
-   walked by hand). Re-run the targeted tests, set the phase to REVIEW, commit
+3. Record in the state file's `TIDY` line what changed, the slice's net lines
+   (`git diff --shortstat` against the base, state file excluded), and how coverage was checked
+   (tool, or walked by hand). Re-run the targeted tests, set the phase to REVIEW, commit
    (`slice-tdd: tidy for <slice-slug>`), and return `exit`.
 
 Pressure-log `hold`s are not yours to drain; the delegator does that at REVIEW.

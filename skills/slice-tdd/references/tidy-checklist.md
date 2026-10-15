@@ -25,9 +25,18 @@ have done.
   squash commit. If a hazard can only be flagged at the edit site and no name, type, or failing
   test can carry it, do not keep a comment — add it (file:line, why) to `Learned` for the user to
   decide.
-- **Dead weight / speculation**: TIDY's coverage step enforces the scope fence — any changed code
-  path no test exercises is a finding. Here, look for what coverage cannot see: a parameter, a
-  branch or a type that every test happens to exercise but that no test *needs*.
+- **Delete first.** Candidates are every element the diff adds or changes, and anything in the
+  code it touches that the change may have made redundant — a branch, parameter, type, concept,
+  test. An argument that something earns its place is not evidence; one can always be made. Act
+  by what is known about each candidate:
+  - **Nothing references it** (no caller found by the compiler or a search, and nothing dynamic
+    could reach it) — delete it.
+  - **Referenced and pinned** by tests you trust — delete it and run the targeted tests. Green
+    means it stays deleted, unless you can name a consumer the tests miss (a caller outside them,
+    behavior a user sees); then restore it and add the test that pins that consumer.
+  - **Referenced but unpinned** — neither delete it nor argue for it: log
+    `deletion candidate (unpinned): <what, why it looks redundant>` in the state file's `## Out of Scope`, so the
+    next change that pins it can decide.
 - **Structure**: responsibilities in the right places? Anything doing too much? A test set
   implemented holistically can quietly grow one function that does the work of three.
 

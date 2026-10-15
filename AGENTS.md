@@ -70,6 +70,11 @@ within it. Design notes for larger efforts live in `docs/designs/`.
   the agent to re-invoke the skill (reloads the body, loses the position in the workflow — the
   artifact does both). Keep the header short; a long one re-read every cycle is more of the rot it
   exists to counter. `tdd`, `slice-tdd`, and `navigator` all do this.
+- **Delete before you add.** Edits grow skills by default. Before adding text, find what the
+  change makes removable and delete it. A passage stays, or comes back, only on a concrete failure
+  scenario — the specific wrong action an executing agent would take without it; "it clarifies"
+  is not one. State the edit's net line count in the commit message; an edit that only adds says
+  why nothing could go.
 - Don't run `skill-review` on your own initiative. It's a deliberate, token-expensive pass the
   user triggers when they judge it worth the cost. If a change looks like it warrants one, say
   so in a sentence and let them decide — then treat its output as a checklist, not just advice.

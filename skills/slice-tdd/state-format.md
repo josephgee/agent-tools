@@ -20,7 +20,7 @@ milestone and ladder drop, each delegate's return, each REVIEW round, and SHIP.
 - MAKE ROOM pins untested code before changing it. New interfaces get raising stubs; a RED test
   that passes immediately gets a mutation check. Touch a test in GREEN only by amendment, committed
   alone. Never the full suite. Pressure log at each milestone, "nothing" is not an answer. Each
-  flat run is a written `flat run N of 3` line; at three, discard. TIDY checks coverage.
+  flat run is a written `flat run N of 3` line; at three, discard. TIDY deletes first and checks coverage.
 - REVIEW is blind; a `structural-if-fixed` fix earns a fresh round, max three. Backlog, never fix,
   a finding that tightens an earlier test or asks for behavior this slice lacks.
 - Hosted: own state file and Attempts line only, commit as you go, no squash or PR. SHIP gates on
@@ -101,14 +101,14 @@ drained to empty at REVIEW step 0 — every `hold` ends as a fix or a dismissal 
 
 ## Out of Scope
 
-Appended during GREEN whenever a gap surfaces that is real but not this slice's to fix, one line
+Appended during GREEN and TIDY whenever a gap or an unpinned deletion candidate surfaces that is real but not this slice's to fix, one line
 each. REVIEW copies these into `## Review`'s `Out of scope` list when it creates that section.
 
 - none | <gap — why it is not this slice's>
 
 ## TIDY
 
-- <what the whole-diff refactor changed, or "nothing to change — <why>">; coverage: <tool and
+- <what the whole-diff refactor changed and deleted>; net lines: +A −D; coverage: <tool and
   result | walked by hand — no tooling>
 
 ## Review
