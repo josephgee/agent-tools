@@ -124,9 +124,9 @@ skill executing it. Superseded versions stay; they are why the later slices are 
 - **Advances**: AC2
 - **Merge safety**: live
 - **Suite**: green: /home/me/.cache/slice-suite/myrepo-<feature-slug>-01
-- **Strategy**: tdd-batch
+- **Strategy**: internal
 - **Attempts**:
-  - tdd-batch — shipped
+  - internal — shipped
 
 ### 02 — <slice-slug> — in progress
 - **Behavior**: <one sentence, no "and">
@@ -134,7 +134,7 @@ skill executing it. Superseded versions stay; they are why the later slices are 
 - **Suite**: running: /home/me/.cache/slice-suite/myrepo-<feature-slug>-02
 - **Strategy**: hand
 - **Attempts**:
-  - tdd-batch — abandoned: <what entangled, one line>
+  - internal — abandoned: <what entangled, one line>
   - hand — handed back
 
 ### 03 — <slice-slug> — planned
@@ -187,10 +187,10 @@ obligation 3.
 | Behavior | One sentence, no "and". Narrowing or splitting it is ordinary re-slicing; widening it into another slice's work is a re-slice. |
 | Advances | The acceptance criteria this slice moves. `none` for a slice that moves no criterion — which must then carry a `Kind`. |
 | Kind | `behavioral` by default, and then omitted entirely. `refactor` or `scaffolding` is written out with a one-sentence reason on the same line, and is the only thing that excuses a slice from shipping a new passing test. A slice whose `Advances` is `none` must carry one. A test-first strategy cannot run such a slice — see SKILL.md, *Running a slice* step 1. |
-| Strategy | What is running the slice *now*. A strategy name from SKILL.md's table (`tdd`, `atdd`, `tdd-batch`, `navigator`), `direct` for the agent building it itself, or `hand` for the user writing it themselves. Chosen before the branch is cut. |
+| Strategy | What is running the slice *now*. A strategy name from SKILL.md's table (`tdd`, `acceptance`, `internal`, `navigator`), `direct` for the agent building it itself, or `hand` for the user writing it themselves. Chosen before the branch is cut. |
 | Suite | The slice's full-suite run, started at the boundary's step 3 (`references/background-suite.md`): `running: <dir>`, then `green: <dir>`, `red: <failing tests>, <dir>`, or `green: fixed — <what>, <dir>` after a reopen — the directory always kept, since its status file is what the host's hold on the next slice reads and Cleanup deletes it. Absent until the boundary. A plan from before this field existed has none on its shipped slices; treat those as `green`. |
 | Merge safety | Present on the steel thread always — `live`, or `inert: <what makes it unreachable>` — and on any other slice that ships something unreachable. Decided when the slice is planned; an `inert:` value is what the squash message says is deliberately not there. |
-| Attempts | An indented list, one line per attempt, never removed; `none yet` is the placeholder for a slice with no strategy chosen and is replaced by the list at the first attempt. A line is **closed in place** as its state changes — `in progress` → `handed back`, `shipped`, `blocked: …`, or `abandoned: …`; only a genuinely new attempt adds a line. Values: `<strategy> — <in progress \| handed back \| shipped \| blocked: <what stopped it> \| abandoned: <what entangled>>`, plus `<atdd | tdd-batch> — paused: design done` (SKILL.md, *Hand off*), closed in place and followed by a fresh `in progress` line when the host resumes it. `in progress`, `handed back` and `shipped` may carry a `: <note>` — used to record an earlier slice's test the host updated on this branch before handing off; `blocked` and `abandoned` already spend their colon, so their note goes in that text. A reviewing guest may also add the whole token `reviewed` to a `handed back` line, comma-separated after any note the host left there (SKILL.md, the executor contract's obligation 5); the host reads it as a whole token. `handed back` means the work is done and the host has not yet run the boundary; a skill-shaped guest writes it, and for `direct`, `hand` and `navigator` the host writes it. `blocked` means the executor stopped without delivering the slice — see SKILL.md, *A guest that hands back blocked*. The host closes the line to `shipped` at the boundary. |
+| Attempts | An indented list, one line per attempt, never removed; `none yet` is the placeholder for a slice with no strategy chosen and is replaced by the list at the first attempt. A line is **closed in place** as its state changes — `in progress` → `handed back`, `shipped`, `blocked: …`, or `abandoned: …`; only a genuinely new attempt adds a line. Values: `<strategy> — <in progress \| handed back \| shipped \| blocked: <what stopped it> \| abandoned: <what entangled>>`, plus `<acceptance | internal> — paused: design done` (SKILL.md, *Hand off*), closed in place and followed by a fresh `in progress` line when the host resumes it. `in progress`, `handed back` and `shipped` may carry a `: <note>` — used to record an earlier slice's test the host updated on this branch before handing off; `blocked` and `abandoned` already spend their colon, so their note goes in that text. A reviewing guest may also add the whole token `reviewed` to a `handed back` line, comma-separated after any note the host left there (SKILL.md, the executor contract's obligation 5); the host reads it as a whole token. `handed back` means the work is done and the host has not yet run the boundary; a skill-shaped guest writes it, and for `direct`, `hand` and `navigator` the host writes it. `blocked` means the executor stopped without delivering the slice — see SKILL.md, *A guest that hands back blocked*. The host closes the line to `shipped` at the boundary. |
 
 The Attempts list is the reversibility record. Everything else about the slice is recoverable
 from git; the fact that a strategy was tried and why it was abandoned is not.
@@ -201,6 +201,6 @@ between `02` and `03` in the list. Read order is the list; `NN` is an identity, 
 
 ## What the record buys
 
-Everything a rollback needs is a branch name. A slice 02 abandoned from `tdd-batch` and redone by
+Everything a rollback needs is a branch name. A slice 02 abandoned from `internal` and redone by
 hand restores from `<slug>/01-<slice-slug>` — no sha anywhere, and the abandoned attempt is
 still legible in the plan after the restore that produced it.

@@ -9,9 +9,9 @@ is in the state file, and everything you leave is in the state file and in commi
 **Your brief is the state file** whose path you were given. Read its `Rules in Force` header (it
 applies to you), `Session` (mode, branch, test runner, and the Constraints, which bind your
 code), the target — `Acceptance Tests` in
-`atdd` mode, the behavior list in `Design` in `tdd-batch` mode — and `Design` (the agreed
+`acceptance` mode, the behavior list in `Design` in `internal` mode — and `Design` (the agreed
 approach, the interface sketch, the files it modifies, the test that will exercise the behavior
-sentence, and in `atdd` mode which acceptance proofs the user chose to persist as suite tests).
+sentence, and in `acceptance` mode which acceptance proofs the user chose to persist as suite tests).
 Its `Current Position` phase — MAKE ROOM, RED, GREEN or TIDY — is where you start; every phase
 before it is done. Each phase's closing commit sets the phase to the next one, so that field is
 always the resume point.
@@ -79,8 +79,8 @@ and commit the state file.
 
 **Re-read the Rules in Force header first.**
 
-1. **Write unit tests** against the agreed design and interface sketch: in `tdd-batch` mode one per
-   entry in the behavior list, in `atdd` mode one per behavior the implementation needs. Follow
+1. **Write unit tests** against the agreed design and interface sketch: in `internal` mode one per
+   entry in the behavior list, in `acceptance` mode one per behavior the implementation needs. Follow
    `design-principles`' test-quality doctrine (FIRST, behavioral-not-wiring — assert observable
    outcomes, never that one object called another), and add any acceptance proofs the user chose
    to persist as suite tests. Everything below treats them alike. Writing them is a design act: if

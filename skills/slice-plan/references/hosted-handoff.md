@@ -26,7 +26,7 @@ substitute the strategy name the plan's Attempts line needs. It is written *to* 
 A guest whose own flow reviews its diff before hand-back, iterating until clean (`slice-tdd` today),
 gets the block's ban on a guest-side review reversed. Give the block verbatim with **paragraph 5
 replaced, whole, by this** (nothing else in the block changes; a guest's own per-slice gates, such
-as `slice-tdd`'s human design gate in `atdd` mode, are not the alignment gate the block skips and survive):
+as `slice-tdd`'s human design gate in `acceptance` mode, are not the alignment gate the block skips and survive):
 
 > **5. Hand back before the squash.** Do not squash, do not present a PR, and do not write a PR
 > description. Do run your own review as your rules describe, before you hand back, and record it
@@ -41,11 +41,10 @@ as `slice-tdd`'s human design gate in `atdd` mode, are not the alignment gate th
 
 ### The mode paragraph, for `slice-tdd`
 
-`slice-tdd` serves two strategies, `atdd` and `tdd-batch`. Add this paragraph after paragraph 5,
+`slice-tdd` serves two strategies, `acceptance` and `internal`. Add this paragraph after paragraph 5,
 always, with `<strategy>` filled in — it is also the `<your name>` the block's Attempts lines use:
 
-> **Mode.** You run in **`<strategy>`** mode: `atdd` is acceptance on, `tdd-batch` is acceptance
-> off. Write `<strategy>` as the name on every Attempts line.
+> **Mode.** You run in **`<strategy>`** mode. Write `<strategy>` as the name on every Attempts line.
 
 ### The pause paragraph, for `slice-tdd`
 
@@ -166,7 +165,7 @@ that stacks on top of this skill's, once per slice, and an abandon is worse — 
 whole body stays in context while its replacement loads on top of it. Delegated, a slice comes back
 as a result instead of as context.
 
-Run a guest in-session when delegation isn't available, when it is `slice-tdd` (its `atdd`
+Run a guest in-session when delegation isn't available, when it is `slice-tdd` (its `acceptance`
 design gate needs the user live, and in both modes it spawns subagents of its own), when it is `navigator` and the user needs
 to watch it work, **or when you expect to want the abandon**. A delegated guest is invisible until
 it hands back: you cannot watch it throw its own work away and you cannot stop it mid-slice, so the

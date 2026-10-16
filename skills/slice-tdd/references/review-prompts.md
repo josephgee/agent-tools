@@ -11,8 +11,8 @@ drafter because the session that produced the design is the least likely to see 
 - The slice's behavior sentence — what every row of the target must trace to.
 - The plan's Constraints — a design that breaks one is a finding however well it fits otherwise.
 - The draft from DESIGN step 1: interface sketch, design doc, and the files it will modify.
-- The target the design must deliver — ACCEPT's acceptance tests in `atdd` mode, the draft's
-  behavior list in `tdd-batch` mode.
+- The target the design must deliver — ACCEPT's acceptance tests in `acceptance` mode, the draft's
+  behavior list in `internal` mode.
 - Pointers into the codebase paths the design touches, extends or read — handed off from that same
   step's research, not rediscovered from scratch.
 - Access to `design-principles`' vocabulary (SOLID, component boundaries, Simple Design

@@ -60,7 +60,7 @@ Then re-enter [Running a slice](../SKILL.md#running-a-slice) by that slice's sta
     The count cannot tell a re-entry from a first pass, so when you re-enter the boundary this way,
     say at its step 3 that the slice may already have been presented and this review is a re-run
     after an interruption. Do not silently ask the user to approve the same slice twice.
-  - `<strategy> — paused: design done` (`atdd` or `tdd-batch`) → the previous slice's run was
+  - `<strategy> — paused: design done` (`acceptance` or `internal`) → the previous slice's run was
     still going when `slice-tdd` reached code. Wait on it
     ([references/background-suite.md](background-suite.md), *Waiting on it*), then *Hand off*'s
     resume: any earlier-test update step 2 held back, a fresh `<strategy> — in progress` line, and

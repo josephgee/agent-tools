@@ -1,6 +1,6 @@
 ---
 name: slice-tdd
-description: "Executes one slice-plan slice test-first, in `atdd` mode (acceptance tests a human can run, human design gate) or `tdd-batch` mode (behavior list, no gate). Use when slice-plan hands a slice to `atdd` or `tdd-batch`; with no plan file, use slice-plan first."
+description: "Executes one slice-plan slice test-first, in `acceptance` mode (acceptance tests a human can run, human design gate) or `internal` mode (behavior list, no gate). Use when slice-plan hands a slice to `acceptance` or `internal`; with no plan file, use slice-plan first."
 compatibility: "Requires slice-plan as host, plus design-principles, design-review and backfill-tests. Requires subagent delegation, with no in-session fallback. Requires git."
 metadata:
   soft-deps: slice-plan design-principles design-review backfill-tests
@@ -15,12 +15,12 @@ slice.
 
 Two modes, chosen by the host, differing in one thing — **what the slice is proven against**:
 
-- **`atdd`** (acceptance on): acceptance tests a human can run and observe, written before any
+- **`acceptance`**: acceptance tests a human can run and observe, written before any
   design, and a **human design gate** before any code.
-- **`tdd-batch`** (acceptance off): a behavior list, drafted with the design. No ACCEPT, no gate,
+- **`internal`**: a behavior list, drafted with the design. No ACCEPT, no gate,
   no acceptance item at SHIP.
 
-Everything else is the same in both. One pass — ACCEPT (`atdd` only) → DESIGN → BUILD → REVIEW →
+Everything else is the same in both. One pass — ACCEPT (`acceptance` only) → DESIGN → BUILD → REVIEW →
 SHIP — delivers one slice. BUILD is one delegated unit: MAKE ROOM (pin and prepare untested code
 about to change), RED, GREEN, TIDY (refactor and coverage).
 
@@ -30,7 +30,7 @@ This skill runs as a guest under slice-plan, which hands it an override block (i
 adaptation, in slice-plan's `references/hosted-handoff.md`) owing five things: stay on the branch
 the host cut, leave your targeted tests green with a passing test for the slice's behavior, write
 only your own state file and Attempts line, commit as you go, and hand back before the squash. The
-block names your mode — `atdd` or `tdd-batch` — and that name is also `<strategy>` on every
+block names your mode — `acceptance` or `internal` — and that name is also `<strategy>` on every
 Attempts line you write. It may also carry a *pause* paragraph: then, after the design commit, you
 hand back `<strategy> — paused: design done`, and the host invokes you again to resume at BUILD. **Where the block conflicts with a phase below, the block wins**, with
 one exception it grants: this skill runs its own REVIEW before hand-back (see REVIEW).
@@ -38,12 +38,12 @@ one exception it grants: this skill runs its own REVIEW before hand-back (see RE
 What that means here:
 
 - **Setup is only the `Kind` check and the state file**; make no "begin" commit.
-- **`atdd`'s human design gate survives** the block's "skip your alignment gate": that gate is
+- **`acceptance`'s human design gate survives** the block's "skip your alignment gate": that gate is
   feature-level and already passed; this one is per slice.
 - **Hand back `<strategy> — blocked: <what stopped it>`** — leaving your tests green and
   committing any complete work — when Setup's `Kind` check fails; the design shows the slice needs
   splitting; an earlier slice's test needs changing; MAKE ROOM outgrows a few commits; or, in
-  `atdd`, the user rejects the design at the gate and no revision converges. The host re-slices or
+  `acceptance`, the user rejects the design at the gate and no revision converges. The host re-slices or
   abandons from there.
 - **Keep decision context in the state file's `Learned` line**, which the host folds into the
   squash commit. Keep the design doc in the state file too, never a second file: the host's disk
@@ -65,7 +65,7 @@ Keep its diff quiet: append entries and tick checkboxes, never reflow unchanged 
 
 **Every phase's closing commit sets `Current Position`'s phase to the next phase** — ACCEPT →
 DESIGN → MAKE ROOM → RED → GREEN → TIDY → REVIEW → SHIP — so the recorded phase is always where
-work resumes. Setup records the first (ACCEPT, or DESIGN in `tdd-batch` mode). A phase recorded as
+work resumes. Setup records the first (ACCEPT, or DESIGN in `internal` mode). A phase recorded as
 MAKE ROOM, RED, GREEN or TIDY means BUILD: the host delegates it, and the delegate resumes at that
 phase.
 
@@ -81,7 +81,7 @@ Look for `slice-tdd-<feature-slug>-<NN>.md` in the plans directory slice-plan is
   commit that, and start fresh. Otherwise resume without asking — the host invoked you on this
   slice, which is the decision: confirm the checked-out branch matches Session's `Branch`, say in
   one line which phase you resume at, and continue from the recorded phase. Work after a phase's
-  last commit is redone — including, in `atdd` mode, a gate the user passed before the design
+  last commit is redone — including, in `acceptance` mode, a gate the user passed before the design
   commit landed: present the design again rather than assume the agreement.
 
 ### Setup
@@ -95,13 +95,13 @@ Look for `slice-tdd-<feature-slug>-<NN>.md` in the plans directory slice-plan is
    [state-format.md](state-format.md). Fill in Session — mode, branch, base branch, test runner —
    and the slice's behavior sentence, criteria and Constraints, copied from the plan, not
    re-derived or re-negotiated here: every delegate reads this file, not the plan. Set its phase to ACCEPT
-   (`atdd` mode) or DESIGN (`tdd-batch` mode). Do not commit it yet; that phase's commit does.
+   (`acceptance` mode) or DESIGN (`internal` mode). Do not commit it yet; that phase's commit does.
 
 ---
 
-## ACCEPT — Define Acceptance Tests (`atdd` mode only)
+## ACCEPT — Define Acceptance Tests (`acceptance` mode only)
 
-In `tdd-batch` mode, skip to DESIGN; the behavior list it drafts is the target this phase would
+In `internal` mode, skip to DESIGN; the behavior list it drafts is the target this phase would
 have set.
 
 Before any research or design: enumerate the slice's external, observable behaviors and write one
@@ -133,21 +133,21 @@ Set the phase to DESIGN, then commit:
 
 Research and the design doc iterate on each other — a design question sends you back to the
 codebase or a web search, a research finding reshapes the design — so step 1 delegates them as one
-unit. Only step 3's triage and `atdd`'s gate run in the host session.
+unit. Only step 3's triage and `acceptance`'s gate run in the host session.
 
 **If the block carries the pause paragraph, both delegates below are read-only:** add to each
 bundle "the host's full-suite run is using this tree: run no tests, and write nothing inside the
 repository." Reading code is fine; probing behavior by running it waits for BUILD.
 
 1. **Research and draft, delegated as one unit.** Hand a subagent the slice's behavior sentence,
-   its criteria, the Constraints, and — in `atdd` mode — ACCEPT's acceptance tests, and let it run the
+   its criteria, the Constraints, and — in `acceptance` mode — ACCEPT's acceptance tests, and let it run the
    research-design loop to a finished draft inside its own context — read the codebase, search the
    web, consult whatever knowledge bases are available, revise the doc against what it finds. It
    returns one artifact, containing:
-   - **In `tdd-batch` mode, the behavior list** — the individual observable behaviors that
+   - **In `internal` mode, the behavior list** — the individual observable behaviors that
      together deliver the behavior sentence, one sentence each, no "and", each traceable to the
      sentence or a criterion this slice advances. This is the slice's target, as ACCEPT's table is
-     in `atdd` mode. A behavior that does not trace is not this slice's.
+     in `acceptance` mode. A behavior that does not trace is not this slice's.
    - **The interface sketch** — names, signatures, types and errors, as consumers will see them.
    - **The design doc** — context, proposed approach, the one real alternative considered and the
      line that decided against it, visuals where they'd clarify a flow or data shape a paragraph
@@ -171,7 +171,7 @@ repository." Reading code is fine; probing behavior by running it waits for BUIL
    design work that enter the host's context. If a finding demands more research, loop back
    through step 1. **Re-review (repeat step 2) when the revision changes the approach, the
    interface, or the rejected alternative; otherwise skip it.**
-4. **`atdd` mode: re-read the Rules in Force header, then hold the human review gate, in the host
+4. **`acceptance` mode: re-read the Rules in Force header, then hold the human review gate, in the host
    session, never delegated.** Present the design doc and stop. It has already been vetted against
    design-principles and codebase patterns, so the gate is about direction and trade-offs. Also
    ask the user which acceptance proofs, if any, should be persisted as automated tests in the
@@ -181,9 +181,9 @@ repository." Reading code is fine; probing behavior by running it waits for BUIL
    the user agrees; silence is not agreement. On pushback, a small revision you make directly; one
    that needs more research or a rethink goes back through step 1, review included.
 
-   `tdd-batch` mode has no gate: a design that needs a new interface or contract the slice did not
+   `internal` mode has no gate: a design that needs a new interface or contract the slice did not
    expect surfaces later as BUILD's `departure`, which goes to the user then.
-5. **Handoff.** Write the design's substance — behavior list (`tdd-batch`), interface sketch,
+5. **Handoff.** Write the design's substance — behavior list (`internal`), interface sketch,
    design doc, the named behavior-sentence test, the files to modify — into the state file, and
    only there. BUILD's delegate reads nothing else, so treat the write as a handoff.
 
@@ -216,8 +216,8 @@ pin; a resumed delegate gets that from RED's per-test table instead. The phases 
 3. **Act on the return.**
    - **`exit`** — go on to REVIEW. The code itself is read only by REVIEW's subagent.
    - **`departure`** — the implementation needs something the agreed design doesn't cover. Take
-     it to the user, scoped to the departure — in `atdd` mode as a re-run of the human gate (DESIGN
-     step 4); in `tdd-batch` mode this is the first time the user sees the design, so show the
+     it to the user, scoped to the departure — in `acceptance` mode as a re-run of the human gate (DESIGN
+     step 4); in `internal` mode this is the first time the user sees the design, so show the
      interface sketch with it. Agreed: record it in the state file's Design section, commit, and
      delegate again. Rejected: delegate again with the user's constraint added to the Design
      section; if no implementation fits it, the delegate returns `blocked`.
@@ -285,7 +285,7 @@ at step 4's check. The round count carries over; a resume never resets the cap.
 **Re-read the Rules in Force header first.** Gate on every item, together, before touching the
 boundary:
 
-1. **Acceptance tests** (`atdd` mode only) — run every row from ACCEPT that has an agent proof,
+1. **Acceptance tests** (`acceptance` mode only) — run every row from ACCEPT that has an agent proof,
    against the finished code; set each row's Status to `pass`/`fail`. For every row with a
    blank agent proof, walk the human proof with the user and set `pass: user-confirmed` only on
    their confirmation.

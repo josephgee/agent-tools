@@ -10,11 +10,11 @@ two-digit slice number the host handed over.
 
 ## Rules in Force
 
-Copied verbatim, never edited. Re-read before `atdd`'s gate, at each BUILD phase, every GREEN
+Copied verbatim, never edited. Re-read before `acceptance`'s gate, at each BUILD phase, every GREEN
 milestone and ladder drop, each delegate's return, each REVIEW round, and SHIP.
 
-- `atdd`: acceptance tests first, human proof never weakened, no BUILD until the user agrees.
-  `tdd-batch`: the behavior list is the target; a departure goes to the user when BUILD returns it.
+- `acceptance`: acceptance tests first, human proof never weakened, no BUILD until the user agrees.
+  `internal`: the behavior list is the target; a departure goes to the user when BUILD returns it.
 - The host triages and asks; delegates research, review, build and fix. It reads results and this
   file, never the diff. Every phase's closing commit sets the next phase.
 - MAKE ROOM pins untested code before changing it. New interfaces get raising stubs; a RED test
@@ -24,10 +24,10 @@ milestone and ladder drop, each delegate's return, each REVIEW round, and SHIP.
 - REVIEW is blind; a `structural-if-fixed` fix earns a fresh round, max three. Backlog, never fix,
   a finding that tightens an earlier test or asks for behavior this slice lacks.
 - Hosted: own state file and Attempts line only, commit as you go, no squash or PR. SHIP gates on
-  acceptance tests (`atdd`), unit tests, lint and review together.
+  acceptance tests (`acceptance`), unit tests, lint and review together.
 
 ## Session
-- **Mode**: atdd | tdd-batch
+- **Mode**: acceptance | internal
 - **Branch**: <the branch the host cut, from the block>
 - **Base branch**: <the plan Session's base branch — slice 01's review diff base>
 - **Slice**: <feature-slug> <NN> <slice-slug>
@@ -42,7 +42,7 @@ milestone and ladder drop, each delegate's return, each REVIEW round, and SHIP.
 
 ## Acceptance Tests
 
-<!-- atdd mode only; omit this section in tdd-batch mode. -->
+<!-- acceptance mode only; omit this section in internal mode. -->
 
 | Behavior | Human proof | Agent proof | Status |
 |---|---|---|---|
@@ -51,7 +51,7 @@ milestone and ladder drop, each delegate's return, each REVIEW round, and SHIP.
 
 ## Design
 
-**Behaviors** (tdd-batch mode only — the slice's target; each traces to the behavior sentence or
+**Behaviors** (internal mode only — the slice's target; each traces to the behavior sentence or
 a criterion):
 - <one sentence, no "and">
 
@@ -64,10 +64,10 @@ a criterion):
 **Design review**: <findings, each fixed or dismissed with a reason — or "clean, nothing to
 fix">
 
-**Acceptance proofs persisted as suite tests** (atdd mode, asked at the gate): none | <which rows,
+**Acceptance proofs persisted as suite tests** (acceptance mode, asked at the gate): none | <which rows,
 and why>
 
-**Gate**: not yet reached | passed on YYYY-MM-DD | none (tdd-batch)
+**Gate**: not yet reached | passed on YYYY-MM-DD | none (internal)
 
 <Design doc substance — approach, trade-off considered and rejected with the deciding line,
 link to a throwaway skeleton if one was built and where it went (deleted, or kept as a

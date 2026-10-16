@@ -172,17 +172,17 @@ slice's shape is the evidence.
 | Strategy | Shape | Suits a slice that |
 |---|---|---|
 | `tdd` | skill | is over unproven ground, or where the design *is* the question — one test at a time surfaces it earliest. Never a `refactor`/`scaffolding` slice |
-| `atdd` | skill (`slice-tdd`, acceptance on) | delivers behavior a user can observe — the default for such a slice. Its proof is the external, user-facing behavior, run the way a user would meet it, so it is validated where the value actually lands; a human design gate precedes any code. Never a `refactor`/`scaffolding` slice. Runs in-session |
-| `tdd-batch` | skill (`slice-tdd`, acceptance off) | is mostly edge cases and internal rules, where setting up external proof of each would cost more than that proof is worth. Same flow as `atdd` without the acceptance tests or the gate. Never a `refactor`/`scaffolding` slice. Runs in-session |
+| `acceptance` | skill (`slice-tdd`) | delivers behavior a user can observe — the default for such a slice. Its proof is the external, user-facing behavior, run the way a user would meet it, so it is validated where the value actually lands; a human design gate precedes any code. Never a `refactor`/`scaffolding` slice. Runs in-session |
+| `internal` | skill (`slice-tdd`) | is mostly edge cases and internal rules, where setting up external proof of each would cost more than that proof is worth. Same flow as `acceptance` without the acceptance tests or the gate. Never a `refactor`/`scaffolding` slice. Runs in-session |
 | `direct` | you, directly | is one obvious edit, or scaffolding whose design carries no risk |
 | `hand` | the user writes it | the user wants to write themselves — for the learning, or because they hold context you don't |
 | `navigator` | skill; the user still writes | the user writes it and wants an agent coaching, questioning direction and catching skipped steps rather than sitting silent |
 
-**Rank `atdd` above `tdd-batch` for a user-facing slice even when its design is settled.** `atdd`
+**Rank `acceptance` above `internal` for a user-facing slice even when its design is settled.** `acceptance`
 buys two things a settled design doesn't remove: validation through the behavior a user sees, and a
 design pass at the moment it pays most — a meaningful functionality change is when simplifications
 and new abstractions surface, however settled the design looked beforehand. "The unknowns are
-settled" is not a reason to recommend `tdd-batch`; "external proof of these cases costs more than
+settled" is not a reason to recommend `internal`; "external proof of these cases costs more than
 it proves" is.
 
 **A test-first guest is not a legal strategy for a slice whose `Kind` is `refactor` or
@@ -248,14 +248,14 @@ criteria it advances, the branch, and the obligations of
 
 | Strategy shape | Handoff |
 |---|---|
-| A skill (`tdd`, `slice-tdd`, `navigator`, …) | Invoke it with the override block from [references/hosted-handoff.md](references/hosted-handoff.md), filled in. For `atdd` and `tdd-batch`, invoke `slice-tdd` with that block's *mode paragraph* naming which. Each of these skills plans a whole feature by default and will re-plan, re-branch and re-ship this slice without it. |
+| A skill (`tdd`, `slice-tdd`, `navigator`, …) | Invoke it with the override block from [references/hosted-handoff.md](references/hosted-handoff.md), filled in. For `acceptance` and `internal`, invoke `slice-tdd` with that block's *mode paragraph* naming which. Each of these skills plans a whole feature by default and will re-plan, re-branch and re-ship this slice without it. |
 | You, directly (`direct`) | Build the slice. Nothing else is prescribed — the obligations are the whole spec. |
 | The user, by hand | Say what the slice is and that the branch is cut, then stop and wait. Do not write code for a slice the user has taken. |
 
 **Hand off only once the previous slice's suite run reads `0`**
 ([references/background-suite.md](references/background-suite.md), *Waiting on it*) — no
-executor sees that run, so the hold is yours alone. **The one exception is `slice-tdd`** (`atdd`
-and `tdd-batch`), whose ACCEPT and design write no code: hand it off at once, with the *pause* paragraph from
+executor sees that run, so the hold is yours alone. **The one exception is `slice-tdd`** (`acceptance`
+and `internal`), whose ACCEPT and design write no code: hand it off at once, with the *pause* paragraph from
 [references/hosted-handoff.md](references/hosted-handoff.md) added to its block while the run is
 still going — it changes nothing outside its state file until resumed, so the tree the run is
 testing stays put. If step 2 found an earlier-test update, hold it back — it is code. It hands back
@@ -282,7 +282,7 @@ the plan, and for the latter two was handed no contract at all:
 **Run a skill-shaped guest in a delegated subagent wherever the session supports it** — a delegated
 slice comes back as a result instead of as context. Keep it in-session when delegation isn't
 available, when it is `navigator` and the user needs to watch it work, when it is `slice-tdd`,
-whose `atdd` design gate needs the user live and which in both modes spawns subagents of its own
+whose `acceptance` design gate needs the user live and which in both modes spawns subagents of its own
 (it delegates every heavy step, so in-session costs the host little), **or when you expect
 to want the abandon**, which a delegated guest puts out of reach. The trade-off in full, and the disk
 checks that replace watching a guest work, are in

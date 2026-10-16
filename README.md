@@ -19,8 +19,8 @@ Design notes for larger efforts live in `docs/designs/`.
   evolution and backlog.
 - **[slice-tdd](skills/slice-tdd/SKILL.md)** — Executes one `slice-plan` slice test-first, with
   every heavy step delegated so a long slice list fits one host session. Two modes, chosen per
-  slice by the host: `atdd` proves the slice through acceptance tests a human can run and holds a
-  human design gate before any code; `tdd-batch` targets a behavior list with no gate, for slices
+  slice by the host: `acceptance` proves the slice through acceptance tests a human can run and holds a
+  human design gate before any code; `internal` targets a behavior list with no gate, for slices
   that are mostly edge cases. Both: a reviewed design, pinning of untested code before changing it,
   a batch of failing tests then holistic implementation, a refactor-and-coverage pass, a blind code
   review, and lint.

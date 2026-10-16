@@ -1,7 +1,7 @@
 # tdd batch flow: TDD's invariants without its pacing
 
 > **Superseded (2026-10-14).** `tdd-batch` no longer exists as a skill. Its per-slice flow merged
-> with `atdd` into `skills/slice-tdd/`, where `tdd-batch` is the acceptance-off mode and runs only
+> with `atdd` into `skills/slice-tdd/`, where it is the `internal` mode (`atdd` is `acceptance`) and runs only
 > as a `slice-plan` guest; the PR stack, one-shot mode and feature-level reviews went to
 > `slice-plan`. Kept as the record of why the batch flow looks as it does.
 
