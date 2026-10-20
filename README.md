@@ -41,6 +41,10 @@ Design notes for larger efforts live in `docs/designs/`.
   the implementation, every test proven falsifiable by perturbing the code it claims to pin, and
   assertions on behavior rather than wiring. Surfaces bugs as expected-to-fail tests to fix at the
   end. The inverse of `tdd`, for code that already exists.
+- **[pr-review](skills/pr-review/SKILL.md)** — Reviews someone else's PR for defects and design to a
+  leave-it-better standard: findings are sorted into debt the PR adds, debt it leaves in code it changes (both
+  the author's to fix now), and debt nearby (not theirs). Then walks the user through each concern
+  while they write their own feedback. Never posts.
 - **[skill-review](skills/skill-review/SKILL.md)** — Reviews agent skills for effectiveness,
   structure, and context management.
 - **[list-tools](skills/list-tools/SKILL.md)** — Lists the tools currently available to the
