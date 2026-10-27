@@ -46,10 +46,10 @@ by default.**
    not during plain detection. The design catalog links into it where a smell has a
    principle behind it.
 
-These three filenames are a **public interface**: consumer skills (`tdd`, `design-review`)
+These three filenames, and their section headings, are a **public interface**: other skills
 reference them by name from their own instructions. Renaming, splitting, or merging the
-files under `references/` is a breaking change for those consumers — update every caller in
-the same change.
+files under `references/`, or renaming a heading, is a breaking change — search every sibling
+skill directory for the old name and update each caller in the same change.
 
 ## Using it well
 

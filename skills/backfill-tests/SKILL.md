@@ -182,7 +182,9 @@ Present:
 (un-skip it, make it pass — a small red-green change, safe now that the net exists) or defer it as
 documented, tracked work. Don't roll into fixes unprompted; the deliverable here is the net, not
 the repairs. Afterwards the refactor can begin, held green by these tests — and *that* is where
-production cleanup belongs. [tdd](../tdd/SKILL.md)'s refactor guidance applies to that pass.
+production cleanup belongs: the [refactor](../refactor/SKILL.md) skill runs that pass. Commit the
+net first — refactor starts from a clean tree — and hand it your "what isn't pinned" list, so it
+doesn't probe gaps you left on purpose.
 
 ## Escalation: gut-and-restore
 

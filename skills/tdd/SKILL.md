@@ -1,9 +1,9 @@
 ---
 name: tdd
 description: "Guides strict Test-Driven Development (TDD) as a learning loop, delivered as a stack of small reviewable PRs. Use when building a feature: decompose it into an ordered sequence of PR-sized behavioral increments, then drive each one through THINK-RED-GREEN-REFACTOR cycles — choose the next behavior, write one failing test, make it pass with the simplest possible code, then refactor and reflect — and SHIP it as a clean, independently reviewable commit before starting the next. Also use when asked to break a feature into small, reviewable, incrementally shippable pull requests."
-compatibility: "Requires the slice-plan, design-principles, and design-review skills to be installed alongside it — the PR plan is drafted from slice-plan's slicing doctrine, and the design checks at REFACTOR, SHIP, and the end-of-feature pass depend on the other two, with no bundled fallback."
+compatibility: "Requires the slice-plan, design-principles, design-review, and refactor skills to be installed alongside it — the PR plan is drafted from slice-plan's slicing doctrine, and the design checks at REFACTOR, SHIP, and the end-of-feature pass depend on design-principles and design-review, and the REFACTOR production checklist is refactor's standard, with no bundled fallback."
 metadata:
-  soft-deps: slice-plan design-principles design-review
+  soft-deps: slice-plan design-principles design-review refactor
 ---
 
 # TDD

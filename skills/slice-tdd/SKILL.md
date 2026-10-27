@@ -1,9 +1,9 @@
 ---
 name: slice-tdd
 description: "Executes one slice-plan slice test-first, in `acceptance` mode (acceptance tests a human can run, human design gate) or `internal` mode (behavior list, no gate). Use when slice-plan hands a slice to `acceptance` or `internal`; with no plan file, use slice-plan first."
-compatibility: "Requires slice-plan as host, plus design-principles, design-review and backfill-tests. Requires subagent delegation, with no in-session fallback. Requires git."
+compatibility: "Requires slice-plan as host, plus design-principles, design-review, backfill-tests and refactor (its standard is the TIDY production checklist). Requires subagent delegation, with no in-session fallback. Requires git."
 metadata:
-  soft-deps: slice-plan design-principles design-review backfill-tests
+  soft-deps: slice-plan design-principles design-review backfill-tests refactor
 ---
 
 # Slice TDD

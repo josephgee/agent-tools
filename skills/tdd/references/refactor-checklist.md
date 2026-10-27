@@ -2,22 +2,13 @@
 
 ## Production Code
 
-- **Duplication**: Same logic in more than one place? Consolidate it.
-- **Naming**: Name the *meaning*, not the type (`remaining_attempts` not `retryInt`). Name the *behavior*, not the mechanism (`publish_validated` not `process_data`). Name the *condition* for booleans (`has_exceeded_limit`, not `flag`). If you must read the body to understand the name, rename it. If this cycle taught you something new about a concept, check whether the names still reflect that understanding.
-- **Comments**: delete every comment in the diff. Where does the code need to be more expressive to make up for it? Do that. Decision context (why this change, what was rejected) goes in the state file's `Learned` line, not back into the code — drained into the PR description at SHIP, or into the host's squash commit when a host owns the PR. If a hazard can only be flagged at the edit site and no name, type, or failing test can carry it, do not keep a comment — list it (file:line, why) in the boundary report for the user to decide.
-- **Delete first.** Candidates are every element the diff adds or changes, and anything in the
-  code it touches that the change may have made redundant — a branch, parameter, type, concept,
-  test. An argument that something earns its place is not evidence; one can always be made. Act
-  by what is known about each candidate:
-  - **Nothing references it** (no caller found by the compiler or a search, and nothing dynamic
-    could reach it) — delete it.
-  - **Referenced and pinned** by tests you trust — delete it and run the targeted tests. Green
-    means it stays deleted, unless you can name a consumer the tests miss (a caller outside them,
-    behavior a user sees); then restore it and add the test that pins that consumer.
-  - **Referenced but unpinned** — neither delete it nor argue for it: log
-    `deletion candidate (unpinned): <what, why it looks redundant>` in the backlog, so the
-    next change that pins it can decide.
-- **Structure**: Responsibilities in the right places? Anything doing too much?
+Apply the `refactor` skill's [references/standard.md](../../refactor/references/standard.md) —
+read it now. Read the file directly; do **not** invoke the `refactor` skill, whose workflow
+would demand a clean tree and start a test-net check of its own. **The scope** is the diff under
+review: this cycle's, or the combined PR diff at SHIP. **The log** is the state file: decision
+context goes on `Learned` (drained into the PR description at SHIP, or into the host's squash
+commit when a host owns the PR); deletion candidates and edit-site hazards (`hazard: file:line,
+why`, for the user to decide) go in the backlog; a missing pin is a test to add now.
 
 ## Test Code
 
