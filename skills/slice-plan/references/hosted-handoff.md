@@ -94,9 +94,7 @@ commit; the user's work on a `navigator` slice is the host's to confirm committe
 > directory is already chosen, and the branch already exists. Make no "begin" commit.
 >
 > **Your plan is this one slice**, and its whole scope is: *`<behavior sentence>`*. It advances
-> `<criteria>`. Any test an earlier slice left that this one invalidates has already been updated
-> for you on this branch, so you start green and nothing this slice asks of you requires breaking
-> an earlier slice's test. The numbered obligations below are the whole of what you owe.
+> `<criteria>`. You start green. The numbered obligations below are the whole of what you owe.
 >
 > **1. Stay on the branch the host cut, and create no others.** It is already cut and checked out:
 > **`<branch>`**. Do not create, rename or switch branches.
@@ -109,8 +107,15 @@ commit; the user's work on a `navigator` slice is the host's to confirm committe
 > recording a `Kind` of `refactor` or `scaffolding`, when the existing tests over the restructured
 > code are still green, which is the whole of the obligation there: no new behavior, so no new
 > test. Green mid-slice is a checkpoint; green when you hand back is what the host's next rollback
-> rests on. If an earlier slice's test turns out to need changing after all, it is the host's to
-> change — hand back `blocked` rather than changing it, and never hand back with a test red.
+> rests on. Never hand back with a test red.
+>
+> **An earlier slice's test this slice breaks is yours to update, whatever your own rules say about
+> changing tests** — routine, since each slice builds only what it needs. Change its fixture or
+> call site wherever that absorbs it: an expectation edited to agree with the new behavior stops
+> pinning its own slice's rule and double-pins this one under its old name. Otherwise narrow the
+> expectation to that slice's rule, never weaker. If this slice replaces the rule, delete the test,
+> and if it ticked a criterion, make sure your test still satisfies it. Commit the update alone,
+> before the work that needs it, and note it on your `Attempts` line.
 >
 > **3. Write only your designated plan fields, and build only your own slice.** In `<plan-file>`
 > write only these: your slice's `Attempts` line, set to `<your name> — handed back` (or
@@ -121,7 +126,9 @@ commit; the user's work on a `navigator` slice is the host's to confirm committe
 > does that at the boundary, against a passing test. Build only your own slice, too: a
 > restructuring the plan has already given to a later slice is not yours to do, so if the cleanup
 > your own refactoring step wants is the whole of a slice further down the Slices section, log it
-> and move on — doing it here empties that slice.
+> and move on — doing it here empties that slice. Preserve existing behavior unless this slice's
+> behavior sentence changes it; the structure behind it, earlier slices' included, evolves as this
+> slice needs.
 >
 > *Under 3, if your flow keeps a state file:* create it at `<plans-dir>/` under your own naming
 > convention, with the feature slug `<feature-slug>`. Where its format calls for a feature
@@ -148,12 +155,11 @@ commit; the user's work on a `navigator` slice is the host's to confirm committe
 > host reads it from there and folds it into the squash commit.
 >
 > **If you cannot finish the slice, hand back `blocked`.** That is the one sanctioned way not to
-> finish one. It needs splitting; it turns out to need an earlier slice's test changed after all;
-> your own rules leave you no move on it — all the same outcome. Leave your tests green, commit any
+> finish one. It needs splitting, or your own rules leave you no move on it — the same outcome. Leave your tests green, commit any
 > complete work (or nothing, if there is none), set your slice's `Attempts` line to
 > `<your name> — blocked: <what stopped you>`, and say the same when you hand back. Do not
-> re-slice, do not change another slice's test, and do not hand back with a test red: the first
-> two are the host's, and the third is nobody's.
+> re-slice, and do not hand back with a test red: the first is the host's, and the second is
+> nobody's.
 
 ---
 

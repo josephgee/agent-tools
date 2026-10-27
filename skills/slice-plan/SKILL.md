@@ -212,28 +212,10 @@ base.
 **The plan owns branch naming**, not the strategy. A strategy that names branches itself has to
 be told this one, because the abandon recipe restores from it by name.
 
-**Then, before handing off, update any earlier slice's test this slice invalidates — yourself, on
-this branch, once the previous slice's suite run reads `0`** (it is code, and no code starts
-before that — [references/background-suite.md](references/background-suite.md), *Waiting on it*;
-for `slice-tdd`, it waits until the pause, per *Hand off*).
-Read the behavior sentence against the tests earlier slices left: if delivering it
-makes one of them assert something no longer true, that test is yours to change, because no
-executor can both deliver the behavior and leave its tests green. Change the **fixture**, not the
-expectation, wherever you can — an earlier test edited down to agree with the new behavior stops
-pinning its own slice's rule and starts double-pinning this one under its old name. Get to green,
-**commit the change on this branch** — the handoff promises the guest a clean tree, and the squash
-collapses the commit into the slice's one — and note what you changed on the slice's Attempts line,
-where the guest is told to leave it standing.
-
-This should be rare: [references/slicing.md](references/slicing.md), §"A thread's test must survive
-being thickened", says an earlier test should have been written to survive thickening, so one that
-does not is usually over-specified rather than genuinely superseded — say so to the user in a
-sentence, because the next slice will hit it again.
-
-Then **set the slice's status to `in progress`** before handing off. That status asserts the branch
+**Then set the slice's status to `in progress`** before handing off. That status asserts the branch
 now exists: a slice still marked `planned` sends a resume back to step 1 to re-ask the strategy and
-re-cut a branch that is already there. The plan is untracked and stays that way; the only commit
-this step can produce is the earlier-test update above.
+re-cut a branch that is already there. The plan is untracked and stays that way; this step commits
+nothing.
 
 **To drop a slice**, delete it from the plan — ordinary re-slicing while it is still `planned`. If
 its branch is already cut, abandon the attempt first; the branch is left behind and the next slice
@@ -258,10 +240,9 @@ executor sees that run, so the hold is yours alone. **The one exception is `slic
 and `internal`), whose ACCEPT and design write no code: hand it off at once, with the *pause* paragraph from
 [references/hosted-handoff.md](references/hosted-handoff.md) added to its block while the run is
 still going — it changes nothing outside its state file until resumed, so the tree the run is
-testing stays put. If step 2 found an earlier-test update, hold it back — it is code. It hands back
-`<strategy> — paused: design done` after its design commit; wait for `0`, make the held-back update
-(committed, noted on the Attempts line), append a fresh `<strategy> — in progress` line, and invoke it
-again with the block and no pause paragraph — its state file resumes it at BUILD. Whoever waits, the user's review of the previous
+testing stays put. It hands back `<strategy> — paused: design done` after its design commit; wait
+for `0`, append a fresh `<strategy> — in progress` line, and invoke it again with the block and no
+pause paragraph — its state file resumes it at BUILD. Whoever waits, the user's review of the previous
 slice and the strategy choice for this one overlap the run.
 
 **What the host carries for `direct`, `hand` and `navigator`** — the executor there cannot write
@@ -323,17 +304,23 @@ Whatever runs a slice owes exactly five things:
    optional even for `direct`: the boundary ticks an acceptance criterion only where a passing
    test satisfies it. **For a slice whose `Kind` is `refactor` or `scaffolding`** the obligation is
    instead that the existing tests over the restructured code stay green — no new behavior, so no
-   new test and no criterion to tick. That carve-out is the only one. There is none for an earlier
-   slice's test: the host updates any this slice invalidates before handing off, at step 2 of
-   Running a slice, so an executor never meets a red test it did not cause. If one turns up anyway
-   it hands back **blocked**, changing no test and never handing back red.
+   new test and no criterion to tick. That carve-out is the only one.
+   **An earlier slice's test this slice breaks is the executor's to update** — routine, since each
+   slice builds only what it needs. Change its **fixture** or call site wherever that absorbs it:
+   an expectation edited to agree with the new behavior stops pinning its own slice's rule and
+   double-pins this one under its old name. Otherwise narrow the expectation to that slice's rule,
+   never weaker. If this slice replaces the rule, delete the test, and if it ticked a criterion,
+   make sure this slice's test still satisfies it. Commit the update alone, before the work that
+   needs it, and note it on the Attempts line.
 
 3. **Write only its designated plan fields, and build only its own slice.** The fields are its
    slice's Attempts line, hypothesis deltas that change a later slice, and backlog items, the last
    in its own state file instead if it keeps one with a backlog of its own. The host owns Strategy,
-   statuses, criteria and every other slice — including the *work* of every other slice: a
+   statuses, criteria and every other slice — including the *work* of every later slice: a
    restructuring the plan has already given to a later slice is not this executor's to do, however
    much its own refactoring step wants it. Log it and move on; doing it here empties that slice.
+   Preserve existing behavior unless this slice's behavior sentence changes it; the structure
+   behind it, earlier slices' included, evolves as this slice needs.
 4. **Commit its work on that branch.** The boundary squashes *commits*, not worktree state. An
    uncommitted slice leaves the branch zero commits ahead of `<previous-slice-branch>` and the
    squash's `git commit` fails — "no changes added to commit", or "nothing added to commit but
@@ -352,9 +339,8 @@ Obligations 2 and 4 describe a *finished* slice. **The one sanctioned way not to
 hand back `blocked`**, and there is no other: the executor stops, gets its tests back to green
 (reverting or simply not committing whatever turned it red), commits whatever complete work it has
 or nothing if there is none, sets its Attempts line to `<strategy> — blocked: <what stopped it>`,
-and says the same when it hands back. A slice that needs splitting, an earlier slice's test that
-needs changing after all, and a strategy whose own rules leave it no move here are all this one
-outcome. The host owns what happens next:
+and says the same when it hands back. A slice that needs splitting and a strategy whose own rules
+leave it no move here are both this one outcome. The host owns what happens next:
 [A guest that hands back blocked](#a-guest-that-hands-back-blocked).
 
 #### Which shape carries which obligation
@@ -390,9 +376,8 @@ Re-read the Rules in Force header and the Slices section. Then:
    review below. When skipping, read the section and carry its `Dismissed` and `Open at cap` lists
    into step 3 as the triage you would otherwise have done — the guest triaged its own reviewer's
    findings, so the user sees each dismissal and its reason — and add its `Backlogged` and
-   `Out of scope` items to the plan's backlog. An earlier-slice test you updated on this branch is
-   in the diff the guest reviewed, and its adapted block applies the same two backlog rules as
-   below.
+   `Out of scope` items to the plan's backlog. Its adapted block applies the same two backlog rules
+   as below.
 
    **Otherwise, delegate a design review to a fresh subagent.** Resolve `git rev-parse --show-toplevel`
    **yourself, first**, and paste the resulting absolute path into the prompt — tell it to invoke
@@ -406,17 +391,17 @@ Re-read the Rules in Force header and the Slices section. Then:
    one slice is too small for component-level findings. The host owns this review, never the guest.
    The `:(exclude)` hides the plans directory wholesale, so a project document this slice
    legitimately changed goes unreviewed too — mention it at step 3 if so. The diff also carries any
-   earlier-slice test you updated at step 2 of Running a slice: leave it in, as this is the only
-   second pair of eyes that change gets.
+   earlier-slice test the executor updated: leave it in, as this is the only second pair of eyes
+   that change gets.
    **You triage the result** — fix what is cheap while the tests are green, **committing the fixes
    on the branch** (step 4 squashes *commits*, so an uncommitted fix is dropped from the shipped
    commit and left dirty for the next slice), and turn the rest into named backlog entries.
    **Triage is scoped to this slice's own diff, and cheapness is not the only test.** Two findings
    are backlog entries however cheap, and the reviewer — a fresh subagent that cannot see the plan
    — will rank both highly: one that wants an earlier slice's or the steel thread's test tightened
-   to assert exactly the current output (that test pins the seam, not the content; tightening it
-   deadlocks the next slice — [references/slicing.md](references/slicing.md), §"A thread's test
-   must survive being thickened"), and one that asks for behavior this slice does not have, such as
+   to assert exactly the current output (that test pins the seam, not the content —
+   [references/slicing.md](references/slicing.md), §"A thread's test must survive being
+   thickened"), and one that asks for behavior this slice does not have, such as
    a missing error path (*Kitchen sink*, same file). Never present the slice untriaged.
 3. **Start the full-suite run in the background**, per
    [The background suite run](#the-background-suite-run), first committing any step-2 fix.
@@ -503,11 +488,9 @@ It is not a boundary — the behavior is not there — and it is not yet an aban
 be fine. Re-read the Rules in Force header and the Slices section, read the reason, and take
 exactly one of three:
 
-- **A precondition you own.** Most often an earlier slice's test this slice invalidates that you
-  did not catch at step 2. Do what step 2 says — change it on this branch, fixture first, get to
-  green, commit, note what you changed. Then hand off again at step 3. The blocked line stays
-  closed where it is; a re-invocation is a new attempt, so append a fresh
-  `<strategy> — in progress` line below it.
+- **A precondition you own** — something the plan or the setup should have provided. Supply it on
+  this branch, commit, and hand off again at step 3. The blocked line stays closed where it is; a
+  re-invocation is a new attempt, so append a fresh `<strategy> — in progress` line below it.
 - **The slice is too big, or is two slices.** Re-slice: narrow this slice's behavior sentence to
   what is green and coherent now, move the rest to a new slice immediately after it, and re-read
   [references/slicing.md](references/slicing.md). Surface the re-slice to the user. Then go to the
@@ -526,9 +509,7 @@ its first attempt away.
 
 ### Abandoning a strategy
 
-Re-read the Rules in Force header and the Slices section before any of this. The restore rewinds
-past the earlier-test update you made at *Running a slice* step 2, so re-doing it is part of the
-recipe.
+Re-read the Rules in Force header and the Slices section before any of this.
 
 Abandon when the strategy itself is wrong for the slice — whether you concluded that yourself or a
 guest handed back `blocked` saying so, which is evidence and not the decision. **Propose it and
@@ -537,8 +518,7 @@ and judging a strategy a bad fit is the call this skill exists to leave with the
 
 Once confirmed, follow [references/abandon.md](references/abandon.md), in that order:
 drain and delete the guest's state file, restore the worktree from the previous slice's branch,
-commit the reversion the restore stages, redo the earlier-slice test update the restore rewound,
-and only then close the abandoned Attempts line and set the new strategy — the plan write is last
+commit the reversion the restore stages, and only then close the abandoned Attempts line and set the new strategy — the plan write is last
 because the new strategy's open line is what a resume reads as "ready for step 3". The
 reversion is committed, not left in the index, so the replacement strategy inherits the genuinely
 clean tree the handoff block promises it. The plan is untracked, so the restore never touches it —

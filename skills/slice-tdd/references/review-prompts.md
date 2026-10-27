@@ -33,8 +33,9 @@ already set.
 > a behavior list, does every row trace to the slice's behavior sentence? Does it break any of the
 > plan's Constraints? Then: does the codebase
 > already have something this duplicates — a helper, a type, a pattern for this kind of problem —
-> that the design should reuse or follow instead? Then assess it against `design-principles`' vocabulary: does it respect
-> existing boundaries and conventions in this codebase, does it hold up against SOLID and the
+> that the design should reuse or follow instead? Then assess it against `design-principles`' vocabulary: does it follow
+> this codebase's conventions, and does it preserve existing behavior while reshaping any structure
+> that doesn't fit this change, rather than designing around it? Does it hold up against SOLID and the
 > component-cohesion/coupling principles, does Simple Design's priority order (tests pass >
 > intention clear > no duplication > fewest elements) suggest a smaller design. Report findings
 > ranked by severity, each with what's wrong and why it matters — including "no findings, this
@@ -53,8 +54,8 @@ produced it. It checks whether the diff holds up on its own, to someone who neve
   file's Session `Base branch`. Resolve
   `git rev-parse --show-toplevel` yourself and paste the absolute path in; state it as the
   subagent's working directory, since a `$(...)` left unexpanded is evaluated in the subagent's own
-  directory, possibly a different repository. The diff includes any earlier-slice test the host
-  updated on this branch — that change gets no other review.
+  directory, possibly a different repository. The diff includes any earlier-slice test the
+  executor updated — that change gets no other review.
 - The unit tests from RED, and any pins from MAKE ROOM, as part of that diff.
 - Access to `design-principles` and `design-review`'s vocabulary for naming what it finds.
 

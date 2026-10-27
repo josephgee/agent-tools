@@ -17,6 +17,8 @@ milestone and ladder drop, each delegate's return, each REVIEW round, and SHIP.
   `internal`: the behavior list is the target; a departure goes to the user when BUILD returns it.
 - The host triages and asks; delegates research, review, build and fix. It reads results and this
   file, never the diff. Every phase's closing commit sets the next phase.
+- Keep existing behavior the slice sentence doesn't change; reshape structure, earlier slices'
+  included. An earlier test it breaks: fixture first, else narrow, never weaker; committed alone.
 - MAKE ROOM pins untested code before changing it. New interfaces get raising stubs; a RED test
   that passes immediately gets a mutation check. Touch a test in GREEN only by amendment, committed
   alone. Never the full suite. Pressure log at each milestone, "nothing" is not an answer. Each

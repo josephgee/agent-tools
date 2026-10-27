@@ -42,7 +42,7 @@ What that means here:
   feature-level and already passed; this one is per slice.
 - **Hand back `<strategy> — blocked: <what stopped it>`** — leaving your tests green and
   committing any complete work — when Setup's `Kind` check fails; the design shows the slice needs
-  splitting; an earlier slice's test needs changing; MAKE ROOM outgrows a few commits; or, in
+  splitting; MAKE ROOM outgrows a few commits; or, in
   `acceptance`, the user rejects the design at the gate and no revision converges. The host re-slices or
   abandons from there.
 - **Keep decision context in the state file's `Learned` line**, which the host folds into the
@@ -142,8 +142,10 @@ repository." Reading code is fine; probing behavior by running it waits for BUIL
 1. **Research and draft, delegated as one unit.** Hand a subagent the slice's behavior sentence,
    its criteria, the Constraints, and — in `acceptance` mode — ACCEPT's acceptance tests, and let it run the
    research-design loop to a finished draft inside its own context — read the codebase, search the
-   web, consult whatever knowledge bases are available, revise the doc against what it finds. It
-   returns one artifact, containing:
+   web, consult whatever knowledge bases are available, revise the doc against what it finds.
+   Include in the bundle, verbatim: "Preserve existing behavior the behavior sentence doesn't
+   change; existing structure is material, not a constraint — where its shape doesn't fit, reshape
+   it rather than work around it." It returns one artifact, containing:
    - **In `internal` mode, the behavior list** — the individual observable behaviors that
      together deliver the behavior sentence, one sentence each, no "and", each traceable to the
      sentence or a criterion this slice advances. This is the slice's target, as ACCEPT's table is
@@ -250,8 +252,8 @@ at step 4's check. The round count carries over; a resume never resets the cap.
 2. **Triage every finding** into one of three: **fix**, **dismiss** with a one-line reason, or
    **backlog** it. The blind reviewer cannot see the plan and will rank two kinds of finding
    highly; both are backlog entries however cheap. One asks to tighten an earlier slice's or the
-   steel thread's test to assert exactly the current output — that test pins the seam, and
-   tightening it deadlocks the next slice. The other asks for behavior this slice does not have,
+   steel thread's test to assert exactly the current output — that test pins the seam, not the
+   content. The other asks for behavior this slice does not have,
    such as a missing error path. Record the round in `Rounds`, and write fixes to the `## Review`
    section's `To fix` list, each with its tag, and dismissals and backlog entries to their lists; the host shows the user every
    dismissal. Commit the state file.

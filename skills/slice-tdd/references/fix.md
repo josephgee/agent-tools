@@ -19,8 +19,7 @@ You return exactly one line, and the tree is clean and committed whichever it is
 - **`departure: <what, and why> at <sha>`** — a fix needs something the agreed Design does not
   describe or contradicts: a new interface or type, a changed boundary or contract. Stop, discard
   uncommitted work, note it in `Current Position`, commit the state file.
-- **`blocked: <what stopped it> at <sha>`** — a fix would need an earlier slice's test changed, or
-  shows the slice needs splitting. Leave the tree green and committed.
+- **`blocked: <what stopped it> at <sha>`** — a fix shows the slice needs splitting. Leave the tree green and committed.
 
 ## Every step
 
@@ -28,7 +27,8 @@ Start each fix from a clean tree, make it, run the targeted tests, and commit it
 are green: `slice-tdd: review fix — <what>` or `slice-tdd: lint fix — <what>`. A step that breaks a
 test that passed before it and survives one repair attempt is discarded per
 [discard.md](discard.md); retry it once in smaller steps, and if that fails too, give up on it.
-Never touch a test except to fix a finding about that test, and never weaken an assertion to make a
+Never touch a test except to fix a finding about that test or to move an earlier slice's test
+with structure a fix reshapes, assertions unchanged; never weaken an assertion to make a
 fix pass.
 
 ## Job: `review fixes`

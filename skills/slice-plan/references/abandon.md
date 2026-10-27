@@ -81,12 +81,6 @@ Either way, re-check `git -C "$top" status --short` afterwards: it should print 
 outside the plans directory — no `??`, and nothing staged. A leftover `??` path is a directory the
 clean missed, not a failed restore — clean it and re-check before going on.
 
-**Then redo the earlier-slice test update** that *Running a slice* step 2 (SKILL.md) made on this
-branch. The restore goes back to the previous slice's branch, which is *before* the host committed
-that update — so it is gone, and the handoff block promises the next guest it starts green. The
-note on the Attempts line you are about to close is the surviving record of what it was. Re-apply
-it, get to green, and commit it on this branch.
-
 **Only then**, on the restored tree, write the plan — no commit, it is untracked:
 
 1. **Close the strategy's open Attempts line** in place, setting it to
@@ -94,9 +88,7 @@ it, get to green, and commit it on this branch.
    `in progress` one standing — a stale open line reads as an attempt still running, and the
    resume path reads the newest line to decide where to re-enter.
 2. Set the slice's **Strategy** to the new one and append `<new-strategy> — in progress`. **This
-   line is written last, after the redo above**, and that order is load-bearing: it is what the
-   resume path (`resume.md`) reads as "the branch is ready for a new strategy, go to
-   step 3". Written before the redo, it routes a session that ends in between straight into a
-   handoff over the red suite the block promises the guest it will not meet.
+   line is written last**: the resume path (`resume.md`) reads it as "the branch is ready for a
+   new strategy, go to step 3".
 
 Then start the new strategy. Its state file is created fresh.

@@ -32,8 +32,7 @@ You return exactly one line, and the tree is clean and committed whichever it is
   work per [discard.md](discard.md), write the departure as one line in the state file's
   `Current Position` notes, and commit the state file. Leave RED's tests in place; the delegator
   takes it to the user and may send a fresh session back to continue.
-- **`blocked: <what stopped it> at <sha>`** — an earlier slice's test needs changing, the slice
-  turns out to need splitting, or MAKE ROOM outgrows a few commits. Get back to green before
+- **`blocked: <what stopped it> at <sha>`** — the slice turns out to need splitting, or MAKE ROOM outgrows a few commits. Get back to green before
   returning: delete RED's still-failing tests, keep the passing ones, record which went in the
   state file's `RED` section, and commit (`slice-tdd: blocked — <reason>`). Do not write the plan's
   Attempts line or hand anything back further; the delegator does.
@@ -51,21 +50,22 @@ test that passed before it, and survives one repair attempt, is discarded per
 
 **Re-read the Rules in Force header first.**
 
-**Gate — both conditions must hold:** this phase runs only if the design will *modify* code (the
-Design section's file list) that (a) was **not written in this feature's earlier slices** —
-feature-internal code is already covered by construction — and (b) is **not already pinned by
-tests you trust** to catch a behavior change. New files and pure additions never qualify. If the
-gate doesn't fire, write `skipped — <one-line reason>` under the state file's `MAKE ROOM`, set
+**Gate:** this phase runs only if the design will *modify* existing code (the Design section's
+file list), earlier slices' included. New files and pure additions never qualify. If the gate
+doesn't fire, write `skipped — <one-line reason>` under the state file's `MAKE ROOM`, set
 the phase to RED, commit the state file, and move on.
 
 When it fires, in this order:
 
-1. **Pin first**: pin the current behavior of the code about to be disturbed — invoke the
+1. **Pin first**, only where that code (a) was **not written in this feature's earlier slices** —
+   feature-internal code is already covered by construction — and (b) is **not already pinned by
+   tests you trust** to catch a behavior change: pin its current behavior — invoke the
    `backfill-tests` skill; it carries the quality bar (intent-derived expectations, proven
    falsifiable). Commit: `slice-tdd: pin <what> before <slice-slug>`.
 2. **Then the preparatory refactor**: make the change easy before making the easy change.
-   Behavior-preserving only; targeted tests green after each step, the pins included. Commit:
-   `slice-tdd: make room for <slice-slug>`.
+   Behavior-preserving only; targeted tests green after each step, the pins included. An earlier
+   slice's test the reshape breaks moves with it — call site, name, location — its assertions
+   unchanged. Commit: `slice-tdd: make room for <slice-slug>`.
 
 If the preparatory refactor grows beyond a few commits, stop: it is a slice of its own. Return
 `blocked: make room outgrew the slice — <what>` so the host can plan it ahead of this one.
@@ -163,7 +163,10 @@ and commit the state file.
   after). Never weaken a test inside an implementation commit. A gap outside the slice's scope is
   not this slice's to fix — add it to the state file's `## Out of Scope` section, which becomes a plan
   backlog entry; don't act on it here. An amendment that only makes sense under a different design
-  is a `departure`, not an amendment.
+  is a `departure`, not an amendment. An earlier slice's test this slice's behavior breaks takes
+  the same route — halt, update it per the Rules in Force header (never to agree with the new
+  output), commit it alone as `slice-tdd: update <test> for <slice-slug>` — except it must pass,
+  not fail, once updated.
 
 ---
 

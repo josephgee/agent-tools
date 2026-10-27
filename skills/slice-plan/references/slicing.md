@@ -122,18 +122,9 @@ The thread is pinned by a test, and every later slice exists to make that thread
 "the response is CSV with a header row" survives rows arriving later; "the response is exactly
 this header and nothing else" does not, and slice 02 breaks it on its first green.
 
-This matters beyond tidiness. A test-first flow forbids leaving the suite red *and* forbids
-changing a test to get green, so a broken inherited test can deadlock it between its own rules.
-Over-specify the thread and you hand the next slice an unwinnable position.
-
-When a later slice genuinely does invalidate an earlier slice's test — the behavior it pinned was
-provisional and the plan always meant to replace it — that is a **plan-level event, not a test
-being weakened to pass**. Make the update a deliberate change of its own, *before* the work that
-invalidates it, so nothing is ever built over a red suite. And change the **fixture** rather than
-the expectation wherever you can: an earlier test edited down to agree with the new behavior stops
-pinning its own slice's rule and starts double-pinning the new one under its old name — green, two
-tests failing for the same cause, and nothing left asserting what the earlier slice promised.
-Record that you did it, wherever your flow records slice-level decisions.
+Over-specify it and every later slice pays to update it. Updating it is routine — each slice
+builds only what it needs — and is a plan-level event, not a test weakened to pass: SKILL.md's
+executor contract, obligation 2, says how.
 
 Every subsequent slice thickens the thread at one point — replacing a stub with real behavior,
 which is itself an observable change. That is why vertical slicing works downstream: there is a
