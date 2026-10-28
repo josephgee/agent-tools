@@ -8,13 +8,14 @@ get the user's confirmation before running any of the below.
 **First** drain the guest's state file into the plan and remove it with the `git rm -f` in the
 block below, so the reversion commit carries the deletion away (`hosted-handoff.md`, *The guest's
 state file*, has what to drain and which guests keep theirs). Use a plain `rm` **only** where the
-guest never committed at all: the file is then untracked and `git rm` fails with `pathspec … did
+file is untracked — the guest never committed at all, or the boundary's step 3 already squashed it
+out — since `git rm` then fails with `pathspec … did
 not match any files`. The destination for a short drain is the Attempts line you are about to
 close — the reason the attempt failed belongs in its `abandoned: <what entangled>` text,
 so write it there now rather than carrying it in your head across the restore; anything longer
 goes in the Backlog or the Design Hypothesis. **Then** restore the worktree to the previous
 slice's branch, remove new files, and commit the reversion the restore stages. Commits on the
-current branch stay; the squash at ship collapses them all away.
+current branch stay; the boundary's squash collapses them all away.
 
 **Derive `<source dirs>` rather than recalling them.** Run `git -C "$top" status --short` first
 and take every untracked path outside the plans directory — a delegated guest is invisible while
@@ -68,7 +69,7 @@ where it caches by path. Check for them after the clean and remove those by name
 `-x`, which would take the plan with them.
 
 If the guest had committed at least once, the restore stages the reversion of its code and the
-block's last line commits it, so **nothing is staged afterwards** — and the squash at ship
+block's last line commits it, so **nothing is staged afterwards** — and the boundary's squash
 collapses that commit away like the guest's own. Do not leave the reversion sitting in the index
 instead: it is the only thing undoing the abandoned attempt's *committed* code, the replacement
 guest is told the tree is already clean and to skip the preflight that would notice, and a guest

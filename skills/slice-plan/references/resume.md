@@ -43,12 +43,18 @@ Then re-enter [Running a slice](../SKILL.md#running-a-slice) by that slice's sta
     Check first whether the squash ran, with `git log --oneline <previous-slice-branch>..HEAD`
     (`<previous-slice-branch>` is the previous slice's branch, the base branch for slice 01), and
     read the commits' **subjects**, not just the count:
-    - one commit whose subject is the slice's behavior sentence → the squash ran but the user's
-      approval is unrecorded (step 5 would have marked the slice `shipped`): resume at step 3's
-      suite start and presentation, after its squash;
-    - one commit with any other subject → the guest's own work (a `direct` or `hand` slice is one
-      commit by construction): the boundary from step 1. Treating it as squashed would skip the
-      design review and the user's approval and ship the slice under the guest's commit message;
+    - one commit whose subject is the slice's behavior sentence, **and** the slice has a **Suite**
+      field → the squash ran (step 3 writes Suite right after it) but the user's approval is
+      unrecorded (step 5 would have marked the slice `shipped`): resume at step 3 after its squash.
+      First run `git -C "$top" status --short`: anything outside the plans directory is a review
+      change interrupted before its amend — show the user and ask whether to finish it, per *A
+      change before approval* in [background-suite.md](background-suite.md), or discard it. Then
+      start the run only if Suite does not read `green:` or a live `running:`, and re-present;
+    - one commit with any other subject, or with no **Suite** field → the guest's own work (a
+      `direct` or `hand` slice is one commit by construction, possibly under the behavior sentence),
+      or a squash the session died before recording, which re-squashing redoes harmlessly: the
+      boundary from step 1. Treating it as squashed would skip the design review and the user's
+      approval;
     - more than one → the ordinary `tdd` handback, squash not yet run: the boundary from step 1;
     - **none at all** → the guest built nothing, or built it and never committed: re-enter at
       *Running a slice* step 3. Re-invoking a guest with commits present would rerun a slice

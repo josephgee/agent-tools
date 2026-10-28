@@ -366,7 +366,7 @@ Re-read the Rules in Force header and the Slices section. Then:
 1. Confirm the targeted tests are green and the slice's behavior is actually observable — for a
    slice whose `Kind` is `refactor` or `scaffolding`, that behavior is *unchanged* and the tests
    over the restructured code prove it. **Do not run the full suite here**; step 3 starts it in the
-   background, once review fixes can no longer move the code.
+   background, on the squashed slice.
    A red test here is not a boundary: if the guest handed back `blocked`, go to
    [A guest that hands back blocked](#a-guest-that-hands-back-blocked); if it handed back red
    anyway, treat that as `blocked` and read it there too.

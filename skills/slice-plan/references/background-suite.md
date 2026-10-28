@@ -93,11 +93,13 @@ otherwise commit it. Until the run finishes, leave its output alone — it is st
 ## A change before approval
 
 Covers both a red run and a change the user asks for at the boundary's step 3 — the slice is not
-`shipped`, so it is still open. Stop the run (the recipe's first two lines), make the change on
+`shipped`, so it is still open. Stop the run as *To stop a run without restarting* says, so a
+resume reads it as stopped rather than dead and restarts nothing over a half-made change. Make the change on
 this branch, rerun the affected tests, and fold it into the slice's one commit:
 `git -C "$top" add -A -- . ':(exclude)<plans-dir>/' && git -C "$top" commit --amend --no-edit`,
 with `top=$(git rev-parse --show-toplevel)` in the same call. The exclude matters: the guest's
-state file sits untracked in the plans directory until step 6, and a bare `add -A` ships it. Then
+state file sits untracked in the plans directory until step 6, and a bare `add -A` ships it. It
+also skips a project document there the change touched — re-stage that by name. Then
 start the run again and tell the user what changed; the new run is waited on like any other.
 
 ## Red before approval
