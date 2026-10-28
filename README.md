@@ -14,7 +14,7 @@ Design notes for larger efforts live in `docs/designs/`.
 
 ## Skills
 
-- **[tdd](skills/tdd/SKILL.md)** — Guides strict Test-Driven Development (TDD) as a learning
+- **[tdd](skills/tdd/SKILL.md)** *(legacy; not installed by default — superseded by `slice-plan` + `slice-tdd`)* — Guides strict Test-Driven Development (TDD) as a learning
   loop, via THINK-RED-GREEN-REFACTOR cycles with a persistent state file for tracking design
   evolution and backlog.
 - **[slice-tdd](skills/slice-tdd/SKILL.md)** — Executes one `slice-plan` slice test-first, with
@@ -85,12 +85,12 @@ into `~/.claude/skills`, so it coexists with skills already there, and never ove
 existing directory or a symlink pointing elsewhere. Re-running is safe.
 
 ```bash
-./install-claude.sh                     # link all skills
-./install-claude.sh tdd design-review   # link those (+ their soft-deps)
+./install-claude.sh                     # link all non-legacy skills
+./install-claude.sh slice-tdd design-review   # link those (+ their soft-deps)
 ./install-claude.sh --list              # list available skills
-./install-claude.sh --dry-run tdd       # preview, change nothing
+./install-claude.sh --dry-run slice-tdd # preview, change nothing
 ./install-claude.sh --no-deps <skill>   # link only what's named
-./install-claude.sh --target .claude/skills tdd   # project-scoped install
+./install-claude.sh --target .claude/skills slice-tdd   # project-scoped install
 ```
 
 Prefer the manual `ln -s` recipes below if you're on another harness, or want to see exactly

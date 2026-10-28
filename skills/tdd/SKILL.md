@@ -4,6 +4,7 @@ description: "Guides strict Test-Driven Development (TDD) as a learning loop, de
 compatibility: "Requires the slice-plan, design-principles, design-review, and refactor skills to be installed alongside it — the PR plan is drafted from slice-plan's slicing doctrine, and the design checks at REFACTOR, SHIP, and the end-of-feature pass depend on design-principles and design-review, and the REFACTOR production checklist is refactor's standard, with no bundled fallback."
 metadata:
   soft-deps: slice-plan design-principles design-review refactor
+  legacy: "true"
 ---
 
 # TDD

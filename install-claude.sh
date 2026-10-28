@@ -23,11 +23,14 @@
 # names), it skips the "no names -> install everything" default and only
 # does the CLAUDE.md wiring.
 #
+# A skill marked `legacy: "true"` in its frontmatter metadata is left out of the
+# link-everything default (and --list) but still links when named explicitly.
+#
 # Usage:
-#   ./install-claude.sh                        # link all skills
-#   ./install-claude.sh tdd design-review      # link those (+ their soft-deps)
+#   ./install-claude.sh                        # link all non-legacy skills
+#   ./install-claude.sh slice-tdd design-review  # link those (+ their soft-deps)
 #   ./install-claude.sh --list                 # list available skills, then exit
-#   ./install-claude.sh --dry-run tdd          # show what would happen, change nothing
+#   ./install-claude.sh --dry-run slice-tdd    # show what would happen, change nothing
 #   ./install-claude.sh --no-deps design-review   # link only what's named, skip soft-deps
 #   ./install-claude.sh --target DIR ...       # link into DIR instead of ~/.claude/skills
 #   ./install-claude.sh --personal-md          # import personal/working-with-joe.md into
@@ -56,23 +59,29 @@ die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 # --help tracks the header automatically instead of hard-coded line numbers.
 usage() { awk 'NR==1{next} /^#/{sub(/^# ?/,""); print; next} {exit}' "${BASH_SOURCE[0]}"; }
 
-# Space-separated soft-deps declared in a skill's SKILL.md frontmatter, or nothing.
-soft_deps() {
+# Value of a metadata key in a skill's SKILL.md frontmatter (quotes stripped), or nothing.
+frontmatter_value() {
   local f="$skills_dir/$1/SKILL.md"
   [ -f "$f" ] || return 0
-  awk '
+  awk -v key="$2" '
     NR==1 && $0=="---" { infm=1; next }
     infm && $0=="---" { exit }
-    infm && /^[[:space:]]*soft-deps:[[:space:]]*/ {
-      sub(/^[[:space:]]*soft-deps:[[:space:]]*/, ""); print; exit
+    infm && $0 ~ "^[[:space:]]*" key ":[[:space:]]*" {
+      sub("^[[:space:]]*" key ":[[:space:]]*", ""); gsub(/"/, ""); print; exit
     }
   ' "$f"
 }
 
+# Space-separated soft-deps declared in a skill's SKILL.md frontmatter, or nothing.
+soft_deps() { frontmatter_value "$1" soft-deps; }
+
 list_skills() {
-  local d
+  local d name
   for d in "$skills_dir"/*/; do
-    [ -f "$d/SKILL.md" ] && basename "$d"
+    name="$(basename "$d")"
+    [ -f "$d/SKILL.md" ] || continue
+    [ "$(frontmatter_value "$name" legacy)" = "true" ] && continue
+    printf '%s\n' "$name"
   done
 }
 
