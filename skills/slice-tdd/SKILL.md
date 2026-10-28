@@ -150,7 +150,9 @@ repository." Reading code is fine; probing behavior by running it waits for BUIL
      together deliver the behavior sentence, one sentence each, no "and", each traceable to the
      sentence or a criterion this slice advances. This is the slice's target, as ACCEPT's table is
      in `acceptance` mode. A behavior that does not trace is not this slice's.
-   - **The interface sketch** — names, signatures, types and errors, as consumers will see them.
+   - **The interface sketch** — names, signatures, types and errors, as consumers will see them;
+     every new parameter, dependency or global with each layer that receives it; and each branch
+     decision with the one place it is made, passed on from there as data.
    - **The design doc** — context, proposed approach, the one real alternative considered and the
      line that decided against it, visuals where they'd clarify a flow or data shape a paragraph
      would only restate.

@@ -39,7 +39,10 @@ already set.
 > component-cohesion/coupling principles, does Simple Design's priority order (tests pass >
 > intention clear > no duplication > fewest elements) suggest a smaller design. Report findings
 > ranked by severity, each with what's wrong and why it matters — including "no findings, this
-> fits" if that's the honest read.
+> fits" if that's the honest read. Then, as a separate section, a wiring table: one row per new
+> parameter, dependency, global or shared value the design introduces, naming every receiver and
+> whether each needs it, and flagging any vendor-specific name that reaches a layer that should be
+> neutral — "none introduced" if there are none. Any row that fails also goes in the findings.
 
 ## REVIEW's blind review
 

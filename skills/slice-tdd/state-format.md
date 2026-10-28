@@ -57,7 +57,8 @@ milestone and ladder drop, each delegate's return, each REVIEW round, and SHIP.
 a criterion):
 - <one sentence, no "and">
 
-**Interface sketch**: <names, signatures, types, errors, as consumers see them>
+**Interface sketch**: <names, signatures, types, errors, as consumers see them; new parameters,
+dependencies and globals with each receiving layer; each branch decision and where it is made>
 
 **Files modified**: <paths the design changes — MAKE ROOM's gate reads this>
 

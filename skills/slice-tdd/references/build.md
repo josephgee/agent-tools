@@ -81,11 +81,18 @@ and commit the state file.
 
 1. **Write unit tests** against the agreed design and interface sketch: in `internal` mode one per
    entry in the behavior list, in `acceptance` mode one per behavior the implementation needs. Follow
-   `design-principles`' test-quality doctrine (FIRST, behavioral-not-wiring — assert observable
-   outcomes, never that one object called another), and add any acceptance proofs the user chose
-   to persist as suite tests. Everything below treats them alike. Writing them is a design act: if
-   setup grows convoluted or assertions contort, the interface is failing its first contact —
-   revise it now, inside the agreed shape, or return `departure` if the fix leaves it.
+   `design-principles`' test-quality doctrine, and add any acceptance proofs the user chose to
+   persist as suite tests. Everything below treats them alike. Each test:
+   - asserts the whole value its name claims, so a wrong value sharing a part still fails — except
+     the steel thread's test, which pins the seam, not the content;
+   - feeds inputs a wrong implementation would fail on: off-boundary values, non-defaults passed
+     explicitly rather than inherited from a fixture;
+   - computes its expected value independently, never by repeating the implementation's math;
+   - cleans up only what it created.
+
+   Writing them is a design act: if setup grows convoluted or assertions contort, the interface is
+   failing its first contact — revise it now, inside the agreed shape, or return `departure` if
+   the fix leaves it.
 2. **Stub every new interface with bodies that raise** (`NotImplementedError` or the language's
    equivalent): real signatures, so the tests fail on assertions, not imports. Never a body that
    returns `None`/`0`/empty, which can satisfy a test by accident. If a stub is reachable, keep it
