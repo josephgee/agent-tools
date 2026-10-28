@@ -59,8 +59,8 @@ before every abandon. Never edited or summarized.
   executor's obligations at every handoff, in the form its shape takes.
 - No code on a slice — the handoff, a paused `slice-tdd`'s resume — until the previous slice's suite run reads
   `0`. The run uses this tree: change nothing outside the plans dir while it goes; stop it first.
-- No boundary over a red test. Review, commit fixes, start the suite run, then present; squash only
-  on the user's approval. Red after the squash: reopen, fix, amend, rebase the next slice onto it.
+- No boundary over a red test. Review, commit fixes, squash, start the suite run, then present; a
+  change in review is amended in. Red after approval: reopen, fix, amend, rebase the next slice onto it.
 - To abandon, **propose it and get the user's confirmation first**, then run the abandon recipe
   (`references/abandon.md`) as one uninterrupted step.
 - An attempt's line is closed in place, never removed and never duplicated.

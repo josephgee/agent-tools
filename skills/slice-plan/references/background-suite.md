@@ -1,9 +1,7 @@
 # The background suite run
 
-The full suite runs once per slice, on the slice's final code, **in the working tree itself**,
-while the user reviews the slice. The squash changes no code — `reset --soft` plus `commit`
-rebuilds the same tree under a new sha — so a run on the pre-squash commit proves the squashed one
-too. No executor runs the full suite, and **no executor ever sees this run**: you start it, you
+The full suite runs once per slice, on the slice's squashed commit, **in the working tree itself**,
+while the user reviews the slice. No executor runs the full suite, and **no executor ever sees this run**: you start it, you
 watch it, and you decide when the next slice's code may start (SKILL.md, *Hand off*).
 
 The tree is idle while it runs — the next slice's code is held until the run reads `0` — and that
@@ -11,10 +9,10 @@ idleness is what the result rests on:
 
 **While the run is going, nothing outside the plans directory changes.** No code edit, no `git
 switch` to a branch with a different tree, no `git restore` or `clean` — by you, an executor, or
-the user. The squash, plan writes, the guest's state-file deletion, and cutting the next slice's
+the user. Plan writes, the guest's state-file deletion, and cutting the next slice's
 branch from the shipped one all leave the code untouched and are fine. Anything else — a fix for a
 red run, a change the user asks for — **stops the run first**, and the recipe below restarts it
-once the change is committed. Tell the user the tree is in use when you present the slice.
+once the change is amended in. Tell the user the tree is in use when you present the slice.
 
 ## Starting it
 
@@ -81,7 +79,7 @@ or start it again. On a resume, do all of this before anything else in the slice
 - **Absent and not alive** — the run died (a reaped background job, a restarted machine). Start
   it again.
 - **Anything else** — red. Clear the run's leftovers below first; which section after that
-  depends on whether the squash has run.
+  depends on whether the slice is `shipped` yet.
 
 **Clearing the run's leftovers.** The tree was clean when the run started and nothing else has
 changed it since, so anything `git -C "$(git rev-parse --show-toplevel)" status --short` now shows
@@ -92,20 +90,22 @@ restored with `git restore`, and the user should know a run changes tracked file
 is deleted. Do this before any of the next slice's code starts: an executor's `git add -A` would
 otherwise commit it. Until the run finishes, leave its output alone — it is still writing.
 
-## A change before the squash
+## A change before approval
 
-Covers both a red run and a change the user asks for at the boundary's step 3 — the user is still
-reviewing, so the slice is still open. Stop the run (the recipe's first two lines), make the change
-on this branch, rerun the affected tests, commit, start the run again, and tell the user what
-changed. Squash once they approve; the new run is waited on like any other.
+Covers both a red run and a change the user asks for at the boundary's step 3 — the slice is not
+`shipped`, so it is still open. Stop the run (the recipe's first two lines), make the change on
+this branch, rerun the affected tests, and fold it into the slice's one commit:
+`git -C "$top" add -A -- . ':(exclude)<plans-dir>/' && git -C "$top" commit --amend --no-edit`,
+with `top=$(git rev-parse --show-toplevel)` in the same call. The exclude matters: the guest's
+state file sits untracked in the plans directory until step 6, and a bare `add -A` ships it. Then
+start the run again and tell the user what changed; the new run is waited on like any other.
 
-## Red before the squash
+## Red before approval
 
-The boundary's step 4 reads the status before squashing, so this is the user still at step 3.
-Fix it per *A change before the squash* above, and tell the user what changed, since no reviewer
-saw it.
+Step 4 reads the status before step 5 marks the slice `shipped`. Fix it per *A change before
+approval* above, and tell the user what changed, since no reviewer saw it.
 
-## Red after the squash
+## Red after approval
 
 This reopens a shipped slice — the one exception to *Feature complete*'s rule against amending
 one. The review is spent, but a slice that breaks the suite never met the bar it was approved

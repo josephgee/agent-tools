@@ -22,7 +22,7 @@ branch from a placeholder base.
 
 **A shipped slice whose Suite reads `red:` comes first**: a reopen was interrupted, and its fix
 may sit uncommitted on that slice's branch. Finish it —
-[references/background-suite.md](background-suite.md), *Red after the squash*, whose
+[references/background-suite.md](background-suite.md), *Red after approval*, whose
 steps say how to tell where it stopped — before the branch check or any routing below.
 
 **The current slice** is the first slice in list order that is not `shipped`. If every slice is
@@ -43,8 +43,9 @@ Then re-enter [Running a slice](../SKILL.md#running-a-slice) by that slice's sta
     Check first whether the squash ran, with `git log --oneline <previous-slice-branch>..HEAD`
     (`<previous-slice-branch>` is the previous slice's branch, the base branch for slice 01), and
     read the commits' **subjects**, not just the count:
-    - one commit whose subject is the slice's behavior sentence → the squash ran; resume at the
-      boundary's step 5;
+    - one commit whose subject is the slice's behavior sentence → the squash ran but the user's
+      approval is unrecorded (step 5 would have marked the slice `shipped`): resume at step 3's
+      suite start and presentation, after its squash;
     - one commit with any other subject → the guest's own work (a `direct` or `hand` slice is one
       commit by construction): the boundary from step 1. Treating it as squashed would skip the
       design review and the user's approval and ship the slice under the guest's commit message;

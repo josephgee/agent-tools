@@ -394,7 +394,7 @@ Re-read the Rules in Force header and the Slices section. Then:
    earlier-slice test the executor updated: leave it in, as this is the only second pair of eyes
    that change gets.
    **You triage the result** — fix what is cheap while the tests are green, **committing the fixes
-   on the branch** (step 4 squashes *commits*, so an uncommitted fix is dropped from the shipped
+   on the branch** (step 3 squashes *commits*, so an uncommitted fix is dropped from the shipped
    commit and left dirty for the next slice), and turn the rest into named backlog entries.
    **Triage is scoped to this slice's own diff, and cheapness is not the only test.** Two findings
    are backlog entries however cheap, and the reviewer — a fresh subagent that cannot see the plan
@@ -403,30 +403,11 @@ Re-read the Rules in Force header and the Slices section. Then:
    [references/slicing.md](references/slicing.md), §"A thread's test must survive being
    thickened"), and one that asks for behavior this slice does not have, such as
    a missing error path (*Kitchen sink*, same file). Never present the slice untriaged.
-3. **Start the full-suite run in the background**, per
-   [The background suite run](#the-background-suite-run), first committing any step-2 fix.
-   Then present the slice for review and stop, telling the user the suite is running in this tree — with, when step 2
-   was skipped, the guest's dismissed findings and their reasons, and anything left open at its round cap. This is where the user changes the slice's design, rejects the slicing, reorders
-   what's left, or calls the feature done early — far cheaper here than three slices later.
-
-   **A change the user asks for here is an edit to this slice, on its branch — make it.** Changing
-   the design is what this review is for; do not answer it with "that's another slice." Stop the
-   run, make the change, rerun the tests it touches, commit, and restart the run, per *A change
-   before the squash* in [references/background-suite.md](references/background-suite.md). If the
-   change is structural — a signature, a moved responsibility, a new type or module — send the new
-   diff through one design-review round as in step 2 before re-presenting; a local change needs
-   none. It is a re-slice instead only when it pulls in work another slice in the plan owns — then
-   say which slice and ask. Widening the behavior sentence alone is not that test. Something the
-   user wants revisited *later* is still a named backlog entry.
-4. On approval, squash the slice to one commit, dropping the plan file from it. **First read the
-   run's status file** — red here is *Red before the squash* in
-   [references/background-suite.md](references/background-suite.md); absent is fine, squash
-   anyway. **Then confirm the
-   tree is clean**: `git -C "$(git rev-parse --show-toplevel)" status --short` should show nothing
-   outside the plans directory. `reset --soft` stages only what was committed, so anything else
-   there is work the squash drops and leaves dirty for the next slice to sweep into its history.
-   While the run is still going, anything new there is its output — leave it, as *Clearing the
-   run's leftovers* in [references/background-suite.md](references/background-suite.md) says.
+3. **Squash the slice to one commit, dropping the plan file from it — before the user sees it**, so
+   their review is one commit's diff. **First confirm the tree is clean**:
+   `git -C "$(git rev-parse --show-toplevel)" status --short` should show nothing outside the plans
+   directory. `reset --soft` stages only what was committed, so anything else there is work the
+   squash drops and leaves dirty for the next slice to sweep into its history.
 
    **Before resetting, read the guest's state file for a `Learned` line from this slice's work** (a
    skill-shaped guest's refactor checklist sends decision context there instead of a PR description
@@ -449,6 +430,26 @@ Re-read the Rules in Force header and the Slices section. Then:
    subdirectory a bare `git reset -- plans/` matches nothing, **exits 0 and prints nothing**, and
    the guest's session notes go straight into the PR. Add a further
    `-m "<what is deliberately not here>"` only when the slice has an `inert:` Merge safety line.
+
+   **Then start the full-suite run in the background**, per
+   [The background suite run](#the-background-suite-run), present the slice for review and stop,
+   telling the user the suite is running in this tree — with, when step 2
+   was skipped, the guest's dismissed findings and their reasons, and anything left open at its round cap. This is where the user changes the slice's design, rejects the slicing, reorders
+   what's left, or calls the feature done early — far cheaper here than three slices later.
+
+   **A change the user asks for here is an edit to this slice, on its branch — make it.** Changing
+   the design is what this review is for; do not answer it with "that's another slice." Stop the
+   run, make the change, rerun the tests it touches, amend it into the slice's one commit, and
+   restart the run, per *A change before approval* in
+   [references/background-suite.md](references/background-suite.md). If the
+   change is structural — a signature, a moved responsibility, a new type or module — send the new
+   diff through one design-review round as in step 2 before re-presenting; a local change needs
+   none. It is a re-slice instead only when it pulls in work another slice in the plan owns — then
+   say which slice and ask. Widening the behavior sentence alone is not that test. Something the
+   user wants revisited *later* is still a named backlog entry.
+4. On approval, **read the run's status file** — red here is *Red before approval* in
+   [references/background-suite.md](references/background-suite.md); absent is fine, carry on.
+   Step 5's `shipped` is the record of approval: until it is written, the slice is still open.
 5. Update the plan: mark the slice `shipped`, close its attempt line, tick any criteria a passing
    test now satisfies, record hypothesis changes and backlog items, and set **Last updated**.
 6. **Delete the guest's state file** per [The guest's state file](#the-guests-state-file),
@@ -472,12 +473,11 @@ Then start the next slice at step 1 — including the strategy question.
 ### The background suite run
 
 The full suite runs once per slice, in the background, **in the working tree itself**, on the
-slice's final commit — the squash keeps the tree, so the result holds for the squashed commit too.
-Launch it at the boundary's step 3; `<dir>/status` is the result and stays until Cleanup: absent
+slice's squashed commit. Launch it at the boundary's step 3; `<dir>/status` is the result and stays until Cleanup: absent
 means running, `0` green, anything else red. **While it runs, nothing outside the plans directory
 changes** — stop it before any fix. No executor sees it: you hold the next slice's code until it
 reads `0` (*Hand off*). The one start-or-restart recipe, waiting and
-liveness, resuming, and fixing a red run before or after the squash are in
+liveness, resuming, and fixing a red run before or after approval are in
 [references/background-suite.md](references/background-suite.md) — read it at every launch, at
 every wait, and on any red.
 
@@ -499,7 +499,7 @@ exactly one of three:
   file in the plans directory, first drain and delete it, per
   [The guest's state file](#the-guests-state-file), and commit the deletion:** its plan and notes
   were written for the old, wider slice, and a re-invoked guest would offer to resume them. On the
-  boundary branch leave it: step 4 reads its `Learned` line and step 6 deletes it. A guest whose
+  boundary branch leave it: step 3 reads its `Learned` line and step 6 deletes it. A guest whose
   file lives outside the repo keeps it.
 - **The strategy has no move on this slice** — a test-first guest on a `refactor` slice is the
   standing example. That is an abandon: propose it and follow the recipe below.
@@ -535,7 +535,7 @@ and the backlog is drained — each item fixed, dismissed with a reason, or carr
 user names. **An item that needs a change to tracked code is not fixed here: it is a new slice**,
 appended to the plan and run through Running a slice like any other — strategy, branch, boundary,
 review — which un-declares the feature until it ships. Never an amendment to a slice already
-squashed and presented, at any size; that slice's review is spent. (A red background run is the
+shipped, at any size; that slice's review is spent. (A red background run is the
 one exception, handled in [references/background-suite.md](references/background-suite.md).)
 
 Report the slice sequence as delivered, the strategies each slice ended up using, and every

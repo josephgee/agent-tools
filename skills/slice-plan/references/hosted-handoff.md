@@ -196,7 +196,7 @@ later slice's concern). A reviewing guest's `## Review` lists are the other exce
 `Dismissed` and `Open at cap` are presented to the user at the boundary (step 3), whatever the user
 wants revisited becomes a plan backlog entry, and `Backlogged` and `Out of scope` become plan
 backlog entries directly. Read it before the squash and fold it into the squash commit per the
-boundary's step 4 — that is the shipped commit's PR description now, so that is where decision
+boundary's step 3 — that is the shipped commit's PR description now, so that is where decision
 context belongs. The squash's `git reset -- <plans-dir>/` keeps the file itself out of the shipped
 commit; the boundary's step 6 deletes it, and in the abandon it is the first action — the
 `git rm -f` at the top of the bash block, before the restore, so the reversion commit carries the
