@@ -50,12 +50,10 @@ Then re-enter [Running a slice](../SKILL.md#running-a-slice) by that slice's sta
       change interrupted before its amend — show the user and ask whether to finish it, per *A
       change before approval* in [background-suite.md](background-suite.md), or discard it. Then
       start the run only if Suite does not read `green:` or a live `running:`, and re-present;
-    - one commit with any other subject, or with no **Suite** field → the guest's own work (a
-      `direct` or `hand` slice is one commit by construction, possibly under the behavior sentence),
-      or a squash the session died before recording, which re-squashing redoes harmlessly: the
+    - one commit with any other subject, or with no **Suite** field → the guest's own work, or a squash the session died before recording, which re-squashing redoes harmlessly: the
       boundary from step 1. Treating it as squashed would skip the design review and the user's
       approval;
-    - more than one → the ordinary `slice-tdd` handback, squash not yet run: the boundary from step 1;
+    - more than one → an unsquashed handback from any strategy: the boundary from step 1;
     - **none at all** → the guest built nothing, or built it and never committed: re-enter at
       *Running a slice* step 3. Re-invoking a guest with commits present would rerun a slice
       already built.

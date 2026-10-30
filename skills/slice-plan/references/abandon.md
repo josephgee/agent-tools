@@ -18,9 +18,8 @@ slice's branch, remove new files, and commit the reversion the restore stages. C
 current branch stay; the boundary's squash collapses them all away.
 
 **Derive `<source dirs>` rather than recalling them.** Run `git -C "$top" status --short` first
-and take every untracked path outside the plans directory — a delegated guest is invisible while
-it works, so a top-level directory it created is one you never saw appear and will not think to
-name. `status --short` prints a mix of files and collapsed directories, so pass the **containing
+and take every untracked path outside the plans directory — a top-level directory a guest created
+mid-slice is one you never noticed appear and will not think to name. `status --short` prints a mix of files and collapsed directories, so pass the **containing
 directory** of each path it lists, not the paths themselves: a second stray file in a directory
 `status` collapsed is otherwise left behind. **If the list comes out empty — the normal case when the executor committed its work — skip the
 `clean` entirely.** `git clean -fd --` with nothing after the `--` has no pathspec to limit it and

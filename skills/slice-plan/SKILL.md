@@ -1,6 +1,6 @@
 ---
 name: slice-plan
-description: "Plans a feature as an ordered sequence of vertically sliced, independently reviewable increments, then hosts their execution while the implementation strategy is chosen separately for each slice. Use when the approach should differ slice by slice — a test-first loop for one, an agent one-shotting the next, the user writing another by hand — or when the slicing decision should be kept separate from how the code gets written. A skill that fixes one methodology for the whole feature (a TDD loop, say) is the better fit when the approach will not vary; this one exists for when it will. Maintains a strategy-agnostic plan file that outlives every attempt, so a strategy that turns out wrong rolls back to the previous slice without losing the record of what was tried."
+description: "Plans a feature as an ordered sequence of vertically sliced, independently reviewable increments, then hosts their execution while the implementation strategy is chosen separately for each slice. Use when the approach should differ slice by slice — a test-first loop for one, an agent one-shotting the next, the user writing another by hand — or when the slicing decision should be kept separate from how the code gets written. Maintains a strategy-agnostic plan file that outlives every attempt, so a strategy that turns out wrong rolls back to the previous slice without losing the record of what was tried."
 compatibility: "Requires the design-review skill — and design-principles, which design-review itself requires — and a way to delegate a task to an isolated subagent — the slice boundary delegates a design review of the slice diff, with no bundled fallback. Requires git — reversibility across a strategy change is implemented with branches and `git restore`, and there is no fallback for a project without it. Strategies are whatever the session has available; this skill requires none of them in particular."
 metadata:
   soft-deps: design-principles design-review
@@ -184,14 +184,11 @@ and new abstractions surface, however settled the design looked beforehand. "The
 settled" is not a reason to recommend `internal`; "external proof of these cases costs more than
 it proves" is.
 
-**A test-first guest is not a legal strategy for a slice whose `Kind` is `refactor` or
-`scaffolding`.** Its loop opens with a failing test for new behavior and such a slice has none to
-write: a test of the restructured behavior passes the moment it is written, which its own rules say
-to delete, and a test of the new internal structure is the internals-testing they forbid. Offer
-`direct`, or `hand`/`navigator` if the user wants to write it — and do not list a test-first guest
-as a second option. If the user asks for one anyway, say what will happen — no legal first move, so
-it hands back `blocked` without running a cycle and you abandon it to `direct`, having paid for a
-guest that built nothing — and let them choose with that in front of them.
+**For a `refactor` or `scaffolding` slice, offer `direct`, or `hand`/`navigator` if the user
+wants to write it** — never `acceptance` or `internal`: `slice-tdd` has no failing test to open
+with and hands back `blocked` at Setup. If the user asks for one anyway, say so — you abandon it to
+`direct`, having paid for a guest that built nothing — and let them choose with that in front of
+them.
 
 `hand` and `navigator` both mean the user writes the code; the difference is whether anyone is
 watching. Record the answer in the slice's **Strategy** field and open its first **Attempts** line,
@@ -229,7 +226,7 @@ criteria it advances, the branch, and the obligations of
 
 | Strategy shape | Handoff |
 |---|---|
-| A skill (`slice-tdd`, `navigator`, …) | Invoke it with the override block from [references/hosted-handoff.md](references/hosted-handoff.md), filled in. For `acceptance` and `internal`, invoke `slice-tdd` with that block's *mode paragraph* naming which. A skill built to run standalone plans a whole feature by default and will re-plan, re-branch and re-ship this slice without it. |
+| A skill (`slice-tdd`, `navigator`, …) | Invoke it with the override block from [references/hosted-handoff.md](references/hosted-handoff.md), filled in. For `acceptance` and `internal`, invoke `slice-tdd` with that block's *mode paragraph* naming which. The block is the only form of the contract a guest reads; without it, it has none. |
 | You, directly (`direct`) | Build the slice. Nothing else is prescribed — the obligations are the whole spec. |
 | The user, by hand | Say what the slice is and that the branch is cut, then stop and wait. Do not write code for a slice the user has taken. |
 
@@ -259,13 +256,11 @@ the plan, and for the latter two was handed no contract at all:
   a slice never built. Committing work the user finished is not writing code, so the rule that a
   hand slice is theirs does not bar it — say that you are doing it.
 
-**Run a skill-shaped guest in a delegated subagent wherever the session supports it** — a delegated
-slice comes back as a result instead of as context. Keep it in-session when delegation isn't
-available, when it is `navigator` and the user needs to watch it work, when it is `slice-tdd`,
-whose `acceptance` design gate needs the user live and which in both modes spawns subagents of its own
-(it delegates every heavy step, so in-session costs the host little), **or when you expect
-to want the abandon**, which a delegated guest puts out of reach. The trade-off in full, and the disk
-checks that replace watching a guest work, are in
+**Run a skill-shaped guest in-session.** `slice-tdd`'s `acceptance` design gate needs the user
+live, and it delegates its own heavy steps, so in-session costs you little; `navigator` is the
+user's to watch. In-session also keeps the abandon in reach — a delegated guest cannot be stopped
+mid-slice. Delegate only a guest that needs neither, and only where the session supports it; the
+trade-off and the disk checks that replace watching it are in
 [references/hosted-handoff.md](references/hosted-handoff.md) — *Delegated or in-session*,
 *Reading the result*.
 
@@ -454,8 +449,8 @@ Re-read the Rules in Force header and the Slices section. Then:
 6. **Delete the guest's state file** per [The guest's state file](#the-guests-state-file),
    draining anything worth keeping into the plan first. Delete only the guest's own file — the
    plans directory is whichever one the repo already had, so it routinely holds project documents
-   nothing to do with this feature. One left behind is found by the *next* slice's guest, whose
-   startup globs for exactly that filename and offers to resume slice 01's finished plan.
+   nothing to do with this feature. One left behind sits untracked after the squash, and the
+   next slice's `git add -A` sweeps it into that slice's history.
 7. **If this was the steel thread, re-slice the rest before continuing** — re-read
    [references/slicing.md](references/slicing.md) and walk the remaining plan against what the
    thread found. Every slice behind it was drawn before those findings existed.

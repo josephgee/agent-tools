@@ -1,7 +1,7 @@
 # Handing a slice to a skill
 
-A skill built to run standalone plans a whole feature, manages its own branches, and ships at
-its own boundaries. Hosted here it runs **one slice** and the plan keeps the rest.
+A hosted skill runs **one slice**; the plan keeps the rest, and the override block is how it
+learns that.
 
 ## The override block
 
@@ -132,14 +132,10 @@ commit; the user's work on a `navigator` slice is the host's to confirm committe
 >
 > *Under 3, if your flow keeps a state file:* create it at `<plans-dir>/` under your own naming
 > convention, with the feature slug `<feature-slug>`. Where its format calls for a feature
-> definition, acceptance criteria, a design hypothesis or a plan of increments, **copy them from
-> the plan file rather than deriving them** — and its plan of increments is this one slice, not a
-> sequence you invent; number that single increment `<NN>` to match the slice. If it also keeps a
-> backlog, capture backlog items **there and not in the plan** — the host drains your file into the
-> plan at the boundary, and an item written to both arrives twice. The fields your format fills at
-> ship never become real here: a final commit sha, an end sha, a `ready` or `complete` status — the
-> host squashes *after* you hand back, so leave them empty, leave the increment open, and do not go
-> looking for the squash or invent a sha.
+> definition, acceptance criteria or a design hypothesis, **copy them from
+> the plan file rather than deriving them**. If it also keeps a backlog, capture backlog items
+> **there and not in the plan** — the host drains your file into the plan at the boundary, and an
+> item written to both arrives twice.
 >
 > **4. Commit your work on this branch as you go, and leave it committed when you hand back.** The
 > host squashes committed *history*, not worktree state: an uncommitted slice leaves the branch
@@ -147,8 +143,7 @@ commit; the user's work on a `navigator` slice is the host's to confirm committe
 > commit", and a resumed host reads zero commits as a slice you never built.
 >
 > **5. Hand back before the squash.** Do not squash, do not present a PR, do not write a PR
-> description, and **do not run your own design review of the diff** — even one your instructions
-> mark as mandatory in every execution mode. The host reviews and squashes this slice at its
+> description, and **do not run your own design review of the diff**. The host reviews and squashes this slice at its
 > boundary; running yours reviews work the host has not accepted yet and asks the user to approve
 > the same work twice. Decision context your refactor step would otherwise send to a PR
 > description still goes in your state file's `Learned` line, as your own rules already say — the
@@ -165,27 +160,19 @@ commit; the user's work on a `navigator` slice is the host's to confirm committe
 
 ## Delegated or in-session
 
-**Run a skill-shaped guest in a delegated subagent wherever the session supports it.** A guest's
-body, its references and its own dependencies all load into whatever context runs it; in-session
-that stacks on top of this skill's, once per slice, and an abandon is worse — the dead guest's
-whole body stays in context while its replacement loads on top of it. Delegated, a slice comes back
-as a result instead of as context.
-
-Run a guest in-session when delegation isn't available, when it is `slice-tdd` (its `acceptance`
-design gate needs the user live, and in both modes it spawns subagents of its own), when it is `navigator` and the user needs
-to watch it work, **or when you expect to want the abandon**. A delegated guest is invisible until
-it hands back: you cannot watch it throw its own work away and you cannot stop it mid-slice, so the
-abandon is only reachable for an in-session guest. Delegation buys context at the cost of the
-mid-slice exit — a slice over unproven ground is the one to keep in-session. It also costs the view
-of how the guest worked, so judge a delegated guest by what it left on disk, per *Reading the
-result* below.
+In-session is the default (SKILL.md, *Hand off*). Delegating buys context: the guest's body,
+references and dependencies load in a subagent instead of on top of this skill, once per slice,
+and an abandoned guest's body does not linger. It costs the mid-slice exit — a delegated guest is
+invisible until it hands back, so you cannot stop it or watch it throw its work away — and the view
+of how it worked. Delegate only a guest that needs neither the user live nor the abandon, and judge
+it by what it left on disk, per *Reading the result* below.
 
 ## The guest's state file
 
 The plan itself needs no handling at a transition — it is excluded and untracked throughout. A
 skill-shaped guest's state file does: `slice-tdd` keeps one in the plans directory and
-**commit it with every cycle**, so it is tracked, and it would ship to the reviewer in the squash
-and be found by the next slice's guest if left behind. Do not add it to the exclude — the guest
+**commit it with every cycle**, so it is tracked; left behind, it sits untracked after the
+squash and the next slice's `git add -A` sweeps it into that slice's history. Do not add it to the exclude — the guest
 needs its own file tracked for its own rollbacks; the host just removes it at the boundary.
 
 So at both transitions off a slice — the boundary and an abandon — drain anything worth keeping out
@@ -206,9 +193,8 @@ outside the repo by its own design — `navigator`, wherever that skill puts it,
 
 ## Reading the result
 
-**A delegated guest returns a result, not a transcript**, and delegating is the default (SKILL.md,
-*Hand off*). So judge it by what it left on disk, not by how it behaved. At the boundary, before
-the design review:
+**Judge a guest by what it left on disk**, not by how it behaved — for a delegated guest that is
+all there is. At the boundary, before the design review:
 
 - the targeted tests are green and no PR was presented;
 - the commits are on the branch you cut, and `git branch --list` shows no branch the plan does not
@@ -217,14 +203,3 @@ the design review:
   your plan it touched nothing but its own slice's fields;
 - `git -C "$(git rev-parse --show-toplevel)" status --short` is clean outside the plans
   directory.
-
-The in-flight tells — a guest re-planning, a guest drifting towards shipping — are visible only to
-a host running the guest in-session, which is the exception.
-
-**The disk checks are necessary but not sufficient, and the gap is structural.** A guest that
-writes its own rules to disk and re-reads them each cycle — as `slice-tdd` does, by
-design, to survive compaction — is re-teaching itself the frame this block just removed, from a
-more durable position than this block occupies. Over a slice of more than a few cycles the disk
-wins. Keep hosted slices short, which the sizing test already requires, and treat drift found at
-the boundary — a PR description written, a second branch, a plan of its own — as a sign the slice
-was too big rather than the wording too weak.
