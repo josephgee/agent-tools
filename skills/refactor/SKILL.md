@@ -1,6 +1,6 @@
 ---
 name: refactor
-description: "Refactors existing code on direct request — 'break up X', 'extract Y', 'clean up this function', 'untangle this' — as a behavior-preserving change held green by tests. First checks that the target has a test net that would actually catch a mistake, and hands off to backfill-tests when it doesn't. Then restructures in small committed steps, running the tests after each, applying a fixed standard for naming, function decomposition, top-down ordering, comments, and deletion. Use when the user asks to restructure code without changing what it does; not for adding behavior (use tdd) or for a review without changes (use design-review)."
+description: "Refactors existing code on direct request — 'break up X', 'extract Y', 'clean up this function', 'untangle this' — as a behavior-preserving change held green by tests. First checks that the target has a test net that would actually catch a mistake, and hands off to backfill-tests when it doesn't. Then restructures in small committed steps, running the tests after each, applying a fixed standard for naming, function decomposition, top-down ordering, comments, and deletion. Use when the user asks to restructure code without changing what it does; not for adding behavior (use slice-plan) or for a review without changes (use design-review)."
 compatibility: "Requires the design-principles skill, and backfill-tests for targets without a trustworthy net — no bundled fallback. Requires git."
 metadata:
   soft-deps: design-principles backfill-tests

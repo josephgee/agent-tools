@@ -32,7 +32,7 @@ within it. Design notes for larger efforts live in `docs/designs/`.
   single self-contained script — don't grow a shared top-level code directory around it.
   The key's name notwithstanding, a listed dependency may be *hard*: a skill that requires
   another outright states that in its `compatibility` frontmatter and carries no fallback
-  instructions for the dependency's absence (e.g. `tdd` and `design-review` both require
+  instructions for the dependency's absence (e.g. `slice-tdd` and `design-review` both require
   `design-principles`). Don't re-add graceful-degradation branches to such a skill — the
   installer resolves the link, and a hand-copy that omits the dependency is broken by design.
 
@@ -69,7 +69,7 @@ within it. Design notes for larger efforts live in `docs/designs/`.
   load in every unrelated session, and that file is the one that can't afford noise), and telling
   the agent to re-invoke the skill (reloads the body, loses the position in the workflow — the
   artifact does both). Keep the header short; a long one re-read every cycle is more of the rot it
-  exists to counter. `tdd`, `slice-tdd`, and `navigator` all do this.
+  exists to counter. `slice-tdd` and `navigator` both do this.
 - **Delete before you add.** Edits grow skills by default. Before adding text, find what the
   change makes removable and delete it. A passage stays, or comes back, only on a concrete failure
   scenario — the specific wrong action an executing agent would take without it; "it clarifies"

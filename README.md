@@ -111,14 +111,14 @@ ln -s ~/workspace/agent-tools/skills ~/.pi/agent/skills
 ### Link one skill at a time (shared/work environments)
 
 If you only want specific skills available, or don't want to hand over the whole directory
-wholesale, symlink individual skill directories instead. Replace `tdd` with the skill you want.
+wholesale, symlink individual skill directories instead. Replace `grill-me` with the skill you want.
 
 ```bash
 # Claude Code, global
-ln -s ~/workspace/agent-tools/skills/tdd ~/.claude/skills/tdd
+ln -s ~/workspace/agent-tools/skills/grill-me ~/.claude/skills/grill-me
 
 # pi, global
-ln -s ~/workspace/agent-tools/skills/tdd ~/.pi/agent/skills/tdd
+ln -s ~/workspace/agent-tools/skills/grill-me ~/.pi/agent/skills/grill-me
 ```
 
 ### Project-scoped installs
@@ -129,15 +129,15 @@ project's local skills directory instead of your home directory:
 ```bash
 # Claude Code, project-scoped
 mkdir -p .claude/skills
-ln -s ~/workspace/agent-tools/skills/tdd .claude/skills/tdd
+ln -s ~/workspace/agent-tools/skills/grill-me .claude/skills/grill-me
 
 # pi, project-scoped
 mkdir -p .pi/skills
-ln -s ~/workspace/agent-tools/skills/tdd .pi/skills/tdd
+ln -s ~/workspace/agent-tools/skills/grill-me .pi/skills/grill-me
 
 # pi, project-scoped (harness-agnostic convention)
 mkdir -p .agents/skills
-ln -s ~/workspace/agent-tools/skills/tdd .agents/skills/tdd
+ln -s ~/workspace/agent-tools/skills/grill-me .agents/skills/grill-me
 ```
 
 ## Adding a new skill
@@ -181,7 +181,7 @@ Despite the key's name, the dependency need not be soft. Decide which you're bui
   fallback.
 - **Hard** — the skill can't do what it promises without the dep. Say so in a
   `compatibility:` field, write *no* fallback branch, and have the skill stop with a clear
-  message if the dep is genuinely missing. `design-review` and `tdd` are both hard on
+  message if the dep is genuinely missing. `design-review` and `slice-tdd` are both hard on
   `design-principles`.
 
 Prefer hard when the fallback would have to restate the dependency's content — a mirrored

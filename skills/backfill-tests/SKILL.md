@@ -1,6 +1,6 @@
 ---
 name: backfill-tests
-description: "Backfill a trustworthy regression-test net onto existing but poorly-tested code, usually right before refactoring or changing it. Use when asked to add tests to, cover, pin, or characterize an untested or legacy function. Enforces the standards that separate a real net from coverage theatre: expected values derived from intent rather than read off the implementation, every test proven falsifiable by perturbing the code it claims to exercise, assertions on observable behavior rather than on which collaborators got called, and specification tests kept distinct from characterization pins. Bugs found along the way are captured as expected-to-fail tests and fixed later under the user's call, never inline. This is the inverse of writing new code test-first (see the tdd skill): here the implementation already exists and the tests are what's missing."
+description: "Backfill a trustworthy regression-test net onto existing but poorly-tested code, usually right before refactoring or changing it. Use when asked to add tests to, cover, pin, or characterize an untested or legacy function. Enforces the standards that separate a real net from coverage theatre: expected values derived from intent rather than read off the implementation, every test proven falsifiable by perturbing the code it claims to exercise, assertions on observable behavior rather than on which collaborators got called, and specification tests kept distinct from characterization pins. Bugs found along the way are captured as expected-to-fail tests and fixed later under the user's call, never inline. This is the inverse of writing new code test-first (see slice-plan and slice-tdd): here the implementation already exists and the tests are what's missing."
 compatibility: Requires the project to be a git repository — the production-code freeze check and perturbation reverts rely on git.
 ---
 
@@ -69,7 +69,7 @@ coming refactor should address. Record it and write the simplest test you can ma
    failures first.
 3. **Pick one target** — a function, method, or tight cluster, not a module. If it's huge, take its
    collaborators one at a time. This technique suits untested, branchy, or tangled code you're
-   about to change. It does not suit code that doesn't exist yet (use [tdd](../tdd/SKILL.md)) or
+   about to change. It does not suit code that doesn't exist yet (use [slice-plan](../slice-plan/SKILL.md)) or
    code trivial enough that the ceremony costs more than it returns.
 
 ## Write down the promises first

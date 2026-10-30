@@ -1,7 +1,7 @@
 # Handing a slice to a skill
 
-Skills like `tdd` plan a whole feature, manage their own branches, and ship at
-their own boundaries. Hosted here they run **one slice** and the plan keeps the rest.
+A skill built to run standalone plans a whole feature, manages its own branches, and ships at
+its own boundaries. Hosted here it runs **one slice** and the plan keeps the rest.
 
 ## The override block
 
@@ -183,7 +183,7 @@ result* below.
 ## The guest's state file
 
 The plan itself needs no handling at a transition — it is excluded and untracked throughout. A
-skill-shaped guest's state file does: `tdd` and `slice-tdd` keep one in the plans directory and
+skill-shaped guest's state file does: `slice-tdd` keeps one in the plans directory and
 **commit it with every cycle**, so it is tracked, and it would ship to the reviewer in the squash
 and be found by the next slice's guest if left behind. Do not add it to the exclude — the guest
 needs its own file tracked for its own rollbacks; the host just removes it at the boundary.
@@ -222,7 +222,7 @@ The in-flight tells — a guest re-planning, a guest drifting towards shipping �
 a host running the guest in-session, which is the exception.
 
 **The disk checks are necessary but not sufficient, and the gap is structural.** A guest that
-writes its own rules to disk and re-reads them each cycle — as `tdd` and `slice-tdd` both do, by
+writes its own rules to disk and re-reads them each cycle — as `slice-tdd` does, by
 design, to survive compaction — is re-teaching itself the frame this block just removed, from a
 more durable position than this block occupies. Over a slice of more than a few cycles the disk
 wins. Keep hosted slices short, which the sizing test already requires, and treat drift found at

@@ -55,7 +55,7 @@ Then re-enter [Running a slice](../SKILL.md#running-a-slice) by that slice's sta
       or a squash the session died before recording, which re-squashing redoes harmlessly: the
       boundary from step 1. Treating it as squashed would skip the design review and the user's
       approval;
-    - more than one → the ordinary `tdd` handback, squash not yet run: the boundary from step 1;
+    - more than one → the ordinary `slice-tdd` handback, squash not yet run: the boundary from step 1;
     - **none at all** → the guest built nothing, or built it and never committed: re-enter at
       *Running a slice* step 3. Re-invoking a guest with commits present would rerun a slice
       already built.

@@ -58,9 +58,8 @@ skill directory for the old name and update each caller in the same change.
   about. Naming a smell is never itself a mandate to fix it.
 - **Don't scan a whole catalog to pattern-match.** Reach for the specific entry you need.
   The catalogs are dictionaries, not checklists to run top to bottom. The one exception is a
-  detection sweep your caller explicitly asks for (design-review's review pass, tdd's
-  end-of-feature check) — there, sweep as the caller directs, covering only the altitudes
-  the scope touches.
+  detection sweep your caller explicitly asks for (design-review's review pass) — there, sweep
+  as the caller directs, covering only the altitudes the scope touches.
 - **The catalogs are open, and say where they aren't.** Several entries are marked as
   descriptive rather than canonical, and the altitude ladder has a known gap above the
   component level. When something is genuinely wrong and no entry names it, say that — it is

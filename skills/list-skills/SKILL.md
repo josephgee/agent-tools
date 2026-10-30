@@ -48,7 +48,7 @@ Do not read any skill's full `SKILL.md` body for this — you only need the fron
    ```markdown
    | Skill | Scope | Location | Description |
    |-------|-------|----------|--------------|
-   | tdd | 🌐 global | <global skills dir>/tdd | Strict TDD via THINK-RED-GREEN-REFACTOR cycles |
+   | slice-plan | 🌐 global | <global skills dir>/slice-plan | Plans a feature as vertical slices, strategy per slice |
    | skill-review | 🌐 global | <global skills dir>/skill-review | Reviews skills for effectiveness and structure |
    | api-conventions | 📁 project | <project skills dir>/api-conventions | House rules for this repo's REST API layer |
    ```

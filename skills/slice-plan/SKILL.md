@@ -28,7 +28,7 @@ Maintain a plan file at `<plans-dir>/slices-<feature-slug>.md` — see
 directory for the whole feature, and Cleanup settles it. Rollback *exempts* the plan on purpose —
 the record of a failed attempt has to survive the rollback that erases the attempt — and untracked
 is what gets that for free: it survives every branch switch, every `git restore` and every squash
-with no special handling. The exclude is not optional: guests commit with `git add -A` (`tdd` does,
+with no special handling. The exclude is not optional: guests commit with `git add -A` (`slice-tdd` does,
 every cycle), which would otherwise sweep the plan into a slice's history. `.git/info/exclude` is
 local to the clone, so no tracked `.gitignore` is touched. The plan does not survive
 `git clean -x`, so don't.
@@ -171,7 +171,6 @@ slice's shape is the evidence.
 
 | Strategy | Shape | Suits a slice that |
 |---|---|---|
-| `tdd` | skill | is over unproven ground, or where the design *is* the question — one test at a time surfaces it earliest. Never a `refactor`/`scaffolding` slice |
 | `acceptance` | skill (`slice-tdd`) | delivers behavior a user can observe — the default for such a slice. Its proof is the external, user-facing behavior, run the way a user would meet it, so it is validated where the value actually lands; a human design gate precedes any code. Never a `refactor`/`scaffolding` slice. Runs in-session |
 | `internal` | skill (`slice-tdd`) | is mostly edge cases and internal rules, where setting up external proof of each would cost more than that proof is worth. Same flow as `acceptance` without the acceptance tests or the gate. Never a `refactor`/`scaffolding` slice. Runs in-session |
 | `direct` | you, directly | is one obvious edit, or scaffolding whose design carries no risk |
@@ -230,7 +229,7 @@ criteria it advances, the branch, and the obligations of
 
 | Strategy shape | Handoff |
 |---|---|
-| A skill (`tdd`, `slice-tdd`, `navigator`, …) | Invoke it with the override block from [references/hosted-handoff.md](references/hosted-handoff.md), filled in. For `acceptance` and `internal`, invoke `slice-tdd` with that block's *mode paragraph* naming which. Each of these skills plans a whole feature by default and will re-plan, re-branch and re-ship this slice without it. |
+| A skill (`slice-tdd`, `navigator`, …) | Invoke it with the override block from [references/hosted-handoff.md](references/hosted-handoff.md), filled in. For `acceptance` and `internal`, invoke `slice-tdd` with that block's *mode paragraph* naming which. A skill built to run standalone plans a whole feature by default and will re-plan, re-branch and re-ship this slice without it. |
 | You, directly (`direct`) | Build the slice. Nothing else is prescribed — the obligations are the whole spec. |
 | The user, by hand | Say what the slice is and that the branch is cut, then stop and wait. Do not write code for a slice the user has taken. |
 
