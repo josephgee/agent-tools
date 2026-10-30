@@ -1,6 +1,6 @@
 ---
 name: backfill-tests
-description: "Backfill a trustworthy regression-test net onto existing but poorly-tested code, usually right before refactoring or changing it. Use when asked to add tests to, cover, pin, or characterize an untested or legacy function. Enforces the standards that separate a real net from coverage theatre: expected values derived from intent rather than read off the implementation, every test proven falsifiable by perturbing the code it claims to exercise, assertions on observable behavior rather than on which collaborators got called, and specification tests kept distinct from characterization pins. Bugs found along the way are captured as expected-to-fail tests and fixed later under the user's call, never inline. This is the inverse of writing new code test-first (see slice-plan and slice-tdd): here the implementation already exists and the tests are what's missing."
+description: "Backfill a trustworthy regression-test net onto existing but poorly-tested code, usually right before refactoring or changing it. Use when asked to add tests to, cover, pin, or characterize an untested or legacy function. Enforces the standards that separate a real net from coverage theatre: expected values derived from intent rather than read off the implementation, every test proven falsifiable by perturbing the code it claims to exercise, assertions on observable behavior rather than on which collaborators got called, and specification tests kept distinct from characterization pins. Bugs found along the way are captured as expected-to-fail tests and fixed later under the user's call, never inline. This is the inverse of writing new code test-first (see slice-plan): here the implementation already exists and the tests are what's missing."
 compatibility: Requires the project to be a git repository — the production-code freeze check and perturbation reverts rely on git.
 ---
 
@@ -181,10 +181,12 @@ Present:
 **Fixing the bugs is a separate, user-gated step.** For each xfail, the user decides: fix now
 (un-skip it, make it pass — a small red-green change, safe now that the net exists) or defer it as
 documented, tracked work. Don't roll into fixes unprompted; the deliverable here is the net, not
-the repairs. Afterwards the refactor can begin, held green by these tests — and *that* is where
-production cleanup belongs: the [refactor](../refactor/SKILL.md) skill runs that pass. Commit the
-net first — refactor starts from a clean tree — and hand it your "what isn't pinned" list, so it
-doesn't probe gaps you left on purpose.
+the repairs. Commit the net, then hand off with your "what isn't pinned" list, so the next step
+doesn't probe gaps you left on purpose:
+
+- **Another skill invoked you** — return the report to it and stop; it owns the next step.
+- **Cleanup next** — the [refactor](../refactor/SKILL.md) skill, held green by these tests.
+- **New behavior next** — [slice-plan](../slice-plan/SKILL.md).
 
 ## Escalation: gut-and-restore
 
