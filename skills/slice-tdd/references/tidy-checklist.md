@@ -15,7 +15,9 @@ read it now. Read the file directly; do **not** invoke the `refactor` skill, who
 would demand a clean tree and start a test-net check of its own. **The scope** is the whole
 slice diff. **The log** is the state file: decision context and edit-site hazards go on
 `Learned` (the host folds it into the squash commit); deletion candidates go in `## Out of
-Scope`; a missing pin is a test to add now. On top of the standard:
+Scope`; a missing pin is a test to add now. On top of the standard (in `yolo` there are no RED
+tests: the test checks below cover only pins and persisted proofs, and *Duplication across RED's
+tests* is skipped):
 
 - **Duplication across RED's tests**: check their implementations against each other —
   behaviors written together tend to repeat each other's shapes — and check the diff against the

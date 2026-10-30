@@ -10,11 +10,12 @@ two-digit slice number the host handed over.
 
 ## Rules in Force
 
-Copied verbatim, never edited. Re-read before `acceptance`'s gate, at each BUILD phase, every GREEN
+Copied verbatim, never edited. Re-read before the design gate, at each BUILD phase, every GREEN
 milestone and ladder drop, each delegate's return, each REVIEW round, and SHIP.
 
 - `acceptance`: acceptance tests first, human proof never weakened, no BUILD until the user agrees.
   `internal`: the behavior list is the target; a departure goes to the user when BUILD returns it.
+  `yolo`: `acceptance` with no unit tests; its acceptance proofs are the only proof, never weakened.
 - The host triages and asks; delegates research, review, build and fix. It reads results and this
   file, never the diff. Every phase's closing commit sets the next phase.
 - Keep existing behavior the slice sentence doesn't change; reshape structure, earlier slices'
@@ -26,10 +27,10 @@ milestone and ladder drop, each delegate's return, each REVIEW round, and SHIP.
 - REVIEW is blind; a `structural-if-fixed` fix earns a fresh round, max three. Backlog, never fix,
   a finding that tightens an earlier test or asks for behavior this slice lacks.
 - Hosted: own state file and Attempts line only, commit as you go, no squash or PR. SHIP gates on
-  acceptance tests (`acceptance`), unit tests, lint and review together.
+  acceptance tests (not `internal`), unit tests, lint and review together.
 
 ## Session
-- **Mode**: acceptance | internal
+- **Mode**: acceptance | internal | yolo
 - **Branch**: <the branch the host cut, from the block>
 - **Base branch**: <the plan Session's base branch — slice 01's review diff base>
 - **Slice**: <feature-slug> <NN> <slice-slug>
@@ -44,11 +45,11 @@ milestone and ladder drop, each delegate's return, each REVIEW round, and SHIP.
 
 ## Acceptance Tests
 
-<!-- acceptance mode only; omit this section in internal mode. -->
+<!-- omit this section in internal mode. -->
 
 | Behavior | Human proof | Agent proof | Status |
 |---|---|---|---|
-| <one sentence> | <steps + expected observation, whatever form proves this behavior> | <same steps run by the agent, or an equivalent> | pending |
+| <one sentence> | <steps + expected observation, whatever form proves this behavior> | <same steps run by the agent, or an equivalent> — `read-only` \| `mutating` | pending |
 | <one sentence> | <what a human does and looks at> | *(blank — no agent mechanism proves this without weakening the human proof)* | pending |
 
 ## Design
@@ -62,12 +63,13 @@ dependencies and globals with each receiving layer; each branch decision and whe
 
 **Files modified**: <paths the design changes — MAKE ROOM's gate reads this>
 
-**Behavior-sentence test**: <the suite test that will exercise the slice's behavior sentence>
+**Behavior-sentence test**: <the suite test that will exercise the slice's behavior sentence — in
+yolo, the acceptance row that proves it>
 
 **Design review**: <findings, each fixed or dismissed with a reason — or "clean, nothing to
 fix">
 
-**Acceptance proofs persisted as suite tests** (acceptance mode, asked at the gate): none | <which rows,
+**Acceptance proofs persisted as suite tests** (asked at the gate): none | <which rows,
 and why>
 
 **Gate**: not yet reached | passed on YYYY-MM-DD | none (internal)
@@ -84,6 +86,8 @@ here.>
 
 ## RED
 
+<!-- omit this section in yolo mode. -->
+
 - **Unit tests** (one row per test — mutation check only appears on a row that passed
   immediately):
   - `<test name>` — fails on: <what was missing> ✓
@@ -93,8 +97,8 @@ here.>
 
 ## Pressure Log
 
-Appended during GREEN (at each milestone, whenever a smell bites, and at every flat run),
-drained to empty at REVIEW step 0 — every `hold` ends as a fix or a dismissal with a reason.
+Appended during GREEN (at each milestone, whenever a smell bites, and at every flat run) or once at
+IMPLEMENT's exit in yolo; drained to empty at REVIEW step 0 — every `hold` ends as a fix or a dismissal with a reason.
 
 - flat run 2 of 3 — nothing new passing
 - count reset — `<test name>` now passing
@@ -138,7 +142,7 @@ review happened. -->
 before it squashes.>
 
 ## Current Position
-- **Phase**: <ACCEPT | DESIGN | MAKE ROOM | RED | GREEN | TIDY | REVIEW | SHIP> — set by each
+- **Phase**: <ACCEPT | DESIGN | MAKE ROOM | RED | GREEN | IMPLEMENT | TIDY | REVIEW | SHIP> — set by each
   phase's closing commit to the phase that comes next, so it is always where work resumes
 - **Notes**: <a `departure`, as one line; otherwise empty>
 ```

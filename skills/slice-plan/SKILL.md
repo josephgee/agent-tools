@@ -173,6 +173,7 @@ slice's shape is the evidence.
 |---|---|---|
 | `acceptance` | skill (`slice-tdd`) | delivers behavior a user can observe — the default for such a slice. Its proof is the external, user-facing behavior, run the way a user would meet it, so it is validated where the value actually lands; a human design gate precedes any code. Never a `refactor`/`scaffolding` slice. Runs in-session |
 | `internal` | skill (`slice-tdd`) | is mostly edge cases and internal rules, where setting up external proof of each would cost more than that proof is worth. Same flow as `acceptance` without the acceptance tests or the gate. Never a `refactor`/`scaffolding` slice. Runs in-session |
+| `yolo` | skill (`slice-tdd`) | delivers behavior a unit test could only restate — config or a query passed through to another system, provable only by running it there. `acceptance` with no unit tests: the acceptance proofs alone tick its criteria. Rare — never for logic of your own. Never a `refactor`/`scaffolding` slice. Runs in-session |
 | `direct` | you, directly | is one obvious edit, or scaffolding whose design carries no risk |
 | `hand` | the user writes it | the user wants to write themselves — for the learning, or because they hold context you don't |
 | `navigator` | skill; the user still writes | the user writes it and wants an agent coaching, questioning direction and catching skipped steps rather than sitting silent |
@@ -185,7 +186,7 @@ settled" is not a reason to recommend `internal`; "external proof of these cases
 it proves" is.
 
 **For a `refactor` or `scaffolding` slice, offer `direct`, or `hand`/`navigator` if the user
-wants to write it** — never `acceptance` or `internal`: `slice-tdd` has no failing test to open
+wants to write it** — never `acceptance`, `internal` or `yolo`: `slice-tdd` has no failing test to open
 with and hands back `blocked` at Setup. If the user asks for one anyway, say so — you abandon it to
 `direct`, having paid for a guest that built nothing — and let them choose with that in front of
 them.
@@ -226,14 +227,14 @@ criteria it advances, the branch, and the obligations of
 
 | Strategy shape | Handoff |
 |---|---|
-| A skill (`slice-tdd`, `navigator`, …) | Invoke it with the override block from [references/hosted-handoff.md](references/hosted-handoff.md), filled in. For `acceptance` and `internal`, invoke `slice-tdd` with that block's *mode paragraph* naming which. The block is the only form of the contract a guest reads; without it, it has none. |
+| A skill (`slice-tdd`, `navigator`, …) | Invoke it with the override block from [references/hosted-handoff.md](references/hosted-handoff.md), filled in. For `acceptance`, `internal` and `yolo`, invoke `slice-tdd` with that block's *mode paragraph* naming which. The block is the only form of the contract a guest reads; without it, it has none. |
 | You, directly (`direct`) | Build the slice. Nothing else is prescribed — the obligations are the whole spec. |
 | The user, by hand | Say what the slice is and that the branch is cut, then stop and wait. Do not write code for a slice the user has taken. |
 
 **Hand off only once the previous slice's suite run reads `0`**
 ([references/background-suite.md](references/background-suite.md), *Waiting on it*) — no
-executor sees that run, so the hold is yours alone. **The one exception is `slice-tdd`** (`acceptance`
-and `internal`), whose ACCEPT and design write no code: hand it off at once, with the *pause* paragraph from
+executor sees that run, so the hold is yours alone. **The one exception is `slice-tdd`** (any
+mode), whose ACCEPT and design write no code: hand it off at once, with the *pause* paragraph from
 [references/hosted-handoff.md](references/hosted-handoff.md) added to its block while the run is
 still going — it changes nothing outside its state file until resumed, so the tree the run is
 testing stays put. It hands back `<strategy> — paused: design done` after its design commit; wait
@@ -256,7 +257,7 @@ the plan, and for the latter two was handed no contract at all:
   a slice never built. Committing work the user finished is not writing code, so the rule that a
   hand slice is theirs does not bar it — say that you are doing it.
 
-**Run a skill-shaped guest in-session.** `slice-tdd`'s `acceptance` design gate needs the user
+**Run a skill-shaped guest in-session.** `slice-tdd`'s design gate (`acceptance`, `yolo`) needs the user
 live, and it delegates its own heavy steps, so in-session costs you little; `navigator` is the
 user's to watch. In-session also keeps the abandon in reach — a delegated guest cannot be stopped
 mid-slice. Delegate only a guest that needs neither, and only where the session supports it; the
@@ -298,7 +299,9 @@ Whatever runs a slice owes exactly five things:
    optional even for `direct`: the boundary ticks an acceptance criterion only where a passing
    test satisfies it. **For a slice whose `Kind` is `refactor` or `scaffolding`** the obligation is
    instead that the existing tests over the restructured code stay green — no new behavior, so no
-   new test and no criterion to tick. That carve-out is the only one.
+   new test and no criterion to tick. **For a `yolo` slice** the passing test is
+   replaced by its acceptance proofs passing — agent-run or user-confirmed — and those tick its
+   criteria; the targeted tests still stay green. Those two carve-outs are the only ones.
    **An earlier slice's test this slice breaks is the executor's to update** — routine, since each
    slice builds only what it needs. Change its **fixture** or call site wherever that absorbs it:
    an expectation edited to agree with the new behavior stops pinning its own slice's rule and
@@ -444,8 +447,10 @@ Re-read the Rules in Force header and the Slices section. Then:
 4. On approval, **read the run's status file** — red here is *Red before approval* in
    [references/background-suite.md](references/background-suite.md); absent is fine, carry on.
    Step 5's `shipped` is the record of approval: until it is written, the slice is still open.
-5. Update the plan: mark the slice `shipped`, close its attempt line, tick any criteria a passing
-   test now satisfies, record hypothesis changes and backlog items, and set **Last updated**.
+5. Update the plan: mark the slice `shipped`, close its attempt line, tick any criteria the
+   slice's obligation-2 proof now satisfies — for `yolo`, read the guest state file's `Acceptance
+   Tests` first and copy each criterion's agent proof onto its line, since step 6 deletes that
+   file — record hypothesis changes and backlog items, and set **Last updated**.
 6. **Delete the guest's state file** per [The guest's state file](#the-guests-state-file),
    draining anything worth keeping into the plan first. Delete only the guest's own file — the
    plans directory is whichever one the repo already had, so it routinely holds project documents
@@ -524,7 +529,8 @@ mechanism. Do it as one uninterrupted step; there is no half-abandoned state to 
 ## Feature complete
 
 Declare it when every slice is `shipped` with its **Suite** `green` — wait for the last slice's
-run — every acceptance criterion is ticked by a passing test,
+run — every acceptance criterion is ticked by its obligation-2 proof (rerun any
+`read-only` `yolo` proof copied onto it),
 and the backlog is drained — each item fixed, dismissed with a reason, or carried somewhere the
 user names. **An item that needs a change to tracked code is not fixed here: it is a new slice**,
 appended to the plan and run through Running a slice like any other — strategy, branch, boundary,

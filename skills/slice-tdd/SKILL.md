@@ -1,6 +1,6 @@
 ---
 name: slice-tdd
-description: "Executes one slice-plan slice test-first, in `acceptance` mode (acceptance tests a human can run, human design gate) or `internal` mode (behavior list, no gate). Use when slice-plan hands a slice to `acceptance` or `internal`; with no plan file, use slice-plan first."
+description: "Executes one slice-plan slice test-first, in `acceptance` mode (acceptance tests a human can run, human design gate) or `internal` mode (behavior list, no gate) — or, where a unit test could only restate the code, in `yolo` mode (`acceptance` without unit tests). Use when slice-plan hands a slice to `acceptance`, `internal` or `yolo`; with no plan file, use slice-plan first."
 compatibility: "Requires slice-plan as host, plus design-principles, design-review, backfill-tests and refactor (its standard is the TIDY production checklist). Requires subagent delegation, with no in-session fallback. Requires git."
 metadata:
   soft-deps: slice-plan design-principles design-review backfill-tests refactor
@@ -13,16 +13,19 @@ review, building — is delegated to a fresh subagent, and the host keeps only t
 decisions. That is what lets a long slice list run in one host session instead of a new session per
 slice.
 
-Two modes, chosen by the host, differing in one thing — **what the slice is proven against**:
+Three modes, chosen by the host, differing in one thing — **what the slice is proven against**:
 
 - **`acceptance`**: acceptance tests a human can run and observe, written before any
   design, and a **human design gate** before any code.
 - **`internal`**: a behavior list, drafted with the design. No ACCEPT, no gate,
   no acceptance item at SHIP.
+- **`yolo`**: ACCEPT's acceptance tests alone, with the gate — for a slice where a unit test could
+  only restate the code (a query string passed through to a vendor). BUILD writes no unit tests:
+  RED and GREEN become one IMPLEMENT phase, and TIDY checks no coverage.
 
-Everything else is the same in both. One pass — ACCEPT (`acceptance` only) → DESIGN → BUILD → REVIEW →
-SHIP — delivers one slice. BUILD is one delegated unit: MAKE ROOM (pin and prepare untested code
-about to change), RED, GREEN, TIDY (refactor and coverage).
+Everything else is the same in all three. One pass — ACCEPT (not `internal`) → DESIGN → BUILD →
+REVIEW → SHIP — delivers one slice. BUILD is one delegated unit: MAKE ROOM (pin and prepare untested code
+about to change), RED, GREEN (IMPLEMENT in `yolo`), TIDY (refactor and coverage).
 
 ## Hosted by slice-plan
 
@@ -30,7 +33,7 @@ This skill runs as a guest under slice-plan, which hands it an override block (i
 adaptation, in slice-plan's `references/hosted-handoff.md`) owing five things: stay on the branch
 the host cut, leave your targeted tests green with a passing test for the slice's behavior, write
 only your own state file and Attempts line, commit as you go, and hand back before the squash. The
-block names your mode — `acceptance` or `internal` — and that name is also `<strategy>` on every
+block names your mode — `acceptance`, `internal` or `yolo` — and that name is also `<strategy>` on every
 Attempts line you write. It may also carry a *pause* paragraph: then, after the design commit, you
 hand back `<strategy> — paused: design done`, and the host invokes you again to resume at BUILD. **Where the block conflicts with a phase below, the block wins**, with
 one exception it grants: this skill runs its own REVIEW before hand-back (see REVIEW).
@@ -38,12 +41,12 @@ one exception it grants: this skill runs its own REVIEW before hand-back (see RE
 What that means here:
 
 - **Setup is only the `Kind` check and the state file**; make no "begin" commit.
-- **`acceptance`'s human design gate survives** the block's "skip your alignment gate": that gate is
+- **The human design gate (`acceptance`, `yolo`) survives** the block's "skip your alignment gate": that gate is
   feature-level and already passed; this one is per slice.
 - **Hand back `<strategy> — blocked: <what stopped it>`** — leaving your tests green and
   committing any complete work — when Setup's `Kind` check fails; the design shows the slice needs
   splitting; MAKE ROOM outgrows a few commits; or, in
-  `acceptance`, the user rejects the design at the gate and no revision converges. The host re-slices or
+  `acceptance` or `yolo`, the user rejects the design at the gate and no revision converges. The host re-slices or
   abandons from there.
 - **Keep decision context in the state file's `Learned` line**, which the host folds into the
   squash commit. Keep the design doc in the state file too, never a second file: the host's disk
@@ -64,9 +67,9 @@ unconditionally. If a resumed state file's header is missing or differs from the
 Keep its diff quiet: append entries and tick checkboxes, never reflow unchanged prose.
 
 **Every phase's closing commit sets `Current Position`'s phase to the next phase** — ACCEPT →
-DESIGN → MAKE ROOM → RED → GREEN → TIDY → REVIEW → SHIP — so the recorded phase is always where
-work resumes. Setup records the first (ACCEPT, or DESIGN in `internal` mode). A phase recorded as
-MAKE ROOM, RED, GREEN or TIDY means BUILD: the host delegates it, and the delegate resumes at that
+DESIGN → MAKE ROOM → RED → GREEN (IMPLEMENT in `yolo`) → TIDY → REVIEW → SHIP — so the recorded
+phase is always where work resumes. Setup records the first (ACCEPT, or DESIGN in `internal` mode).
+A phase recorded as MAKE ROOM, RED, GREEN, IMPLEMENT or TIDY means BUILD: the host delegates it, and the delegate resumes at that
 phase.
 
 ---
@@ -81,7 +84,7 @@ Look for `slice-tdd-<feature-slug>-<NN>.md` in the plans directory slice-plan is
   commit that, and start fresh. Otherwise resume without asking — the host invoked you on this
   slice, which is the decision: confirm the checked-out branch matches Session's `Branch`, say in
   one line which phase you resume at, and continue from the recorded phase. Work after a phase's
-  last commit is redone — including, in `acceptance` mode, a gate the user passed before the design
+  last commit is redone — including, in `acceptance` or `yolo` mode, a gate the user passed before the design
   commit landed: present the design again rather than assume the agreement.
 
 ### Setup
@@ -95,11 +98,11 @@ Look for `slice-tdd-<feature-slug>-<NN>.md` in the plans directory slice-plan is
    [state-format.md](state-format.md). Fill in Session — mode, branch, base branch, test runner —
    and the slice's behavior sentence, criteria and Constraints, copied from the plan, not
    re-derived or re-negotiated here: every delegate reads this file, not the plan. Set its phase to ACCEPT
-   (`acceptance` mode) or DESIGN (`internal` mode). Do not commit it yet; that phase's commit does.
+   (`acceptance`, `yolo`) or DESIGN (`internal`). Do not commit it yet; that phase's commit does.
 
 ---
 
-## ACCEPT — Define Acceptance Tests (`acceptance` mode only)
+## ACCEPT — Define Acceptance Tests (`acceptance` and `yolo` modes)
 
 In `internal` mode, skip to DESIGN; the behavior list it drafts is the target this phase would
 have set.
@@ -122,7 +125,11 @@ Two priorities, in order, and the second never compromises the first:
    easier check that proves something narrower (a 200 status standing in for "the user sees the
    updated dashboard" is exactly the substitution to refuse).
 
-Record each behavior as a row of the state file's acceptance-test table, Status `pending`.
+Record each behavior as a row of the state file's acceptance-test table, Status `pending`. In
+`yolo` these rows are the slice's only proof, so priority 2 matters more: an agent proof that asks
+the real system whether it accepts the change (a vendor's validate endpoint, a dry run) is worth
+finding. Mark each agent proof `read-only` or `mutating` (it writes to a real system, such as
+sending a test notification): BUILD reruns only the read-only ones.
 
 Set the phase to DESIGN, then commit:
 `git add <state-file> && git commit -m "slice-tdd: acceptance tests for <slice-slug>"`.
@@ -140,7 +147,7 @@ bundle "the host's full-suite run is using this tree: run no tests, and write no
 repository." Reading code is fine; probing behavior by running it waits for BUILD.
 
 1. **Research and draft, delegated as one unit.** Hand a subagent the slice's behavior sentence,
-   its criteria, the Constraints, and — in `acceptance` mode — ACCEPT's acceptance tests, and let it run the
+   its criteria, the Constraints, and — unless `internal` — ACCEPT's acceptance tests, and let it run the
    research-design loop to a finished draft inside its own context — read the codebase, search the
    web, consult whatever knowledge bases are available, revise the doc against what it finds.
    Include in the bundle, verbatim: "Preserve existing behavior the behavior sentence doesn't
@@ -157,7 +164,7 @@ repository." Reading code is fine; probing behavior by running it waits for BUIL
      line that decided against it, visuals where they'd clarify a flow or data shape a paragraph
      would only restate.
    - **Which suite test will exercise the behavior sentence**, so obligation 2's "passing test for
-     the slice's behavior" is met.
+     the slice's behavior" is met — in `yolo`, which ACCEPT row proves it instead.
    - **The files the design will modify**, and pointers to every codebase path it read.
 
    A throwaway skeleton implementation is optional inside this step — built when it would make an
@@ -171,17 +178,19 @@ repository." Reading code is fine; probing behavior by running it waits for BUIL
    modifies.
 3. **Re-read the Rules in Force header, read the draft and the review findings into the host
    session, then triage** — fix, or
-   dismiss with a stated reason, recorded in the state file. These are the only pieces of the
+   dismiss with a stated reason, recorded in the state file. In `yolo`, a draft with logic of its
+   own — a branch, a transformation — is a finding: that logic needs unit tests, so the slice
+   needs another mode. These are the only pieces of the
    design work that enter the host's context. If a finding demands more research, loop back
    through step 1. **Re-review (repeat step 2) when the revision changes the approach, the
    interface, or the rejected alternative; otherwise skip it.**
-4. **`acceptance` mode: re-read the Rules in Force header, then hold the human review gate, in the host
+4. **`acceptance` and `yolo` modes: re-read the Rules in Force header, then hold the human review gate, in the host
    session, never delegated.** Present the design doc and stop. It has already been vetted against
    design-principles and codebase patterns, so the gate is about direction and trade-offs. Also
    ask the user which acceptance proofs, if any, should be persisted as automated tests in the
    suite. There is no default: automated acceptance tests can be fragile, expensive, and specific
    to the environment, so it is a per-slice conversation. Record the answer in the state file's
-   Design section; any you keep are written in RED like other tests. Do not proceed to BUILD until
+   Design section; any you keep are written in BUILD like other tests. Do not proceed to BUILD until
    the user agrees; silence is not agreement. On pushback, a small revision you make directly; one
    that needs more research or a rethink goes back through step 1, review included.
 
@@ -220,7 +229,7 @@ pin; a resumed delegate gets that from RED's per-test table instead. The phases 
 3. **Act on the return.**
    - **`exit`** — go on to REVIEW. The code itself is read only by REVIEW's subagent.
    - **`departure`** — the implementation needs something the agreed design doesn't cover. Take
-     it to the user, scoped to the departure — in `acceptance` mode as a re-run of the human gate (DESIGN
+     it to the user, scoped to the departure — in `acceptance` or `yolo` mode as a re-run of the human gate (DESIGN
      step 4); in `internal` mode this is the first time the user sees the design, so show the
      interface sketch with it. Agreed: record it in the state file's Design section, commit, and
      delegate again. Rejected: delegate again with the user's constraint added to the Design
@@ -256,8 +265,11 @@ at step 4's check. The round count carries over; a resume never resets the cap.
    highly; both are backlog entries however cheap. One asks to tighten an earlier slice's or the
    steel thread's test to assert exactly the current output — that test pins the seam, not the
    content. The other asks for behavior this slice does not have,
-   such as a missing error path. Record the round in `Rounds`, and write fixes to the `## Review`
-   section's `To fix` list, each with its tag, and dismissals and backlog entries to their lists; the host shows the user every
+   such as a missing error path. In `yolo`, dismiss a finding that asks for unit tests, citing the
+   mode — unless it names logic the slice owns (a branch, a transformation): that is a `departure`,
+   since the mode no longer fits, and goes to the user per BUILD step 3. Record the round in
+   `Rounds`, and write fixes to the `## Review` section's `To fix` list, each with its tag, and
+   dismissals and backlog entries to their lists; the host shows the user every
    dismissal. Commit the state file.
 3. **Delegate the fixes.** Give a fresh subagent only: the absolute repo path, as its working
    directory; the state file's absolute path; the absolute path of `references/fix.md`, as its
@@ -289,13 +301,13 @@ at step 4's check. The round count carries over; a resume never resets the cap.
 **Re-read the Rules in Force header first.** Gate on every item, together, before touching the
 boundary:
 
-1. **Acceptance tests** (`acceptance` mode only) — run every row from ACCEPT that has an agent proof,
+1. **Acceptance tests** (not `internal`) — run every row from ACCEPT that has an agent proof,
    against the finished code; set each row's Status to `pass`/`fail`. For every row with a
    blank agent proof, walk the human proof with the user and set `pass: user-confirmed` only on
    their confirmation.
-2. **Unit tests** — the slice's tests and the targeted tests for every change since RED (review
-   and lint fixes included) green on the final code. Not the full suite: the host starts that in
-   the background once you hand back.
+2. **Unit tests** — the slice's tests (in `yolo`, only pins and persisted proofs) and the targeted
+   tests for every change since the design commit (review and lint fixes included) green on the
+   final code. Not the full suite: the host starts that in the background once you hand back.
 3. **Lint** — clean per REVIEW, or `none found`.
 4. **Review** — REVIEW's findings all fixed, dismissed with a reason, backlogged, or listed under
    `Open at cap`.

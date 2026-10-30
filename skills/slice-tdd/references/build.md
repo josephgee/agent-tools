@@ -2,18 +2,20 @@
 
 You are building one slice, test-first, in four phases: MAKE ROOM (pin and prepare untested code
 about to change, only if its gate fires), RED (unit tests), GREEN (implementation), TIDY (refactor
-and coverage). The session that delegated to you — the *delegator* — has already agreed a design,
-and will review your code blind once you return. You never talk to the user; everything you need
-is in the state file, and everything you leave is in the state file and in commits.
+and coverage). In `yolo` mode RED and GREEN are one IMPLEMENT phase and no unit tests are
+written: a unit test there could only restate the code. The session that delegated to you — the
+*delegator* — has already agreed a design, and will review your code blind once you return. You
+never talk to the user; everything you need is in the state file, and everything you leave is in
+the state file and in commits.
 
 **Your brief is the state file** whose path you were given. Read its `Rules in Force` header (it
 applies to you), `Session` (mode, branch, test runner, and the Constraints, which bind your
 code), the target — `Acceptance Tests` in
-`acceptance` mode, the behavior list in `Design` in `internal` mode — and `Design` (the agreed
-approach, the interface sketch, the files it modifies, the test that will exercise the behavior
-sentence, and in `acceptance` mode which acceptance proofs the user chose to persist as suite tests).
-Its `Current Position` phase — MAKE ROOM, RED, GREEN or TIDY — is where you start; every phase
-before it is done. Each phase's closing commit sets the phase to the next one, so that field is
+`acceptance` and `yolo` modes, the behavior list in `Design` in `internal` mode — and `Design`
+(the agreed approach, the interface sketch, the files it modifies, the test that will exercise the
+behavior sentence, and outside `internal` mode which acceptance proofs the user chose to persist as
+suite tests). Its `Current Position` phase — MAKE ROOM, RED, GREEN, IMPLEMENT or TIDY — is where
+you start; every phase before it is done. Each phase's closing commit sets the phase to the next one, so that field is
 always the resume point.
 
 **If the tree is dirty on entry**, a previous delegate died mid-step: discard the uncommitted work
@@ -34,7 +36,8 @@ You return exactly one line, and the tree is clean and committed whichever it is
   takes it to the user and may send a fresh session back to continue.
 - **`blocked: <what stopped it> at <sha>`** — the slice turns out to need splitting, or MAKE ROOM outgrows a few commits. Get back to green before
   returning: delete RED's still-failing tests, keep the passing ones, record which went in the
-  state file's `RED` section, and commit (`slice-tdd: blocked — <reason>`). Do not write the plan's
+  state file's `RED` section (in `yolo`, revert to the last green commit), and commit
+  (`slice-tdd: blocked — <reason>`). Do not write the plan's
   Attempts line or hand anything back further; the delegator does.
 
 Never return with uncommitted changes. If a check fails on the way out, fix it before returning.
@@ -53,7 +56,7 @@ test that passed before it, and survives one repair attempt, is discarded per
 **Gate:** this phase runs only if the design will *modify* existing code (the Design section's
 file list), earlier slices' included. New files and pure additions never qualify. If the gate
 doesn't fire, write `skipped — <one-line reason>` under the state file's `MAKE ROOM`, set
-the phase to RED, commit the state file, and move on.
+the phase to RED (IMPLEMENT in `yolo`), commit the state file, and move on.
 
 When it fires, in this order:
 
@@ -70,8 +73,8 @@ When it fires, in this order:
 If the preparatory refactor grows beyond a few commits, stop: it is a slice of its own. Return
 `blocked: make room outgrew the slice — <what>` so the host can plan it ahead of this one.
 
-Record what was pinned and refactored under the state file's `MAKE ROOM`, set the phase to RED,
-and commit the state file.
+Record what was pinned and refactored under the state file's `MAKE ROOM`, set the phase to RED
+(IMPLEMENT in `yolo`), and commit the state file.
 
 ---
 
@@ -177,6 +180,22 @@ and commit the state file.
 
 ---
 
+## IMPLEMENT — `yolo` Mode Only, in Place of RED and GREEN
+
+**Re-read the Rules in Force header first.**
+
+- **Implement inside the agreed Design**, and write no unit tests for the new behavior. Write the
+  acceptance proofs the user chose to persist as suite tests, if any.
+- **Exit** when the targeted tests are green — the pins from MAKE ROOM, any persisted proofs, and
+  the existing tests nearest the code you changed — and every `read-only` agent proof in
+  `Acceptance Tests` passes — never a `mutating` one; leave Status for SHIP. Never the full suite. An earlier slice's
+  test this slice breaks is updated as GREEN's amendment protocol says, committed alone.
+- **Pressure log once, at exit**: *ugliest thing you wrote?* — "nothing" is not a legal answer —
+  with a `steer now` or `hold` disposition. Gaps outside the slice go to `## Out of Scope`.
+- Set the phase to TIDY and commit (`slice-tdd: implement <slice-slug>`).
+
+---
+
 ## TIDY — Refactor and Coverage
 
 **Re-read the Rules in Force header first.**
@@ -185,7 +204,10 @@ and commit the state file.
    [tidy-checklist.md](tidy-checklist.md) — read it now — and Simple Design priority: tests pass >
    intention clear > no duplication > fewest elements. Clean tree before each step, commit after
    each green one: `slice-tdd: tidy — <what>`.
-2. **Coverage over the diff.** Where the project has coverage tooling, run it over the slice's
+2. **Coverage over the diff** — skipped in `yolo`, recorded as `coverage: n/a — yolo`; there,
+   step 1 is guarded only by the targeted tests and `read-only` agent proofs, so rerun them after
+   each step.
+   Elsewhere: where the project has coverage tooling, run it over the slice's
    tests: **any changed code path no test exercises is a finding** — dead, speculative, or missing
    a test; decide which, and delete it or add the test. A test added here must trace to the
    behavior sentence, a criterion, or a target row; never a trivial test to silence the tool.

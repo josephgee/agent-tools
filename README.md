@@ -18,12 +18,13 @@ Design notes for larger efforts live in `docs/designs/`.
   loop, via THINK-RED-GREEN-REFACTOR cycles with a persistent state file for tracking design
   evolution and backlog.
 - **[slice-tdd](skills/slice-tdd/SKILL.md)** — Executes one `slice-plan` slice test-first, with
-  every heavy step delegated so a long slice list fits one host session. Two modes, chosen per
+  every heavy step delegated so a long slice list fits one host session. Three modes, chosen per
   slice by the host: `acceptance` proves the slice through acceptance tests a human can run and holds a
   human design gate before any code; `internal` targets a behavior list with no gate, for slices
-  that are mostly edge cases. Both: a reviewed design, pinning of untested code before changing it,
-  a batch of failing tests then holistic implementation, a refactor-and-coverage pass, a blind code
-  review, and lint.
+  that are mostly edge cases; `yolo` is `acceptance` without unit tests, for the rare slice a unit
+  test could only restate. All: a reviewed design, pinning of untested code before changing it,
+  a batch of failing tests then holistic implementation (not `yolo`), a refactor-and-coverage
+  pass, a blind code review, and lint.
 - **[slice-plan](skills/slice-plan/SKILL.md)** — Owns the other half of what `tdd` does: cutting a feature into vertically sliced, independently reviewable increments,
   while leaving *how* each slice gets built to be chosen slice by slice — a test-first loop for
   one, an agent one-shotting the next, the user writing another by hand. Keeps a strategy-agnostic

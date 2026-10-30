@@ -11,8 +11,8 @@ drafter because the session that produced the design is the least likely to see 
 - The slice's behavior sentence — what every row of the target must trace to.
 - The plan's Constraints — a design that breaks one is a finding however well it fits otherwise.
 - The draft from DESIGN step 1: interface sketch, design doc, and the files it will modify.
-- The target the design must deliver — ACCEPT's acceptance tests in `acceptance` mode, the draft's
-  behavior list in `internal` mode.
+- The target the design must deliver — ACCEPT's acceptance tests, or in `internal` mode the draft's
+  behavior list.
 - Pointers into the codebase paths the design touches, extends or read — handed off from that same
   step's research, not rediscovered from scratch.
 - Access to `design-principles`' vocabulary (SOLID, component boundaries, Simple Design
@@ -59,7 +59,7 @@ produced it. It checks whether the diff holds up on its own, to someone who neve
   subagent's working directory, since a `$(...)` left unexpanded is evaluated in the subagent's own
   directory, possibly a different repository. The diff includes any earlier-slice test the
   executor updated — that change gets no other review.
-- The unit tests from RED, and any pins from MAKE ROOM, as part of that diff.
+- The slice's tests, if any (none in `yolo`), and any pins from MAKE ROOM, as part of that diff.
 - Access to `design-principles` and `design-review`'s vocabulary for naming what it finds.
 
 **What it must not receive**: the design doc, the Design section of the state file (behavior

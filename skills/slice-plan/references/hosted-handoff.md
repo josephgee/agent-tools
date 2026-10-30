@@ -26,7 +26,7 @@ substitute the strategy name the plan's Attempts line needs. It is written *to* 
 A guest whose own flow reviews its diff before hand-back, iterating until clean (`slice-tdd` today),
 gets the block's ban on a guest-side review reversed. Give the block verbatim with **paragraph 5
 replaced, whole, by this** (nothing else in the block changes; a guest's own per-slice gates, such
-as `slice-tdd`'s human design gate in `acceptance` mode, are not the alignment gate the block skips and survive):
+as `slice-tdd`'s human design gate in `acceptance` and `yolo` modes, are not the alignment gate the block skips and survive):
 
 > **5. Hand back before the squash.** Do not squash, do not present a PR, and do not write a PR
 > description. Do run your own review as your rules describe, before you hand back, and record it
@@ -41,14 +41,17 @@ as `slice-tdd`'s human design gate in `acceptance` mode, are not the alignment g
 
 ### The mode paragraph, for `slice-tdd`
 
-`slice-tdd` serves two strategies, `acceptance` and `internal`. Add this paragraph after paragraph 5,
+`slice-tdd` serves three strategies, `acceptance`, `internal` and `yolo`. Add this paragraph after paragraph 5,
 always, with `<strategy>` filled in — it is also the `<your name>` the block's Attempts lines use:
 
 > **Mode.** You run in **`<strategy>`** mode. Write `<strategy>` as the name on every Attempts line.
 
+For `yolo`, append to it: *"In `yolo`, obligation 2's passing test for this slice's behavior is
+replaced by your acceptance proofs passing at SHIP; the targeted tests still stay green."*
+
 ### The pause paragraph, for `slice-tdd`
 
-While the previous slice's suite run is still going, `slice-tdd` (either mode) is handed off with
+While the previous slice's suite run is still going, `slice-tdd` (any mode) is handed off with
 this paragraph added after the mode paragraph (SKILL.md, *Hand off*); it is the only guest handed
 off before that run is green. Leave it out once the run reads `0`, and when invoking a paused
 `slice-tdd` again.
