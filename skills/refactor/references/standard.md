@@ -1,7 +1,7 @@
 # Refactoring Standard
 
-The rules production code is held to, not suggestions to weigh. Shared by the `refactor`
-and `slice-tdd` skills, so it speaks in two terms the file that sent you here defines:
+The rules production code is held to, not suggestions to weigh. Shared by more than one
+skill, so it speaks in two terms the file that sent you here defines:
 **the scope** (the code under change) and **the log** (where findings are recorded).
 
 When priorities conflict, apply Simple Design in this order: tests pass > intention clear > no

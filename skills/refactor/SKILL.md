@@ -19,7 +19,8 @@ catch a mistake is a rewrite with optimism; the first job is finding out which o
    the user's sign-off on known failures before going on.
 3. **Pin the scope.** The target is what the user named, plus whatever the change forces you to
    touch (its callers, for a signature change). Everything else you notice goes in the report's
-   `Noticed, not done`. A module-sized target is a sequence of function-sized ones: take them one
+   `Noticed, not done`. Any behavior change the request asks for is out of scope: say so, and
+   route it to slice-plan once this refactor lands. A module-sized target is a sequence of function-sized ones: take them one
    at a time, net check included.
 
 ## Check the net
