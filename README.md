@@ -10,7 +10,8 @@ format — so the same directory can be used as-is by multiple harnesses
 A skill may bundle its own supporting scripts (see `navigator`), but the repo has no shared
 application code, build step, or dependencies of its own.
 
-Design notes for larger efforts live in `docs/designs/`.
+Design notes for larger efforts live in `docs/designs/`. [`docs/workflow.md`](docs/workflow.md)
+diagrams how a feature moves through `feature-spec`, `slice-plan` and `slice-tdd`.
 
 ## Skills
 
