@@ -124,6 +124,11 @@ scope against those standards with the same detection posture as the catalog. Wh
 standard and a catalog entry disagree, the standard wins — it is the user's deliberate
 choice for their code — and a catalog finding it overrides is dropped, not reported.
 
+**Run the change-source probe on every function and module in scope, whatever its size** — for
+a diff scope, those whose behavior the diff changes. The probe is defined in the catalog's
+*Single responsibility* lens. Keep each unit's table (request, requester, source, lines) in
+working notes; a table goes in the report only with a finding it supports.
+
 ### 4. Report a rated assessment
 
 **Before ranking, apply the finding gate.** Size, length, and branching-density observations
@@ -136,10 +141,22 @@ The exception is a unit that clearly troubles you while no lens names why. Say e
 its own note rather than a rated finding — it points at a real gap in the catalog, and it is
 more honest than either forcing a match or reporting the code as clean.
 
+The change-source probe is not gated by size. **Every outcome the probe's step 3 lists is a
+reported finding**, at any length, with its probe table as evidence. You may rate one low, but
+you may not drop it.
+
+**Rate a probe finding by interleaving, not by size.** Sources in separate blocks can be read
+one at a time: rate that low. Sources interleaved within one line or expression make the reader
+hold them together: rate that at least medium, however short the unit is. A probe finding that
+is the root of others takes the root rating below instead.
+
 Produce findings **ranked most-severe first**. For each:
 - **Name** the smell/principle (the precise term from the catalog), at the altitude it
   actually lives at. A symptom visible in one function may have its cause at the component
-  level; name the cause, since that is what a fix has to address. For a violation of the
+  level; name the cause, since that is what a fix has to address. When a probe finding caused
+  other findings (a duplicated check, an overreaching catch or default), report it as
+  the root with those listed under it, rated at least as high as the worst, and point its
+  direction at restructuring the responsibilities. For a violation of the
   user's coding standards, name it as `standard: <the rule, quoted or paraphrased>`, with
   the file it came from.
 - **Location** — file and line/region.

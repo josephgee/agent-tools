@@ -42,6 +42,11 @@ duplication > fewest elements. Never trade clarity for less duplication.
     `deletion candidate (unpinned): <what, why it looks redundant>`.
 - **Duplication**: same logic in more than one place in the scope? Consolidate it. Check the
   surrounding code too: a helper that already exists there is duplication.
-- **Structure**: responsibilities in the right places? A unit doing the work of several, or a
-  method more interested in another object's data than its own, is the cause to fix — not its
+- **Structure**: responsibilities in the right places? Run the change-source probe from
+  `design-principles`' *Single responsibility* lens on each unit in the scope, whatever its size.
+  Where sources land on disjoint lines, split the unit along those line sets; where they
+  interleave on one line, first pull them apart into separate steps, then split. Where one
+  request changes two places, give it one home; where a request about the unit is met at its
+  call site, move that work into the unit. Log a split you can't make safely as a finding. A method
+  more interested in another object's data than its own is likewise the cause to fix — not its
   length.

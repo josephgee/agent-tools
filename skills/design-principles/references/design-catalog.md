@@ -85,8 +85,33 @@ The lenses, in no fixed order:
 - **Missing abstraction** — is a concept the code clearly *has* never given a name of its own,
   so it gets re-derived inline everywhere it's needed? *Primitive Obsession* and *Data Clumps*
   are its two most common concrete forms; the general case is broader than either.
-- **Single responsibility** — does the unit have more than one reason to change? See
-  [principles.md](principles.md).
+- **Single responsibility** — does the unit have more than one source of change? Size doesn't
+  matter here: a 15-line function can carry four. Judge it by change requests, not by its
+  name. A name always states one purpose, and everything inside reads as serving it. The
+  *change-source probe*:
+  1. Name plausible change requests from different sources: the external contract the unit
+     consumes, product rules, operational policy (what fails, what retries, what commits
+     together, what runs afterward), data quality, and callers' scope. Each request names who
+     would ask for it: a team, a role, an external party. A request nobody would ask for is not
+     a row.
+  2. For each request, mark the lines that would change, wherever the edit would land,
+     including in callees and callers.
+  3. Read the outcomes off the rows:
+     - different sources on disjoint lines in one unit: separate responsibilities
+       (*Divergent Change*);
+     - different sources making different edits to the same line: separate responsibilities,
+       interleaved (*Divergent Change*);
+     - one request that has to change two places: a responsibility with no home of its own
+       (*Shotgun Surgery*);
+     - a request about this unit met only by an edit outside it: part of this unit's
+       responsibility lives at the call site (*Feature Envy* in the unit holding it).
+
+  A unit whose rows show none of these has one responsibility. Only the change requests count as
+  evidence. The code's current shape never shows it has one responsibility: not its name, its
+  size, a library construct that groups the concerns, or two requests sharing a line. To
+  conclude that two requests are one responsibility, name the single source both come from. If
+  you can't, they are two.
+  See [principles.md](principles.md).
 - **Branching density** — this one is a *measurement*, not a smell: high cyclomatic complexity
   is a reason to look harder, never a finding on its own. The finding, when there is one, is
   one of the other lenses — most often a missing abstraction, or a type/kind conditional that

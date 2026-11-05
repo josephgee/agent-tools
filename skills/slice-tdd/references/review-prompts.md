@@ -35,7 +35,10 @@ already set.
 > already have something this duplicates — a helper, a type, a pattern for this kind of problem —
 > that the design should reuse or follow instead? Then assess it against `design-principles`' vocabulary: does it follow
 > this codebase's conventions, and does it preserve existing behavior while reshaping any structure
-> that doesn't fit this change, rather than designing around it? Does it hold up against SOLID and the
+> that doesn't fit this change, rather than designing around it? Run the change-source probe from
+> `design-principles`' *Single responsibility* lens on every unit the draft adds or modifies, with its
+> table: for a modified unit, mark its lines; for a new one, mark the parts of the interface sketch
+> each request would change. Does it hold up against the rest of SOLID and the
 > component-cohesion/coupling principles, does Simple Design's priority order (tests pass >
 > intention clear > no duplication > fewest elements) suggest a smaller design. Report findings
 > ranked by severity, each with what's wrong and why it matters — including "no findings, this

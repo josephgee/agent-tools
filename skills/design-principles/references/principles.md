@@ -8,9 +8,11 @@ need to name *why* something is wrong or *which* option is better — not to run
 
 Five principles for where responsibilities and dependencies should sit.
 
-- **Single Responsibility** — a module should have one reason to change. Two unrelated
-  reasons to change living in one place is the root of *Divergent Change* and much
-  *Rigidity*.
+- **Single Responsibility** — a module should have one reason to change. A reason is a
+  *source* of change, not a purpose: a party or concern that would ask for the code to
+  change, such as an external contract, a product rule, or an operational policy. (Martin
+  later restated the principle as "responsible to one actor".) Two sources of change living in
+  one place is the root of *Divergent Change* and much *Rigidity*.
 - **Open/Closed** — open for extension, closed for modification. You should be able to add
   behavior without editing code that already works. When a new case forces edits to a
   central conditional, this is what's being violated (*Switch Statements*).
