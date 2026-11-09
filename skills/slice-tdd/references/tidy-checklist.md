@@ -14,8 +14,8 @@ Apply the `refactor` skill's [references/standard.md](../../refactor/references/
 read it now. Read the file directly; do **not** invoke the `refactor` skill, whose workflow
 would demand a clean tree and start a test-net check of its own. **The scope** is the whole
 slice diff. **The log** is the state file: decision context and edit-site hazards go on
-`Learned` (the host folds it into the squash commit); deletion candidates go in `## Out of
-Scope`; a missing pin is a test to add now. On top of the standard (in `yolo` there are no RED
+`Learned` (the loop folds it into the squash commit); deletion candidates go in `## Out of
+Scope`; a cleanup the plan gives a later PR goes in `## Later-PR Discoveries`, not into this diff; a missing pin is a test to add now. On top of the standard (in `yolo` there are no RED
 tests: the test checks below cover only pins and persisted proofs, and *Duplication across RED's
 tests* is skipped):
 

@@ -11,27 +11,35 @@ A skill may bundle its own supporting scripts (see `navigator`), but the repo ha
 application code, build step, or dependencies of its own.
 
 Design notes for larger efforts live in `docs/designs/`. [`docs/workflow.md`](docs/workflow.md)
-diagrams how a feature moves through `feature-spec`, `slice-plan` and `slice-tdd`.
+diagrams how a feature moves through `feature-spec`, `slice-plan`, `slice-loop` and `slice-tdd`.
 
 ## Skills
 
-- **[tdd](skills/tdd/SKILL.md)** *(legacy; not installed by default — superseded by `slice-plan` + `slice-tdd`)* — Guides strict Test-Driven Development (TDD) as a learning
+- **[tdd](skills/tdd/SKILL.md)** *(legacy; not installed by default — superseded by `slice-plan` + `slice-loop` + `slice-tdd`)* — Guides strict Test-Driven Development (TDD) as a learning
   loop, via THINK-RED-GREEN-REFACTOR cycles with a persistent state file for tracking design
   evolution and backlog.
-- **[slice-tdd](skills/slice-tdd/SKILL.md)** — Executes one `slice-plan` slice test-first, with
-  every heavy step delegated so a long slice list fits one host session. Three modes, chosen per
-  slice by the host: `acceptance` proves the slice through acceptance tests a human can run and holds a
+- **[slice-tdd](skills/slice-tdd/SKILL.md)** — Builds one slice test-first from a host's handoff
+  block and hands back a report, with every heavy step delegated so a long slice list fits one host
+  session. Depends on no particular host — `slice-loop` provides the block, and any loop that fills
+  it in will do. Three modes, chosen per slice by the host: `acceptance` proves the slice through acceptance tests a human can run and holds a
   human design gate before any code; `internal` targets a behavior list with no gate, for slices
   that are mostly edge cases; `yolo` is `acceptance` without unit tests, for the rare slice a unit
   test could only restate. All: a reviewed design, pinning of untested code before changing it,
   a batch of failing tests then holistic implementation (not `yolo`), a refactor-and-coverage
   pass, a blind code review, and lint.
-- **[slice-plan](skills/slice-plan/SKILL.md)** — Owns the other half of what `tdd` does: cutting a feature into vertically sliced, independently reviewable increments,
-  while leaving *how* each slice gets built to be chosen slice by slice — a test-first loop for
-  one, an agent one-shotting the next, the user writing another by hand. Keeps a strategy-agnostic
-  plan file that outlives every attempt, so a strategy that turns out wrong rolls back to the
-  previous slice with the record of what was tried intact. Its `references/slicing.md` is the
-  slicing doctrine `tdd` defers to.
+- **[slice-plan](skills/slice-plan/SKILL.md)** — Decides *what* gets built: cuts a feature into an
+  ordered sequence of independently reviewable PRs — mostly vertical slices, the occasional
+  refactor — with the dependencies between them, proposes a split when the sequence shows the
+  feature is several, and stops at an agreed plan file. Useful without building anything: the
+  plan can become tickets instead. Its `references/slicing.md` is the slicing doctrine `tdd`
+  defers to.
+- **[slice-loop](skills/slice-loop/SKILL.md)** — Builds an agreed `slice-plan` plan one PR at a
+  time, choosing *how* each gets built as it goes — a test-first guest for one, the agent directly
+  for the next, the user by hand for another. Cuts a stacked branch per PR, reviews and squashes at
+  each boundary, runs the full suite in the background, and keeps a ledger that outlives every
+  attempt, so a strategy that turns out wrong rolls back to the previous PR with the record of what
+  was tried intact. The plan file is its only interface with `slice-plan`, so it can be replaced —
+  by a script, say — without touching the planner.
 - **[feature-spec](skills/feature-spec/SKILL.md)** — The step before `slice-plan`: interviews the
   user to settle a feature's or bug fix's correct behavior and scope, and writes a spec of
   acceptance criteria with concrete examples, constraints, scope rulings and a non-binding design

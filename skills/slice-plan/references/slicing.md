@@ -8,6 +8,9 @@ understand, and approve without needing the rest of the feature in front of them
 ships as one PR; if the project has no forge, it still means the same thing — the unit of review
 doesn't depend on the tooling.
 
+*In this file, "slice" means that unit of review — what `slice-plan`'s plan calls a PR, the
+occasional `refactor` or `scaffolding` PR included. The legacy `tdd` skill reads it the same way.*
+
 Slicing is decided before a strategy is chosen, and it does not change when the strategy does.
 A slice executed by hand, by an agent one-shotting it, or by a test-first loop is the same slice:
 the same behavior sentence, the same boundary, the same reviewer reading the same diff.
@@ -96,7 +99,8 @@ run the path as far as the last seam you can cross cheaply, and stop there:
 
 > Thread planned as request → handler → store → response. The store turns out to need a
 > migration and a connection pool. Slice 01 becomes request → handler → hardcoded response;
-> crossing into the store becomes slice 02.
+> crossing into the store becomes the next slice — the next free number, and also a thread,
+> since it crosses a seam nothing has crossed yet.
 
 The stopping point becomes a stub behind a real interface, and the next slice crosses that one
 seam. The path is shorter but still runs end to end — a thread that stops at a seam is still a
@@ -123,8 +127,8 @@ The thread is pinned by a test, and every later slice exists to make that thread
 this header and nothing else" does not, and slice 02 breaks it on its first green.
 
 Over-specify it and every later slice pays to update it. Updating it is routine — each slice
-builds only what it needs — and is a plan-level event, not a test weakened to pass: SKILL.md's
-executor contract, obligation 2, says how.
+builds only what it needs — and is a plan-level event, not a test weakened to pass: whatever loop
+builds the plan says how.
 
 Every subsequent slice thickens the thread at one point — replacing a stub with real behavior,
 which is itself an observable change. That is why vertical slicing works downstream: there is a
@@ -153,8 +157,8 @@ thread, which is a known-good end-to-end state rather than a green field.
 
 Feature: users can export a report as CSV.
 
-1. **Export endpoint returns an empty CSV** — route exists, correct content type and headers, no
-   rows. Thinnest real vertical slice: it genuinely works, it just has nothing to say yet.
+1. **Export endpoint returns an empty CSV** — the steel thread (`Kind: thread`, `Merge safety:
+   live`): route exists, correct content type and headers, no rows. Thinnest real vertical slice: it genuinely works, it just has nothing to say yet.
 2. **Export includes the report's rows** — real data, default column set, default ordering.
 3. **Export respects the caller's date range** — one filter, the one every caller uses.
 4. **Export rejects a range wider than the configured maximum** — first error path, one rule.
@@ -165,9 +169,27 @@ Feature: users can export a report as CSV.
 Each line is one sentence with no "and." Each merges on its own. A reviewer of slice 3 needs to
 know nothing about slice 4.
 
+## When to split the feature
+
+*Provisional — the judgment here is still being tuned.*
+
+Slicing is how a feature turns out to be several. Once the sequence is drafted, look for two
+signals:
+
+- **Disconnected work.** Groups of slices that share no dependency chain — nothing in one group
+  needs anything in the other. Each group is a candidate feature, and its boundary is already
+  drawn.
+- **A long list.** No count decides this. Weigh scope — how much work the list is — against value —
+  how much of it must ship together before anyone benefits. A feature is the smallest set whose
+  value stands on its own.
+
+Either one is a proposal to the user, with the grouping and its reason, never a split made
+silently. The number of slices is not itself the measure: slices are sized for review, features
+for value, and the two don't convert.
+
 ## Re-slicing
 
-The plan evolves the same way the design hypothesis does. What you learn while executing a slice
+The plan evolves as the build teaches you. What you learn while executing a slice
 can reveal that a planned slice is two slices, that one is unnecessary, or that the order is
 wrong.
 
@@ -176,8 +198,8 @@ wrong.
   it was drawn before those facts existed. Walk the remaining plan once against what the thread
   found. A plan that survives slice 01 untouched is more often unexamined than correct.
 - **Splitting a planned slice in two** is minor — update the plan and proceed.
-- **Dropping a planned slice, or reordering** shipped-relevant work surfaces to the user first,
-  the same as any significant plan change.
+- **Dropping a planned slice, reordering, or widening a slice into another's work** surfaces to the
+  user first.
 - **Discovering the current slice is too big mid-flight** — stop extending it, ship what is green
   and coherent now, and move the remainder to a new slice immediately after it in the plan. A
   slice stays one item because a reviewer can read it, not because the plan said so.

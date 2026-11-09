@@ -51,11 +51,10 @@ duplicate.
   resume: read it in full; if its rules-in-force header is missing or differs from
   [spec-format.md](spec-format.md), replace it verbatim; then continue the interview from the first
   exit-check item it fails.
-- **A signed-off spec the user wants changed** — check whether a plan has adopted it:
-  `find plans docs/plans .plans -maxdepth 1 -name '*.md' -exec grep -l '<spec file name>' {} + 2>/dev/null`
-  — any file it lists other than the spec itself is a plan that adopted it. If one
-  has, the spec is frozen and the change belongs in that plan — say so, and don't edit the spec. If
-  none has, reopen it: Status back to `drafting`, the header restored, and resume.
+- **A spec the user wants changed** — if its Status reads `adopted: <plan>`, a plan owns its
+  criteria now: the spec is frozen and the change belongs in that plan — say so, and don't edit
+  the spec. If it reads `signed off`, reopen it: Status back to `drafting`, the header restored,
+  and resume.
 - Otherwise — start fresh.
 
 ## 1. Gather

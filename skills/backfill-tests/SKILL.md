@@ -1,6 +1,6 @@
 ---
 name: backfill-tests
-description: "Backfill a trustworthy regression-test net onto existing but poorly-tested code, usually right before refactoring or changing it. Use when asked to add tests to, cover, pin, or characterize an untested or legacy function. Enforces the standards that separate a real net from coverage theatre: expected values derived from intent rather than read off the implementation, every test proven falsifiable by perturbing the code it claims to exercise, assertions on observable behavior rather than on which collaborators got called, and specification tests kept distinct from characterization pins. Bugs found along the way are captured as expected-to-fail tests and fixed later under the user's call, never inline. This is the inverse of writing new code test-first (see slice-plan): here the implementation already exists and the tests are what's missing."
+description: "Backfill a trustworthy regression-test net onto existing but poorly-tested code, usually right before refactoring or changing it. Use when asked to add tests to, cover, pin, or characterize an untested or legacy function. Enforces the standards that separate a real net from coverage theatre: expected values derived from intent rather than read off the implementation, every test proven falsifiable by perturbing the code it claims to exercise, assertions on observable behavior rather than on which collaborators got called, and specification tests kept distinct from characterization pins. Bugs found along the way are captured as expected-to-fail tests and fixed later under the user's call, never inline. This is the inverse of writing new code test-first (see slice-tdd): here the implementation already exists and the tests are what's missing."
 compatibility: Requires the project to be a git repository — the production-code freeze check and perturbation reverts rely on git.
 ---
 
@@ -69,7 +69,7 @@ coming refactor should address. Record it and write the simplest test you can ma
    failures first.
 3. **Pick one target** — a function, method, or tight cluster, not a module. If it's huge, take its
    collaborators one at a time. This technique suits untested, branchy, or tangled code you're
-   about to change. It does not suit code that doesn't exist yet (use [slice-plan](../slice-plan/SKILL.md)) or
+   about to change. It does not suit code that doesn't exist yet (plan it with [slice-plan](../slice-plan/SKILL.md), build it with [slice-loop](../slice-loop/SKILL.md)) or
    code trivial enough that the ceremony costs more than it returns.
 
 ## Write down the promises first
@@ -186,7 +186,7 @@ doesn't probe gaps you left on purpose:
 
 - **Another skill invoked you** — return the report to it and stop; it owns the next step.
 - **Cleanup next** — the [refactor](../refactor/SKILL.md) skill, held green by these tests.
-- **New behavior next** — [slice-plan](../slice-plan/SKILL.md).
+- **New behavior next** — plan it with [slice-plan](../slice-plan/SKILL.md), then build it with [slice-loop](../slice-loop/SKILL.md).
 
 ## Escalation: gut-and-restore
 

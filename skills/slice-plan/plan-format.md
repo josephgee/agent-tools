@@ -1,16 +1,7 @@
 # Slice Plan Format
 
-The slice plan records the feature, its acceptance criteria, and the ordered slices that deliver
-it — plus, per slice, which implementation strategy is running it and which strategies were tried
-and abandoned.
-
-It is never committed. It stays untracked — via `.git/info/exclude`, set at Setup — from
-creation to Cleanup, so that the record of a failed attempt survives the rollback that erases the
-attempt. SKILL.md's *Plan File* section has the full reasoning.
-
-A strategy may keep its own state file for intra-slice state — current phase, active test,
-pressure log — under its own name, born and dying within one attempt. Many keep nothing at all.
-The slice plan outlives every attempt, which is what lets the strategy change.
+A plan records **what** gets built: the feature, its acceptance criteria, its constraints, and the
+ordered PRs that deliver it.
 
 ## Location and name
 
@@ -18,73 +9,40 @@ The slice plan outlives every attempt, which is what lets the strategy change.
 
 - **`<plans-dir>`** — whichever of `plans/`, `docs/plans/`, or `.plans/` the repo already has.
   Create `plans/` only if none exists. If more than one exists, ask rather than guessing.
-- **`<feature-slug>`** — a short kebab-case name for the effort, derived from the confirmed
-  feature definition (`csv-export`, `session-timeout`). Confirm it at the alignment gate: it is
-  permanent and also names the branches (`<feature-slug>/NN-<slice-slug>`).
+- **`<feature-slug>`** — a short kebab-case name derived from the confirmed feature definition
+  (`csv-export`, `session-timeout`). Confirm it at the alignment gate: it is permanent, and a loop
+  may use it to name branches.
 
-The `slices-` prefix and the `# Slice Plan` heading keep these files distinct from an executing
-skill's own state file. Naming files after the effort lets several efforts run in parallel.
+The `slices-` prefix and the `# Slice Plan` heading let Startup find plans, renamed ones included.
 
----
+**The plan is never committed.** Add its path to `.git/info/exclude` when the file is created:
+`printf '%s\n' "<plans-dir>/slices-<feature-slug>.md" >> "$(git rev-parse --git-path info/exclude)"`,
+then confirm `git status --short` does not list it. An executor's `git add -A` would otherwise
+sweep it into a PR, and a loop's rollback would erase edits made to it.
 
-## The Rules in Force header
+## Who writes it
 
-Everything inside the fence below — the `# Slice Plan` title and the `## Rules in Force` section,
-and nothing after it — is copied verbatim into a new plan file and never edited. It is the
-**host's** rules-in-force, and only the host's: no executor ever reads it, every bullet is a host
-obligation worded as the host's own check, and none of them states what an executor owes. Audit it
-against the host's procedure in SKILL.md — never against the executor contract, which lives in
-SKILL.md, *The executor contract*, and is rendered for guests in `references/hosted-handoff.md`.
-Keep it short: it is re-read at every slice, boundary and abandon, and a long header is the context
-rot it exists to counter.
+- **`slice-plan`**, from creation until `Status` is `agreed`. After that, only `Ticket` and
+  *Differs from ticket* lines, when tickets are published or a ticket is edited — or to set it back
+  to `drafting`, or to retire it.
+- **A loop**, after `agreed`, and only to re-slice: the `## PRs` section — PRs it has not started,
+  or narrowing the current one — following `slicing.md`'s *Re-slicing*. Feature, criteria and
+  Constraints stay as agreed; changing them is a new planning session.
 
-**This section is the only part of a plan file that is ever replaced wholesale.** If a resumed
-plan's header is missing or has drifted from the fence below, replace the `## Rules in Force`
-section and leave every other section of that plan — Session, Feature, Acceptance Criteria,
-Constraints, Design Hypothesis, Slices, Backlog — exactly as it stands. The Attempts history under Slices is the one
-thing no rollback recovers.
+Set **Last updated** on every write.
+
+## The file
+
+A template, filled in as you go.
 
 ```markdown
 # Slice Plan
 
-## Rules in Force
-
-Copied verbatim at creation. Re-read at the start of every slice, at every slice boundary, and
-before every abandon. Never edited or summarized.
-
-- One slice = one branch off the previous slice's branch (base branch for slice 01); never two.
-- A behavior sentence narrows or splits freely; widening it into another slice's work is a
-  re-slice. A change the user asks for at the boundary is an edit on this slice's branch.
-- Choose the strategy per slice, before its branch is cut; record it before any code. State the
-  executor's obligations at every handoff, in the form its shape takes.
-- No code on a slice — the handoff, a paused `slice-tdd`'s resume — until the previous slice's suite run reads
-  `0`. The run uses this tree: change nothing outside the plans dir while it goes; stop it first.
-- No boundary over a red test. Review, commit fixes, squash, start the suite run, then present; a
-  change in review is amended in. Red after approval: reopen, fix, amend, rebase the next slice onto it.
-- To abandon, **propose it and get the user's confirmation first**, then run the abandon recipe
-  (`references/abandon.md`) as one uninterrupted step.
-- An attempt's line is closed in place, never removed and never duplicated.
-- **The plan is never committed** — path in `info/exclude`. Never `git add` or `clean -x` it.
-- Branch names only, never a commit sha: the squash rewrites them.
-- The feature hypothesis is the plan's; a slice's internal design is the executor's.
-- A slice the user has taken by hand is theirs — write no code in it; close its attempt line and
-  confirm its work committed yourself.
-```
-
-## The rest of the file
-
-A template, filled in as you go — not copied verbatim. **Write the Session block at creation,
-along with the header**, with the feature slug and start date filled in and Base branch and Test
-runner left as the placeholders below: `references/resume.md` reads a still-placeholder value as
-"Setup never ran", so the placeholders are load-bearing and a plan created without a Session block
-disables that detector.
-
-```markdown
-## Session
 - **Feature slug**: <feature-slug>
-- **Base branch**: <branch slice 01 is reviewed against — filled in at Setup>
-- **Test runner**: `<command>` — filled in at Setup, once, so each executor need not rediscover it
-- **Spec**: <plans-dir>/spec-<name>.md — the spec this plan adopted, or `none`
+- **Status**: drafting
+- **Spec**: <plans-dir>/spec-<name>.md, or `none`
+- **Design**: <path to a design document>, or `none`
+- **Split from**: <the parent feature's name or ticket ref>, or `none`
 - **Started**: YYYY-MM-DD
 - **Last updated**: YYYY-MM-DD
 
@@ -94,112 +52,80 @@ disables that detector.
 
 ## Acceptance Criteria
 
-Behavioral, outside-observable, the fixed target. Status is set only by a passing test, or a `yolo` slice's
-passing acceptance proof (SKILL.md, the executor contract's obligation 2).
+Behavioral and outside-observable: each names who observes it and where.
 
-- [ ] AC1 — <criterion>
+- AC1 — <criterion>
   - e.g. <concrete example, carried from the spec when there is one>
-- [x] AC2 — <criterion> — satisfied in slice 01
 
 ## Constraints
 
-Mandates from outside the team that slicing and every executor must respect, each with its source.
-`None.` when there are none.
+Mandates from outside the team, each with its source. `None.` when there are none.
 
 - <mandate> — <who imposed it, and where it's recorded>
 
-## Design Hypothesis
+## PRs
 
-Feature-level only: the seams the slicing depends on — key modules, where responsibilities
-divide, what each slice will find already in place. A slice's own internal design belongs to the
-skill executing it. Superseded versions stay; they are why the later slices are shaped as they are.
-
-- **v1** — <description> — superseded after slice 02: <what was learned>.
-- **v2** — <description> — current.
-
-## Slices
-
-### 01 — <slice-slug> — shipped
+### 01 — <pr-slug>
 - **Behavior**: <one sentence, no "and">
-- **Advances**: AC2
+- **Depends on**: none
+- **Advances**: AC1
+- **Kind**: thread
 - **Merge safety**: live
-- **Suite**: green: /home/me/.cache/slice-suite/myrepo-<feature-slug>-01
-- **Strategy**: internal
-- **Attempts**:
-  - internal — shipped
+- **Ticket**: PROJ-12
 
-### 02 — <slice-slug> — in progress
+### 02 — <pr-slug>
 - **Behavior**: <one sentence, no "and">
-- **Advances**: AC1, AC3
-- **Suite**: running: /home/me/.cache/slice-suite/myrepo-<feature-slug>-02
-- **Strategy**: hand
-- **Attempts**:
-  - internal — abandoned: <what entangled, one line>
-  - hand — handed back
-
-### 03 — <slice-slug> — planned
-- **Behavior**: <one sentence, no "and">
+- **Depends on**: 01
 - **Advances**: none
-- **Kind**: refactor — <why it is too large to ride along with a behavioral slice>
-- **Strategy**: <chosen when its branch is cut>
-- **Attempts**: none yet
+- **Kind**: refactor — <why it is too large to ride along with a slice>
 
-## Backlog
-
-Cross-slice notebook. Every item reaches a closed state before the feature is complete.
-
-- [ ] <description> — noted in slice 02
-- [x] <description> — resolved in slice 03: <how>
-- [-] <description> — dismissed in slice 04: <why>
-- [>] <description> — carried to <where the user named>
+### 03 — <pr-slug>
+- **Behavior**: <one sentence, no "and">
+- **Depends on**: 01, 02
+- **Advances**: AC2
+- **Ticket**: PROJ-12, PROJ-14
+- **Differs from ticket**: PROJ-14 — <what it says> / <what this plan says instead>
 ```
 
----
-
-## When the host writes
-
-Set **Last updated** at each of these:
-
-- **Before the alignment gate** — create the file: the Rules in Force header, the Session block's
-  feature slug, spec and start date, the feature, criteria, constraints, hypothesis and slices.
-- **Setup** — the test runner command and the base branch.
-- **Choosing a strategy** — the slice's `Strategy` field and its first `Attempts` line.
-- **Cutting the branch** — the slice's status to `in progress`.
-- **The slice boundary** — `Suite` set to `running: <dir>` at step 3, then slice status, its
-  `Attempts` line closed, criteria ticked, hypothesis changes, and backlog items.
-- **A background run's result** — `Suite` set to `green: <dir>` or
-  `red: …, <dir>` when you read it, and back to `running: <dir>` at every restart.
-- **An abandon** — the abandoned `Attempts` line and the new strategy.
-
-These seven are the scheduled writes, not the only ones: the blocked path appends a fresh attempt
-line or re-slices, and Feature complete may append a whole new slice. Set **Last updated** on those
-too.
-
-The exceptions are the fields an executor writes for itself: SKILL.md, *The executor contract*,
-obligation 3.
-
-## Slice record
+## Header fields
 
 | Field | Rule |
 |---|---|
-| Heading | `### NN — <slice-slug> — <status>`. Status is `planned`, `in progress`, or `shipped`. A slice you decide not to build is deleted from the plan, not marked — see SKILL.md, *Running a slice* step 2. |
-| Behavior | One sentence, no "and". Narrowing or splitting it is ordinary re-slicing; widening it into another slice's work is a re-slice. |
-| Advances | The acceptance criteria this slice moves. `none` for a slice that moves no criterion — which must then carry a `Kind`. |
-| Kind | `behavioral` by default, and then omitted entirely. `refactor` or `scaffolding` is written out with a one-sentence reason on the same line, and is — with the `yolo` strategy — the only thing that excuses a slice from shipping a new passing test. A slice whose `Advances` is `none` must carry one. A test-first strategy cannot run such a slice — see SKILL.md, *Running a slice* step 1. |
-| Strategy | What is running the slice *now*. A strategy name from SKILL.md's table (`acceptance`, `internal`, `yolo`, `navigator`), `direct` for the agent building it itself, or `hand` for the user writing it themselves. Chosen before the branch is cut. |
-| Suite | The slice's full-suite run, started at the boundary's step 3 (`references/background-suite.md`): `running: <dir>`, then `green: <dir>`, `red: <failing tests>, <dir>`, or `green: fixed — <what>, <dir>` after a reopen — the directory always kept, since its status file is what the host's hold on the next slice reads and Cleanup deletes it. Absent until the boundary. A plan from before this field existed has none on its shipped slices; treat those as `green`. |
-| Merge safety | Present on the steel thread always — `live`, or `inert: <what makes it unreachable>` — and on any other slice that ships something unreachable. Decided when the slice is planned; an `inert:` value is what the squash message says is deliberately not there. |
-| Attempts | An indented list, one line per attempt, never removed; `none yet` is the placeholder for a slice with no strategy chosen and is replaced by the list at the first attempt. A line is **closed in place** as its state changes — `in progress` → `handed back`, `shipped`, `blocked: …`, or `abandoned: …`; only a genuinely new attempt adds a line. Values: `<strategy> — <in progress \| handed back \| shipped \| blocked: <what stopped it> \| abandoned: <what entangled>>`, plus `<acceptance | internal | yolo> — paused: design done` (SKILL.md, *Hand off*), closed in place and followed by a fresh `in progress` line when the host resumes it. `in progress`, `handed back` and `shipped` may carry a `: <note>` — used to record an earlier slice's test the executor updated; `blocked` and `abandoned` already spend their colon, so their note goes in that text. A reviewing guest may also add the whole token `reviewed` to a `handed back` line, comma-separated after any note already there (SKILL.md, the executor contract's obligation 5); the host reads it as a whole token. `handed back` means the work is done and the host has not yet run the boundary; a skill-shaped guest writes it, and for `direct`, `hand` and `navigator` the host writes it. `blocked` means the executor stopped without delivering the slice — see SKILL.md, *A guest that hands back blocked*. The host closes the line to `shipped` at the boundary. |
+| Status | `drafting` until the user passes the alignment gate, then `agreed`. A loop builds only an `agreed` plan. A `drafting` plan found at Startup was never agreed: re-present it at the gate. Back to `drafting` only to change feature, criteria, Constraints or PRs — and, if a loop ledger (`loop-<feature-slug>.md`) exists, only on the user's yes, since a build is resting on them. |
+| Spec | The spec this plan adopted. Adoption also sets the spec's own `Status` to `adopted: <this plan's path>`. |
+| Design | Any design document, from whatever step wrote it. |
+| Split from | Set on a plan created by splitting a larger feature. A child may split again. |
 
-The Attempts list is the reversibility record. Everything else about the slice is recoverable
-from git; the fact that a strategy was tried and why it was abandoned is not.
+## PR fields
 
-**Numbering.** `NN` is assigned at planning and never reused — it names the branch. A slice
-inserted mid-flight takes the next free number and sits in sequence order, so `05` may appear
-between `02` and `03` in the list. Read order is the list; `NN` is an identity, not a position.
+| Field | Rule |
+|---|---|
+| Heading | `### NN — <pr-slug>`. A PR you decide not to build is deleted, not marked. |
+| Behavior | One sentence, no "and". Narrowing or splitting it is ordinary re-slicing; widening it into another PR's work goes to the user first. |
+| Depends on | Comma-separated `NN`s of the PRs that must merge before this one, or `none`. Every dependency appears earlier in the list. Groups that share no dependency chain are the evidence for a split (`slicing.md`). |
+| Advances | The criteria this PR moves, or `none` — which then requires a `Kind`. |
+| Kind | Omitted for an ordinary slice. `thread` marks the steel thread, and a PR split off it at a seam — still slices; a loop re-slices after each ships. `refactor` or `scaffolding`, with a one-sentence reason, marks a PR that isn't a slice. |
+| Merge safety | On the `thread` PR always — `live`, or `inert: <what makes it unreachable>` — and on any other PR that ships something unreachable. |
+| Ticket | Tracker refs this PR serves. Many-to-many: one PR may serve several tickets, and several PRs may share one. |
+| Differs from ticket | Where this plan disagrees with a ticket it can't change: the ref, what the ticket says, what the plan says. The plan wins locally; these are listed at the gate. Removed if the user has the ticket edited. |
 
-## What the record buys
+Fields appear in the template's order, optional ones omitted.
 
-Everything a rollback needs is a branch name. A slice 02 abandoned from `internal` and redone by
-hand restores from `<slug>/01-<slice-slug>` — no sha anywhere, and the abandoned attempt is
-still legible in the plan after the restore that produced it.
+**Numbering.** `NN` is assigned at planning and never reused — loops key their own records on it.
+A PR inserted later takes the next free number and sits in sequence order, so `05` may appear
+between `02` and `03`. Read order is the list; `NN` is an identity, not a position. A re-slice
+re-points every `Depends on` it affects, and no dependency may follow its dependent.
+
+## Splitting into child plans
+
+When a split is agreed, write one plan per group **in place of the parent**: each with its own
+slug and exclude line, `Status: drafting`, `Split from` set, its own Feature sentence, the parent's
+Constraints, Spec and Design, and its PRs — `NN`s kept — and the criteria they advance, carried
+over as a draft. Retire the parent if it was already written. The user picks which
+child, if any, goes through its gate now; the rest wait at Startup.
+
+## Retiring a plan
+
+Delete the file, then delete its one line from `"$(git rev-parse --git-path info/exclude)"`,
+leaving every other line alone. If the user keeps the plan as a record, keep the exclude line too:
+a file that stays without it gets committed by the next `git add -A`.

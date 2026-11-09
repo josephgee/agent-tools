@@ -1,567 +1,122 @@
 ---
 name: slice-plan
-description: "Plans a feature as an ordered sequence of vertically sliced, independently reviewable increments, then hosts their execution while the implementation strategy is chosen separately for each slice. Use when the approach should differ slice by slice — a test-first loop for one, an agent one-shotting the next, the user writing another by hand — or when the slicing decision should be kept separate from how the code gets written. Maintains a strategy-agnostic plan file that outlives every attempt, so a strategy that turns out wrong rolls back to the previous slice without losing the record of what was tried."
-compatibility: "Requires the design-review skill — and design-principles, which design-review itself requires — and a way to delegate a task to an isolated subagent — the slice boundary delegates a design review of the slice diff, with no bundled fallback. Requires git — reversibility across a strategy change is implemented with branches and `git restore`, and there is no fallback for a project without it. Strategies are whatever the session has available; this skill requires none of them in particular."
-metadata:
-  soft-deps: design-principles design-review
+description: "Plans a feature as an ordered sequence of independently reviewable PRs — mostly vertical slices of deliverable behavior, the occasional refactor — with the dependencies between them, then stops at an agreed plan file without building anything. Use when asked to plan, scope, slice or break down a feature, bug fix or ticket before building it; to decide whether a feature should split into smaller features; or to turn a feature into independent tickets. Adopts a signed-off spec, or treats existing tickets as source material. Building the plan is a separate loop's job."
+compatibility: "Requires git — the plan file is kept untracked via .git/info/exclude. Reads the codebase, and any ticket system the session has a tool for; writes to a ticket only on the user's yes for that edit."
 ---
 
 # Slice Plan
 
-Two decisions are usually made at once and shouldn't be: **how a feature is cut into slices**, and
-**how each slice gets built**. This skill owns the first and hosts the second.
+Decide **what** gets built and in what reviewable pieces, then stop. The output is one agreed plan
+file — feature, acceptance criteria, constraints, and an ordered list of PRs with their
+dependencies — in the format of [plan-format.md](plan-format.md).
 
-Slicing is decided up front and holds for the whole feature. Strategy is chosen one slice at a
-time — a test-first loop, an agent one-shotting it, the user writing it by hand — and can change at
-any boundary, or mid-slice by abandoning the attempt and restoring to the previous slice.
+Terms used throughout:
 
-The plan is a **host**; a strategy is a **guest**. The plan holds the feature, the criteria, the
-slices, and the record of what was tried. Whatever actually builds a slice — a guest skill, you, or
-the user — is its **executor**, and owes [the executor contract](#the-executor-contract).
-
-## Plan File
-
-Maintain a plan file at `<plans-dir>/slices-<feature-slug>.md` — see
-[plan-format.md](plan-format.md) for the format, directory choice, and slug rules.
-
-**The plan is never committed.** Setup adds its path to `.git/info/exclude`; it lives in the plans
-directory for the whole feature, and Cleanup settles it. Rollback *exempts* the plan on purpose —
-the record of a failed attempt has to survive the rollback that erases the attempt — and untracked
-is what gets that for free: it survives every branch switch, every `git restore` and every squash
-with no special handling. The exclude is not optional: guests commit with `git add -A` (`slice-tdd` does,
-every cycle), which would otherwise sweep the plan into a slice's history. `.git/info/exclude` is
-local to the clone, so no tracked `.gitignore` is touched. The plan does not survive
-`git clean -x`, so don't.
-
-**Rules in Force**, the header at its top, is copied verbatim at creation and never edited. It is
-the *host's* rules, read by no executor. This body is read into the conversation once, so a feature
-spanning many slices dilutes it by position and a compaction can drop it; the file is on disk, and
-re-reading the header puts the rules back at the end of the context. **Re-read the header plus the
-Slices section at the start of every slice, at every slice boundary, and before every abandon** —
-unconditionally, not when you notice you've lost track. If a resumed plan's header is missing or
-differs from the fence under *The Rules in Force header* in [plan-format.md](plan-format.md),
-replace **the `## Rules in Force` section alone**, verbatim, leaving every other section of that
-plan untouched — the Attempts history under Slices is the record no rollback recovers.
-
-**Write** the plan at seven points at least — before the alignment gate, at Setup, on choosing a
-strategy, on cutting the branch, at the slice boundary, on reading a background suite run's
-result, and at an abandon — setting **Last
-updated** at each, and at any other write too. Each step below says what it writes;
-[plan-format.md](plan-format.md), *When the host writes*, lists them together. Which of those
-fields an executor writes instead of the host is obligation 3 of
-[the executor contract](#the-executor-contract); everything else is the host's.
-
----
+- **Slice** — an end-to-end piece of deliverable functionality, possibly trivial.
+- **PR** — one independently reviewable change: usually one slice, sometimes a refactor or
+  scaffolding change kept separate because it reviews better alone.
+- **Feature** — a small set of slices delivered together. Sized by a judgment of scope against
+  value; a feature too big by that judgment splits into smaller features.
 
 ## Startup
 
 Run `find plans docs/plans .plans -maxdepth 1 -name 'slices-*.md' 2>/dev/null`, keeping the
 pattern quoted and judging by the output rather than the exit status: an unquoted
-`plans/slices-*.md` matching nothing makes zsh print "no matches found" and never run `find` at
-all (`2>/dev/null` does not suppress that), and a missing plans directory makes `find` exit
-non-zero even when it did find a plan. If that finds nothing, run
-`grep -rl "# Slice Plan" plans/ docs/plans/ .plans/ 2>/dev/null` before concluding there is none —
-a renamed file is still a plan file. Use `grep -r` (or `rg --no-ignore`), never a plain
-ignore-aware search: the plan is in `.git/info/exclude`, so ripgrep skips it silently and you start
-a second planning session over a live feature.
+`plans/slices-*.md` matching nothing makes zsh print "no matches found" and never run `find`, and
+a missing plans directory makes `find` exit non-zero even when it found a plan. If that finds
+nothing, run `grep -rl "# Slice Plan" plans/ docs/plans/ .plans/ 2>/dev/null` — a renamed file is
+still a plan. Never a plain ignore-aware search: the plan is in `.git/info/exclude`, so ripgrep
+skips it silently.
 
-- **None found** — run the planning session below.
-- **Exactly one** — offer to resume it.
-- **More than one** — list them (feature, last-updated) and ask which, or whether to start new.
+Also look for specs: `find plans docs/plans .plans -maxdepth 1 -name 'spec-*.md' 2>/dev/null`. Only
+a spec whose `Status` reads `signed off` is ready to plan; mention a `drafting` one, and ignore an
+`adopted:` one.
 
-Whichever case, also look for specs: `find plans docs/plans .plans -maxdepth 1 -name 'spec-*.md'
-2>/dev/null`, quoted for the same reason. A spec whose `Status` reads `signed off` and that no plan's
-**Spec** field names is a feature ready to plan — offer it alongside the choices above. One still
-`drafting` is not ready: mention it, and don't adopt it.
+- **A `drafting` plan** — the gate was never passed. Offer to resume it at the gate.
+- **An `agreed` plan** — say so, and offer the next steps under *After the gate*. Changing its
+  feature, criteria, constraints or PRs means setting it back to `drafting` and passing the gate
+  again — if a `loop-<feature-slug>.md` ledger exists beside it, only on the user's yes: a build
+  rests on it.
+- **Nothing**, or the user wants something new — run the planning session, offering any ready spec
+  as its input.
 
-**If resuming**, read [references/resume.md](references/resume.md) and follow it before anything
-else: it reports where the feature stands, runs the checks a resume needs, and routes you back into
-the slice where it stopped.
+With more than one candidate, list them (feature, status, last updated) and ask.
 
 ## Planning session
 
-**First, establish the ground.** Confirm a clean working tree — stash or commit unrelated work.
-Then identify the test runner and run the full suite: you need a green baseline, and any
-pre-existing failure needs the user's confirmation before you plan around it. Finding a red suite
-*after* the alignment gate invalidates a plan the user has already approved. Then establish four
-things in order — each builds on the previous.
-
-**Planning from a signed-off spec** replaces steps 1–2 with adoption: its Problem and Out of Scope
-become the Feature; its Acceptance Criteria are copied verbatim with their IDs and examples — gaps
-included — each given a checkbox; its Constraints become the plan's Constraints; its Design
-Hypothesis is step 3's starting point, free to discard. Choose the feature slug as usual — the spec
-doesn't set it — and name the spec's path in the plan's **Spec** field. Present what was adopted for confirmation — don't re-interview, and
-never edit the spec: from here on the criteria live in the plan. Its Deferred and Assumptions are
-not adopted; name any assumption the slicing leans on in the hypothesis.
-
-**1. Feature definition.** What is being built, why, for whom; what is explicitly out of scope.
-Sharpen a vague definition before moving on — it produces vague criteria otherwise. Note any
-constraint mandated from outside — compatibility, regulation, a contract — with who imposed it.
-
-**2. Acceptance criteria.** Behavioral, specific, testable, scoped — they describe what the feature
-does from the outside, and any valid implementation could satisfy them. Derive candidates if not
-provided; push back on criteria that describe internals or that no observation would settle.
-**Each criterion names who observes it and where** — an actor at the system boundary, or a
-measurement taken from outside. One only a reader of the code or schema could observe ("add a `tz`
-column") is design: ask what breaks, for whom, without it — that answer is the criterion, and the
-mechanism goes to the hypothesis. Present the final list for confirmation.
-
-**3. Design hypothesis.** Feature-level only: the seams the slicing depends on — key modules, where
-responsibilities divide, what each slice will find already in place. A proposal, not a declaration;
-how any one slice is built internally belongs to its executor.
-
-**4. Slice sequence.** Read [references/slicing.md](references/slicing.md) **in full** before
-drafting it — the sizing test, the steel thread that opens the sequence, the splitting moves, the
-anti-patterns. Do not draft from memory. For each slice: a one-sentence behavior with no "and", a
-short `<slice-slug>` for its heading and branch name, and the criteria it advances — `none` for a
-slice that advances none, which must then carry a `Kind` of `refactor` or `scaffolding` with a
-one-sentence reason, since `Kind` decides both which strategies are legal for it and what green
-means at its boundary. Record `Merge safety` on the steel thread always — `live`, or
-`inert: <what makes it unreachable>` — and on any other slice that ships something unreachable.
-
-Leave each slice's Strategy as its placeholder: it is chosen slice by slice, at the moment each one
-starts, when you know most about it.
-
-**Write it down before the gate.** Steps 1–4 exist only in the conversation otherwise, and a
-compaction before Setup loses the whole planning session. So now, before the gate:
-
-1. Choose the plans directory: whichever of `plans/`, `docs/plans/`, `.plans/` exists; create
-   `plans/` only if none does; ask if several do.
-2. Create the plan file: the Rules in Force header copied verbatim from *The Rules in Force
-   header* in [plan-format.md](plan-format.md), then the **Session block** with the feature slug
-   and start date filled in and Base branch and Test runner left as their placeholders — Startup
-   reads a still-placeholder value as "Setup never ran", so omitting the block resumes into the
-   routing with no base branch — then the feature, criteria, hypothesis and slices.
-
-**Alignment gate.** Present the feature, criteria, hypothesis, slice sequence, and the proposed
-slug — permanent, and it names the plan file and every branch. Ask: *"Are we aligned? Shall I
-proceed?"* Do not start slice 01 until confirmed.
-
-If the gate changes the slug, rename the file — it names every branch too. If the user declines
-the gate outright, delete it, or Startup finds it next session and offers to resume a feature
-that was never agreed.
-
-### Setup
-
-1. Record the test runner command **and** the base branch — what slice 01 is reviewed against —
-   in the plan, in one write. The runner is what the full suite runs with at every boundary
-   ([The background suite run](#the-background-suite-run)). The
-   runner and base branch are placeholders until now, and the resume path reads either
-   one still being a placeholder as "Setup never ran"; filling them separately opens a window
-   where a resume re-presents an alignment gate the user already approved.
-2. **Exclude it from git**:
-   `printf '%s\n' "<plans-dir>/slices-<feature-slug>.md" >> "$(git rev-parse --git-path info/exclude)"`.
-   A guest's `git add -A` would otherwise commit it. `--git-path` resolves correctly from a
-   subdirectory and in a linked worktree, where `.git` is a file. Confirm with
-   `git status --short` — the plan should not appear at all.
-3. Cut no branch here: slice 01's is cut at step 2 of Running a slice, *after* its strategy is
-   chosen, like every other slice's.
-
----
-
-## Running a slice
-
-### 1. Choose the strategy
-
-Re-read the Rules in Force header and the Slices section first.
-
-**Ask the user which strategy this slice gets.** Check which of the skill-shaped ones this session
-actually has before recommending any, then offer one recommendation with a line of reason — the
-slice's shape is the evidence.
-
-| Strategy | Shape | Suits a slice that |
-|---|---|---|
-| `acceptance` | skill (`slice-tdd`) | delivers behavior a user can observe — the default for such a slice. Its proof is the external, user-facing behavior, run the way a user would meet it, so it is validated where the value actually lands; a human design gate precedes any code. Never a `refactor`/`scaffolding` slice. Runs in-session |
-| `internal` | skill (`slice-tdd`) | is mostly edge cases and internal rules, where setting up external proof of each would cost more than that proof is worth. Same flow as `acceptance` without the acceptance tests or the gate. Never a `refactor`/`scaffolding` slice. Runs in-session |
-| `yolo` | skill (`slice-tdd`) | delivers behavior a unit test could only restate — config or a query passed through to another system, provable only by running it there. `acceptance` with no unit tests: the acceptance proofs alone tick its criteria. Rare — never for logic of your own. Never a `refactor`/`scaffolding` slice. Runs in-session |
-| `direct` | you, directly | is one obvious edit, or scaffolding whose design carries no risk |
-| `hand` | the user writes it | the user wants to write themselves — for the learning, or because they hold context you don't |
-| `navigator` | skill; the user still writes | the user writes it and wants an agent coaching, questioning direction and catching skipped steps rather than sitting silent |
-
-**Rank `acceptance` above `internal` for a user-facing slice even when its design is settled.** `acceptance`
-buys two things a settled design doesn't remove: validation through the behavior a user sees, and a
-design pass at the moment it pays most — a meaningful functionality change is when simplifications
-and new abstractions surface, however settled the design looked beforehand. "The unknowns are
-settled" is not a reason to recommend `internal`; "external proof of these cases costs more than
-it proves" is.
-
-**For a `refactor` or `scaffolding` slice, offer `direct`, or `hand`/`navigator` if the user
-wants to write it** — never `acceptance`, `internal` or `yolo`: `slice-tdd` has no failing test to open
-with and hands back `blocked` at Setup. If the user asks for one anyway, say so — you abandon it to
-`direct`, having paid for a guest that built nothing — and let them choose with that in front of
-them.
-
-`hand` and `navigator` both mean the user writes the code; the difference is whether anyone is
-watching. Record the answer in the slice's **Strategy** field and open its first **Attempts** line,
-both before any code exists. Do not carry the previous slice's strategy forward silently, and do
-not pick a default when the user hasn't answered: per-slice choice is the reason this skill exists.
-
-### 2. Cut the branch
-
-`git switch -c <feature-slug>/NN-<slice-slug> <previous-slice-branch>` — naming the start
-point rather than trusting `HEAD`.
-
-**`<previous-slice-branch>` means the previous slice's branch** — the base branch, for slice 01.
-Every slice before the current one has shipped, so there is only ever one candidate — except
-where a slice was dropped after its branch was cut; that branch is left behind and is never a
-base.
-
-**The plan owns branch naming**, not the strategy. A strategy that names branches itself has to
-be told this one, because the abandon recipe restores from it by name.
-
-**Then set the slice's status to `in progress`** before handing off. That status asserts the branch
-now exists: a slice still marked `planned` sends a resume back to step 1 to re-ask the strategy and
-re-cut a branch that is already there. The plan is untracked and stays that way; this step commits
-nothing.
-
-**To drop a slice**, delete it from the plan — ordinary re-slicing while it is still `planned`. If
-its branch is already cut, abandon the attempt first; the branch is left behind and the next slice
-cuts from the same `<previous-slice-branch>` this one did.
-
-### 3. Hand off
-
-State to the executor — the guest, yourself, or the user — the slice's behavior sentence, the
-criteria it advances, the branch, and the obligations of
-[the executor contract](#the-executor-contract) in the form that executor's shape takes, per
-*Which shape carries which obligation*. Then:
-
-| Strategy shape | Handoff |
-|---|---|
-| A skill (`slice-tdd`, `navigator`, …) | Invoke it with the override block from [references/hosted-handoff.md](references/hosted-handoff.md), filled in. For `acceptance`, `internal` and `yolo`, invoke `slice-tdd` with that block's *mode paragraph* naming which. The block is the only form of the contract a guest reads; without it, it has none. |
-| You, directly (`direct`) | Build the slice. Nothing else is prescribed — the obligations are the whole spec. |
-| The user, by hand | Say what the slice is and that the branch is cut, then stop and wait. Do not write code for a slice the user has taken. |
-
-**Hand off only once the previous slice's suite run reads `0`**
-([references/background-suite.md](references/background-suite.md), *Waiting on it*) — no
-executor sees that run, so the hold is yours alone. **The one exception is `slice-tdd`** (any
-mode), whose ACCEPT and design write no code: hand it off at once, with the *pause* paragraph from
-[references/hosted-handoff.md](references/hosted-handoff.md) added to its block while the run is
-still going — it changes nothing outside its state file until resumed, so the tree the run is
-testing stays put. It hands back `<strategy> — paused: design done` after its design commit; wait
-for `0`, append a fresh `<strategy> — in progress` line, and invoke it again with the block and no
-pause paragraph — its state file resumes it at BUILD. Whoever waits, the user's review of the previous
-slice and the strategy choice for this one overlap the run.
-
-**What the host carries for `direct`, `hand` and `navigator`** — the executor there cannot write
-the plan, and for the latter two was handed no contract at all:
-
-- **Close the Attempts line yourself.** When the work is done and the targeted tests are green, set it to
-  `<strategy> — handed back`, or `<strategy> — blocked: <what stopped it>` if it could not be
-  finished. Leave it open and a resume routes back to step 3 — which for `direct` means rebuilding
-  a slice you already finished.
-- **For `hand` and `navigator`, first confirm the work is committed on the branch, and commit it
-  yourself if it is not** — `git -C "$(git rev-parse --show-toplevel)" status --short` and
-  `git log --oneline <previous-slice-branch>..HEAD`. This is obligation 4, which the user never
-  received and `navigator` by its own rules will not do. A finished slice left in the worktree
-  fails the boundary's squash with "no changes added to commit", and a resume reads zero commits as
-  a slice never built. Committing work the user finished is not writing code, so the rule that a
-  hand slice is theirs does not bar it — say that you are doing it.
-
-**Run a skill-shaped guest in-session.** `slice-tdd`'s design gate (`acceptance`, `yolo`) needs the user
-live, and it delegates its own heavy steps, so in-session costs you little; `navigator` is the
-user's to watch. In-session also keeps the abandon in reach — a delegated guest cannot be stopped
-mid-slice. Delegate only a guest that needs neither, and only where the session supports it; the
-trade-off and the disk checks that replace watching it are in
-[references/hosted-handoff.md](references/hosted-handoff.md) — *Delegated or in-session*,
-*Reading the result*.
-
-### The guest's state file
-
-A skill-shaped guest's state file is tracked, unlike the plan. **At both transitions off a slice,
-drain it into the plan and remove it** — at the boundary's step 6, and as the abandon's first
-action. What to drain, and which guests keep theirs, is in
-[references/hosted-handoff.md](references/hosted-handoff.md), *The guest's state file*.
-
-Every recipe here uses `top=$(git rev-parse --show-toplevel)` with repo-root-relative paths.
-Pathspecs follow the working directory, so from a subdirectory a bare one silently matches
-nothing and the transition ships or destroys the wrong files.
-
-### The executor contract
-
-**This section is the contract's single source.** Every obligation an executor owes is stated here,
-in full, and nowhere else. It has exactly one other rendering: the override block in
-[references/hosted-handoff.md](references/hosted-handoff.md), which restates these five obligations
-as five numbered paragraphs in the same order, in the guest's voice, and is the only form of the
-contract a skill-shaped guest ever reads. Change an obligation here and change its paragraph there
-in the same edit; a block with fewer than five numbered paragraphs has lost one, which is what the
-numbering is for.
-
-Whatever runs a slice owes exactly five things:
-
-1. **Stay on the branch the host cut**, and create no others.
-2. **Leave the targeted tests green at the boundary, with a passing test for the slice's
-   behavior.** The *targeted tests* are the slice's own tests plus the existing tests nearest the
-   code it changed, picked with the runner's own file or directory filter. The executor never
-   owes a full-suite run: that is the host's, once per slice, in the background from the
-   boundary's step 3 ([The background suite run](#the-background-suite-run)), because it is
-   expensive and almost always changes nothing. Green mid-slice is a checkpoint; green at the
-   boundary is the precondition for the next slice's rollback to mean anything. The test is not
-   optional even for `direct`: the boundary ticks an acceptance criterion only where a passing
-   test satisfies it. **For a slice whose `Kind` is `refactor` or `scaffolding`** the obligation is
-   instead that the existing tests over the restructured code stay green — no new behavior, so no
-   new test and no criterion to tick. **For a `yolo` slice** the passing test is
-   replaced by its acceptance proofs passing — agent-run or user-confirmed — and those tick its
-   criteria; the targeted tests still stay green. Those two carve-outs are the only ones.
-   **An earlier slice's test this slice breaks is the executor's to update** — routine, since each
-   slice builds only what it needs. Change its **fixture** or call site wherever that absorbs it:
-   an expectation edited to agree with the new behavior stops pinning its own slice's rule and
-   double-pins this one under its old name. Otherwise narrow the expectation to that slice's rule,
-   never weaker. If this slice replaces the rule, delete the test, and if it ticked a criterion,
-   make sure this slice's test still satisfies it. Commit the update alone, before the work that
-   needs it, and note it on the Attempts line.
-
-3. **Write only its designated plan fields, and build only its own slice.** The fields are its
-   slice's Attempts line, hypothesis deltas that change a later slice, and backlog items, the last
-   in its own state file instead if it keeps one with a backlog of its own. The host owns Strategy,
-   statuses, criteria and every other slice — including the *work* of every later slice: a
-   restructuring the plan has already given to a later slice is not this executor's to do, however
-   much its own refactoring step wants it. Log it and move on; doing it here empties that slice.
-   Preserve existing behavior unless this slice's behavior sentence changes it; the structure
-   behind it, earlier slices' included, evolves as this slice needs.
-4. **Commit its work on that branch.** The boundary squashes *commits*, not worktree state. An
-   uncommitted slice leaves the branch zero commits ahead of `<previous-slice-branch>` and the
-   squash's `git commit` fails — "no changes added to commit", or "nothing added to commit but
-   untracked files present". The work is in the worktree, but nothing has been built as far as the
-   boundary can see.
-5. **Hand back before the squash**, with green targeted tests and no boundary review, PR or squash of its
-   own. The plan owns all three; a strategy that runs its own asks the user to approve the same
-   work twice. **One exception: a guest whose own flow reviews its diff, iterating until clean,
-   before it hands back** (`slice-tdd` is the one today). It records the result in a `## Review` section
-   of its state file and says `reviewed` on its hand-back line, and the boundary then skips its own
-   review (step 2 below). Such a guest is given the adapted block in
-   [references/hosted-handoff.md](references/hosted-handoff.md), *Adapting it for a guest that
-   reviews*.
-
-Obligations 2 and 4 describe a *finished* slice. **The one sanctioned way not to finish one is to
-hand back `blocked`**, and there is no other: the executor stops, gets its tests back to green
-(reverting or simply not committing whatever turned it red), commits whatever complete work it has
-or nothing if there is none, sets its Attempts line to `<strategy> — blocked: <what stopped it>`,
-and says the same when it hands back. A slice that needs splitting and a strategy whose own rules
-leave it no move here are both this one outcome. The host owns what happens next:
-[A guest that hands back blocked](#a-guest-that-hands-back-blocked).
-
-#### Which shape carries which obligation
-
-All five are owed on every slice; what changes with the executor's shape is who carries each and
-how it is delivered. A skill-shaped guest reads it in the block; for the other shapes you say it or
-you carry it yourself. Where an obligation cannot bind the executor it does not lapse — it becomes
-the host's. `navigator` is skill-shaped but the *user* executes, so it belongs in the third column
-and its block is adapted to match (see the reference's *Adapting it for `navigator`*).
-
-| | A skill-shaped guest | `direct` — you are the executor | `hand` / `navigator` — the user is |
-|---|---|---|---|
-| **1** branch | In the block. | Yours: you cut it, so stay on it and cut no other. | Tell the user the branch is already cut and that they need create none; at the boundary, check none appeared — `git branch --list`. |
-| **2** green + test | In the block. | Yours, test included — a behavioral slice you build yourself still ships a passing test. | This is the bar the user's work has to meet: say so when you hand the slice over, and confirm it yourself at the boundary's step 1. A hosted `navigator` is told to coach to it. |
-| **3** own fields, own slice | In the block; the guest writes its own Attempts line. | Yours — though as host you write the rest of the plan anyway. | The plan-fields half does not bind: the user writes no plan fields at all, and `navigator`'s own rules forbid it writing anything but its session file, so **you** write that Attempts line (see *Hand off*). The scope half still applies to the user — state the slice's behavior sentence when you hand it over, so a later slice's work does not get done here. |
-| **4** commit | In the block. | Yours. | The user was handed no contract and `navigator` commits nothing by its own rules, so **you** carry it: before writing the `handed back` line, confirm the work is committed on the branch and commit it yourself if it is not (see *Hand off*). |
-| **5** hand back before the squash | In the block. | There is no hand-back *act* — you are the host — but you still write the `direct — handed back` line yourself (see *Hand off*). It binds you as: no squash, no review, no PR until the boundary's own steps run, in order. | The user stops and says the slice is done; you run the boundary from there. A hosted `navigator` is told to run no review and no squash of its own. |
-
-### 4. The slice boundary
-
-Re-read the Rules in Force header and the Slices section. Then:
-
-1. Confirm the targeted tests are green and the slice's behavior is actually observable — for a
-   slice whose `Kind` is `refactor` or `scaffolding`, that behavior is *unchanged* and the tests
-   over the restructured code prove it. **Do not run the full suite here**; step 3 starts it in the
-   background, on the squashed slice.
-   A red test here is not a boundary: if the guest handed back `blocked`, go to
-   [A guest that hands back blocked](#a-guest-that-hands-back-blocked); if it handed back red
-   anyway, treat that as `blocked` and read it there too.
-2. **Skip this step only if the newest Attempts line carries the whole token `reviewed` and the
-   guest's state file has a `## Review` section.** Both are required: the line is the claim, the
-   section is the record. A note like `not reviewed` does not count. Anything else — no `reviewed`, no section, a guest that keeps neither — means run the
-   review below. When skipping, read the section and carry its `Dismissed` and `Open at cap` lists
-   into step 3 as the triage you would otherwise have done — the guest triaged its own reviewer's
-   findings, so the user sees each dismissal and its reason — and add its `Backlogged` and
-   `Out of scope` items to the plan's backlog. Its adapted block applies the same two backlog rules
-   as below.
-
-   **Otherwise, delegate a design review to a fresh subagent.** Resolve `git rev-parse --show-toplevel`
-   **yourself, first**, and paste the resulting absolute path into the prompt — tell it to invoke
-   the `design-review` skill over
-   `git -C <absolute-repo-path> diff <previous-slice-branch>...HEAD -- . ':(exclude)<plans-dir>/'`
-   (the base branch, for slice 01). Never send `$(git rev-parse --show-toplevel)` unexpanded: the
-   subagent's shell evaluates it in its *own* working directory, possibly an entirely different
-   repository, and `design-review` returns a confident, well-formed report about code you did not
-   write. **State that absolute path as the subagent's working directory** and tell it to run every
-   git command and file read there. Focus it on the statement, name, function and class altitudes —
-   one slice is too small for component-level findings. The host owns this review, never the guest.
-   The `:(exclude)` hides the plans directory wholesale, so a project document this slice
-   legitimately changed goes unreviewed too — mention it at step 3 if so. The diff also carries any
-   earlier-slice test the executor updated: leave it in, as this is the only second pair of eyes
-   that change gets.
-   **You triage the result** — fix what is cheap while the tests are green, **committing the fixes
-   on the branch** (step 3 squashes *commits*, so an uncommitted fix is dropped from the shipped
-   commit and left dirty for the next slice), and turn the rest into named backlog entries.
-   **Triage is scoped to this slice's own diff, and cheapness is not the only test.** Two findings
-   are backlog entries however cheap, and the reviewer — a fresh subagent that cannot see the plan
-   — will rank both highly: one that wants an earlier slice's or the steel thread's test tightened
-   to assert exactly the current output (that test pins the seam, not the content —
-   [references/slicing.md](references/slicing.md), §"A thread's test must survive being
-   thickened"), and one that asks for behavior this slice does not have, such as
-   a missing error path (*Kitchen sink*, same file). Never present the slice untriaged.
-3. **Squash the slice to one commit, dropping the plan file from it — before the user sees it**, so
-   their review is one commit's diff. **First confirm the tree is clean**:
-   `git -C "$(git rev-parse --show-toplevel)" status --short` should show nothing outside the plans
-   directory. `reset --soft` stages only what was committed, so anything else there is work the
-   squash drops and leaves dirty for the next slice to sweep into its history.
-
-   **Before resetting, read the guest's state file for a `Learned` line from this slice's work** (a
-   skill-shaped guest's refactor checklist sends decision context there instead of a PR description
-   it was forbidden to write — see `references/hosted-handoff.md`, *The guest's state file*). Skip
-   this for a `direct` or `hand` slice, which keeps no such file. "No surprises" or empty is nothing
-   to carry; anything else becomes a second `-m` below.
-
-   ```bash
-   top=$(git rev-parse --show-toplevel)
-   git -C "$top" reset --soft <previous-slice-branch>
-   git -C "$top" reset -- <plans-dir>/     # unstage the guest's state file
-   git -C "$top" commit -m "<behavior sentence>" -m "<Learned line, if any>"
-   ```
-
-   The `reset -- <plans-dir>/` unstages the guest's committed state file so it does not ship to the
-   reviewer; the plan was never tracked and needs nothing. It unstages the *whole* directory, so if
-   this slice legitimately changed a project document living there, re-stage that file by name
-   before committing — otherwise the change is silently dropped from the shipped commit and left
-   dangling in the worktree. Keep the `-C` and give `<plans-dir>` repo-root-relative: from a
-   subdirectory a bare `git reset -- plans/` matches nothing, **exits 0 and prints nothing**, and
-   the guest's session notes go straight into the PR. Add a further
-   `-m "<what is deliberately not here>"` only when the slice has an `inert:` Merge safety line.
-
-   **Then start the full-suite run in the background**, per
-   [The background suite run](#the-background-suite-run), present the slice for review and stop,
-   telling the user the suite is running in this tree — with, when step 2
-   was skipped, the guest's dismissed findings and their reasons, and anything left open at its round cap. This is where the user changes the slice's design, rejects the slicing, reorders
-   what's left, or calls the feature done early — far cheaper here than three slices later.
-
-   **A change the user asks for here is an edit to this slice, on its branch — make it.** Changing
-   the design is what this review is for; do not answer it with "that's another slice." Stop the
-   run, make the change, rerun the tests it touches, amend it into the slice's one commit, and
-   restart the run, per *A change before approval* in
-   [references/background-suite.md](references/background-suite.md). If the
-   change is structural — a signature, a moved responsibility, a new type or module — send the new
-   diff through one design-review round as in step 2 before re-presenting; a local change needs
-   none. It is a re-slice instead only when it pulls in work another slice in the plan owns — then
-   say which slice and ask. Widening the behavior sentence alone is not that test. Something the
-   user wants revisited *later* is still a named backlog entry.
-4. On approval, **read the run's status file** — red here is *Red before approval* in
-   [references/background-suite.md](references/background-suite.md); absent is fine, carry on.
-   Step 5's `shipped` is the record of approval: until it is written, the slice is still open.
-5. Update the plan: mark the slice `shipped`, close its attempt line, tick any criteria the
-   slice's obligation-2 proof now satisfies — for `yolo`, read the guest state file's `Acceptance
-   Tests` first and copy each criterion's agent proof onto its line, since step 6 deletes that
-   file — record hypothesis changes and backlog items, and set **Last updated**.
-6. **Delete the guest's state file** per [The guest's state file](#the-guests-state-file),
-   draining anything worth keeping into the plan first. Delete only the guest's own file — the
-   plans directory is whichever one the repo already had, so it routinely holds project documents
-   nothing to do with this feature. One left behind sits untracked after the squash, and the
-   next slice's `git add -A` sweeps it into that slice's history.
-7. **If this was the steel thread, re-slice the rest before continuing** — re-read
-   [references/slicing.md](references/slicing.md) and walk the remaining plan against what the
-   thread found. Every slice behind it was drawn before those findings existed.
-8. **Verify the session can hand off cleanly here** — the boundary is where a session most often
-   ends. Run the same two checks Startup runs on resume, now, while a miss is a one-line fix rather
-   than next session's diagnosis: `git -C "$top" status --short` shows nothing outside
-   `<plans-dir>`, and `git -C "$top" check-ignore -q <plan-path>` still succeeds. If either fails,
-   fix it before stopping — unless the run is still going and the stray files are its output,
-   which its leftovers step clears — a stray file or a dropped exclude line here is a dirty tree or a
-   committed plan for whoever resumes next.
-
-Then start the next slice at step 1 — including the strategy question.
-
-### The background suite run
-
-The full suite runs once per slice, in the background, **in the working tree itself**, on the
-slice's squashed commit. Launch it at the boundary's step 3; `<dir>/status` is the result and stays until Cleanup: absent
-means running, `0` green, anything else red. **While it runs, nothing outside the plans directory
-changes** — stop it before any fix. No executor sees it: you hold the next slice's code until it
-reads `0` (*Hand off*). The one start-or-restart recipe, waiting and
-liveness, resuming, and fixing a red run before or after approval are in
-[references/background-suite.md](references/background-suite.md) — read it at every launch, at
-every wait, and on any red.
-
-### A guest that hands back blocked
-
-`<strategy> — blocked: <what stopped it>` means the executor stopped without delivering the slice.
-It is not a boundary — the behavior is not there — and it is not yet an abandon; the strategy may
-be fine. Re-read the Rules in Force header and the Slices section, read the reason, and take
-exactly one of three:
-
-- **A precondition you own** — something the plan or the setup should have provided. Supply it on
-  this branch, commit, and hand off again at step 3. The blocked line stays closed where it is; a
-  re-invocation is a new attempt, so append a fresh `<strategy> — in progress` line below it.
-- **The slice is too big, or is two slices.** Re-slice: narrow this slice's behavior sentence to
-  what is green and coherent now, move the rest to a new slice immediately after it, and re-read
-  [references/slicing.md](references/slicing.md). Surface the re-slice to the user. Then go to the
-  boundary if the narrowed slice is already delivered, or append a new `<strategy> — in progress`
-  line and hand off again if it is not. **On the hand-off-again branch, if the guest kept a state
-  file in the plans directory, first drain and delete it, per
-  [The guest's state file](#the-guests-state-file), and commit the deletion:** its plan and notes
-  were written for the old, wider slice, and a re-invoked guest would offer to resume them. On the
-  boundary branch leave it: step 3 reads its `Learned` line and step 6 deletes it. A guest whose
-  file lives outside the repo keeps it.
-- **The strategy has no move on this slice** — a test-first guest on a `refactor` slice is the
-  standing example. That is an abandon: propose it and follow the recipe below.
-
-Do not re-invoke the same guest on an unchanged slice; it stops in the same place, having thrown
-its first attempt away.
-
-### Abandoning a strategy
-
-Re-read the Rules in Force header and the Slices section before any of this.
-
-Abandon when the strategy itself is wrong for the slice — whether you concluded that yourself or a
-guest handed back `blocked` saying so, which is evidence and not the decision. **Propose it and
-wait for the user's confirmation**: the recipe throws away uncommitted work and runs `git clean`,
-and judging a strategy a bad fit is the call this skill exists to leave with them.
-
-Once confirmed, follow [references/abandon.md](references/abandon.md), in that order:
-drain and delete the guest's state file, restore the worktree from the previous slice's branch,
-commit the reversion the restore stages, and only then close the abandoned Attempts line and set the new strategy — the plan write is last
-because the new strategy's open line is what a resume reads as "ready for step 3". The
-reversion is committed, not left in the index, so the replacement strategy inherits the genuinely
-clean tree the handoff block promises it. The plan is untracked, so the restore never touches it —
-the record of the attempt survives the rollback that erases the attempt, which is the whole
-mechanism. Do it as one uninterrupted step; there is no half-abandoned state to resume from.
-
----
-
-## Feature complete
-
-Declare it when every slice is `shipped` with its **Suite** `green` — wait for the last slice's
-run — every acceptance criterion is ticked by its obligation-2 proof (rerun any
-`read-only` `yolo` proof copied onto it),
-and the backlog is drained — each item fixed, dismissed with a reason, or carried somewhere the
-user names. **An item that needs a change to tracked code is not fixed here: it is a new slice**,
-appended to the plan and run through Running a slice like any other — strategy, branch, boundary,
-review — which un-declares the feature until it ships. Never an amendment to a slice already
-shipped, at any size; that slice's review is spent. (A red background run is the
-one exception, handled in [references/background-suite.md](references/background-suite.md).)
-
-Report the slice sequence as delivered, the strategies each slice ended up using, and every
-abandoned attempt with what entangled it — the abandoned attempts are the part worth reading, being
-what the feature taught about which approach suits which slice. Then run Cleanup.
-
-## Cleanup
-
-1. **Report the branch stack** — each slice's branch and its base — and offer to restack
-   (`git rebase --onto <new-base> <old-base> <branch>`, from the bottom up) if an earlier slice was
-   amended or merged after a later one was cut off it. Name separately any branch left behind by an
-   abandoned slice later deleted from the plan; nothing is based on it.
-2. **Pushing and opening PRs is the user's call.** This skill produces a stack of local branches
-   and stops there. Ask before publishing any of it.
-3. **Remove this feature's suite runs** — `rm -rf "<dir>"` for each `<dir>` a Slices **Suite**
-   field names, then `git -C "$(git rev-parse --show-toplevel)" worktree prune`, which clears a
-   checkout a plan begun before runs went in-place left registered. Runs of other features and repos share the parent `slice-suite` directory;
-   touch nothing there you did not read from this plan.
-4. **Settle the plan file.** It is untracked, as it has been all along. Offer to delete it — and
-   only then, open the exclude file (`"$(git rev-parse --git-path info/exclude)"`) and delete that
-   one line, leaving every other pattern alone. If the user keeps the plan for the record of which
-   strategy suited which slice, **leave the exclude in place** or move the file out of the repo:
-   stripping the exclude from a file that stays hands the next feature's guest, on its first
-   `git add -A`, a plan file to commit.
-5. **Settle the spec**, if the Session's **Spec** names one. First list its Deferred and
-   Assumptions entries: the plan never adopted them, so the spec is their only record — ask where
-   the user wants them carried. Then offer to delete the spec and its exclude line, or move it out
-   of the plans directory. It cannot stay where it is: once this plan is gone, Startup would offer
-   it as a feature ready to plan.
+### Inputs
+
+- **A signed-off spec** — adopt it. Its Problem and Out of Scope become the Feature; its Acceptance
+  Criteria are copied verbatim with their IDs and examples; its Constraints become the plan's.
+  Present what was adopted for confirmation — don't re-interview. Name the spec in the plan's
+  **Spec** field, and set **Design** to the spec's path if its design hypothesis is worth keeping
+  in view. Never edit the spec, except its `Status` at the gate.
+- **Existing tickets** — source material, not adopted verbatim: a ticket has not been through a
+  sign-off that made its criteria observable. Derive the feature and criteria from it through steps
+  1–2, record its ref on the PRs that serve it, and record every place the plan ends up disagreeing
+  with it (*Differs from ticket*, in [plan-format.md](plan-format.md)). The plan wins locally. If a
+  ticket is too vague or contested to sharpen in a few questions, suggest the `feature-spec` skill
+  first, if the session has it.
+- **Conversation** — steps 1–2 from scratch.
+
+### 1. Feature definition
+
+What is being built, why, for whom; what is explicitly out of scope. Sharpen a vague definition
+before moving on — it produces vague criteria otherwise. Note any constraint mandated from outside
+— compatibility, regulation, a contract — with who imposed it.
+
+### 2. Acceptance criteria
+
+Behavioral, specific, testable, scoped — they describe what the feature does from the outside, and
+any valid implementation could satisfy them. **Each names who observes it and where** — an actor
+at the system boundary, or a measurement taken from outside. One only a reader of the code could
+observe ("add a `tz` column") is design: ask what breaks, for whom, without it — that answer is the
+criterion. Present the list for confirmation.
+
+### 3. PR sequence
+
+Read [references/slicing.md](references/slicing.md) **in full** before drafting — the sizing test,
+the steel thread that opens the sequence, the splitting moves, the anti-patterns. Do not draft from
+memory. Read enough of the codebase to judge whether PR 01 must be a steel thread — marked
+`Kind: thread` if so.
+Fill each PR's fields per [plan-format.md](plan-format.md).
+
+### 4. Split check
+
+Run the check in [references/slicing.md](references/slicing.md), *When to split the feature*,
+against the drafted list. If it suggests a split, propose the grouping with its reason and let the
+user decide. On a split, follow *Splitting into child plans* in [plan-format.md](plan-format.md):
+write the children instead of this plan, then take the one the user picks through the gate below.
+
+### Write it down before the gate
+
+Steps 1–4 exist only in the conversation otherwise, and a compaction loses them. Choose the plans
+directory, create the plan file with `Status: drafting`, and exclude it from git — both per
+[plan-format.md](plan-format.md).
+
+### Alignment gate
+
+Present the feature, criteria, constraints, PR sequence with its dependencies, every *Differs from
+ticket* line, and the proposed slug — permanent. If a spec was adopted and its `Status` does not
+already read `adopted:` (an earlier child of the same split settled it), list its Deferred and
+Assumptions entries too: the plan does not carry them, so ask where each goes — into the
+Feature's out-of-scope sentence, onto a ticket (on a yes), or dropped. Ask: *"Are we
+aligned?"*
+
+- **Yes** — set `Status: agreed`, and set the adopted spec's `Status` to
+  `adopted: <plan path>`, unless an earlier child already did, so Startup never offers it again.
+- **Changes** — make them and re-present. A changed slug renames the file and its exclude line.
+- **Declined outright** — retire the plan per [plan-format.md](plan-format.md), or Startup offers
+  it next session.
+
+## After the gate
+
+Stop. Offer next steps, starting none:
+
+- **Build it** — with a loop skill the session has (`slice-loop`, if installed), in this session or
+  a fresh one; everything the loop needs is on disk.
+- **Publish tickets** — only with a tool the session has for the tracker, and only on the user's
+  yes for each write. What becomes a ticket — the feature, each child feature of a split, or each
+  PR — is the user's call. Each carries its behavior, its criteria in full and its dependencies, so
+  it stands alone. Once the user says the tickets have taken over, offer to retire the plan.
+- **Stop here** — the plan stays on disk for later.

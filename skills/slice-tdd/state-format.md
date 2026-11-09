@@ -16,7 +16,7 @@ milestone and ladder drop, each delegate's return, each REVIEW round, and SHIP.
 - `acceptance`: acceptance tests first, human proof never weakened, no BUILD until the user agrees.
   `internal`: the behavior list is the target; a departure goes to the user when BUILD returns it.
   `yolo`: `acceptance` with no unit tests; its acceptance proofs are the only proof, never weakened.
-- The host triages and asks; delegates research, review, build and fix. It reads results and this
+- The main session triages and asks; delegates research, review, build and fix. It reads results and this
   file, never the diff. Every phase's closing commit sets the next phase.
 - Keep existing behavior the slice sentence doesn't change; reshape structure, earlier slices'
   included. An earlier test it breaks: fixture first, else narrow, never weaker; committed alone.
@@ -26,18 +26,21 @@ milestone and ladder drop, each delegate's return, each REVIEW round, and SHIP.
   flat run is a written `flat run N of 3` line; at three, discard. TIDY deletes first and checks coverage.
 - REVIEW is blind; a `structural-if-fixed` fix earns a fresh round, max three. Backlog, never fix,
   a finding that tightens an earlier test or asks for behavior this slice lacks.
-- Hosted: own state file and Attempts line only, commit as you go, no squash or PR. SHIP gates on
+- Hosted: write neither the plan nor any file of the loop's, commit as you go, no squash or PR; hand back with a report. SHIP gates on
   acceptance tests (not `internal`), unit tests, lint and review together.
 
 ## Session
 - **Mode**: acceptance | internal | yolo
 - **Branch**: <the branch the host cut, from the block>
-- **Base branch**: <the plan Session's base branch — slice 01's review diff base>
+- **Base branch**: <from the block — this slice's review diff base>
 - **Slice**: <feature-slug> <NN> <slice-slug>
-- **Slice behavior**: <the one-sentence behavior from slice-plan's plan, copied verbatim>
-- **Criteria advanced**: <which, from slice-plan's plan>
-- **Constraints**: <the plan's Constraints section, copied verbatim — they bind this slice, and
-  delegates read this file, not the plan>
+- **Report path**: <from the block>
+- **Slice behavior**: <the one-sentence behavior from the block, copied verbatim>
+- **Criteria advanced**: <each, with its full text and examples, from the block>
+- **Constraints**: <from the block, copied verbatim — they bind this slice, and delegates read
+  this file, not the block>
+- **Design**: <path from the block, or none — context for DESIGN, never binding>
+- **Plan**: <path from the block — read-only context: its later PRs are not this slice's work>
 - **Test runner**: `<command>`
 - **Lint command**: `<command>` | none found
 - **Started**: YYYY-MM-DD
@@ -65,6 +68,9 @@ dependencies and globals with each receiving layer; each branch decision and whe
 
 **Behavior-sentence test**: <the suite test that will exercise the slice's behavior sentence — in
 yolo, the acceptance row that proves it>
+
+**Criteria tests**: <one line per criterion advanced: `<ID>` — the test (in yolo, the acceptance
+row) that satisfies it>
 
 **Design review**: <findings, each fixed or dismissed with a reason — or "clean, nothing to
 fix">
@@ -113,6 +119,20 @@ each. REVIEW copies these into `## Review`'s `Out of scope` list when it creates
 
 - none | <gap — why it is not this slice's>
 
+## Later-PR Discoveries
+
+Appended by DESIGN and BUILD whenever something learned changes work the plan gives a later PR, one
+line each. The hand-back report carries it to the host.
+
+- none | <discovery — which later PR it affects>
+
+## Earlier Tests Updated
+
+Appended whenever this slice changes an earlier slice's test (MAKE ROOM, GREEN or IMPLEMENT), one
+line each. The hand-back report carries it to the host.
+
+- none | `<test>` — <fixture or call site changed | narrowed | deleted>, and why — <commit>
+
 ## TIDY
 
 - <what the whole-diff refactor changed and deleted>; net lines: +A −D; coverage: <tool and
@@ -120,8 +140,8 @@ each. REVIEW copies these into `## Review`'s `Out of scope` list when it creates
 
 ## Review
 
-<!-- Add this whole section when REVIEW starts, not at creation: its presence tells the host a
-review happened. -->
+<!-- Add this whole section when REVIEW starts, not at creation: its presence tells a resumed
+main session that REVIEW has started. -->
 
 - **Rounds**: <N; what triggered each extra round — a `structural-if-fixed` fix, and which>
 - **To fix**: <finding — `structural-if-fixed` | `local`, one line each; the fix delegate empties
@@ -138,11 +158,11 @@ review happened. -->
 
 ## Learned
 
-<Decision context worth carrying into the squash commit, or "no surprises". The host reads this
-before it squashes.>
+<Decision context worth carrying into the squash commit, or "no surprises". The report carries it to
+the host, which folds it into the squash commit.>
 
 ## Current Position
-- **Phase**: <ACCEPT | DESIGN | MAKE ROOM | RED | GREEN | IMPLEMENT | TIDY | REVIEW | SHIP> — set by each
+- **Phase**: <ACCEPT | DESIGN | MAKE ROOM | RED | GREEN | IMPLEMENT | TIDY | REVIEW | SHIP | HAND BACK> — set by each
   phase's closing commit to the phase that comes next, so it is always where work resumes
 - **Notes**: <a `departure`, as one line; otherwise empty>
 ```

@@ -9,7 +9,7 @@ drafter because the session that produced the design is the least likely to see 
 **What the subagent receives**:
 
 - The slice's behavior sentence — what every row of the target must trace to.
-- The plan's Constraints — a design that breaks one is a finding however well it fits otherwise.
+- The slice's Constraints — a design that breaks one is a finding however well it fits otherwise.
 - The draft from DESIGN step 1: interface sketch, design doc, and the files it will modify.
 - The target the design must deliver — ACCEPT's acceptance tests, or in `internal` mode the draft's
   behavior list.
@@ -31,7 +31,7 @@ already set.
 > codebase it touches or extends — read what you need there to judge fit, including the code
 > *around* the files it modifies. First: does the design deliver every row of the target, and in
 > a behavior list, does every row trace to the slice's behavior sentence? Does it break any of the
-> plan's Constraints? Then: does the codebase
+> slice's Constraints? Then: does the codebase
 > already have something this duplicates — a helper, a type, a pattern for this kind of problem —
 > that the design should reuse or follow instead? Then assess it against `design-principles`' vocabulary: does it follow
 > this codebase's conventions, and does it preserve existing behavior while reshaping any structure
@@ -55,9 +55,8 @@ produced it. It checks whether the diff holds up on its own, to someone who neve
 **What the subagent receives** — nothing beyond this:
 
 - The diff for this slice:
-  `git -C <absolute-repo-path> diff <previous-slice-branch>...HEAD -- . ':(exclude)<plans-dir>/'`,
-  where `<previous-slice-branch>` is the previous slice's branch — or, for slice 01, the state
-  file's Session `Base branch`. Resolve
+  `git -C <absolute-repo-path> diff <base-branch>...HEAD -- . ':(exclude)<plans-dir>/'`,
+  where `<base-branch>` is the state file's Session `Base branch`. Resolve
   `git rev-parse --show-toplevel` yourself and paste the absolute path in; state it as the
   subagent's working directory, since a `$(...)` left unexpanded is evaluated in the subagent's own
   directory, possibly a different repository. The diff includes any earlier-slice test the

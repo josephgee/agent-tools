@@ -13,7 +13,7 @@ applies to you), `Session` (mode, branch, test runner, and the Constraints, whic
 code), the target — `Acceptance Tests` in
 `acceptance` and `yolo` modes, the behavior list in `Design` in `internal` mode — and `Design`
 (the agreed approach, the interface sketch, the files it modifies, the test that will exercise the
-behavior sentence, and outside `internal` mode which acceptance proofs the user chose to persist as
+behavior sentence, the `Criteria tests` naming the test for each criterion, and outside `internal` mode which acceptance proofs the user chose to persist as
 suite tests). Its `Current Position` phase — MAKE ROOM, RED, GREEN, IMPLEMENT or TIDY — is where
 you start; every phase before it is done. Each phase's closing commit sets the phase to the next one, so that field is
 always the resume point.
@@ -37,8 +37,8 @@ You return exactly one line, and the tree is clean and committed whichever it is
 - **`blocked: <what stopped it> at <sha>`** — the slice turns out to need splitting, or MAKE ROOM outgrows a few commits. Get back to green before
   returning: delete RED's still-failing tests, keep the passing ones, record which went in the
   state file's `RED` section (in `yolo`, revert to the last green commit), and commit
-  (`slice-tdd: blocked — <reason>`). Do not write the plan's
-  Attempts line or hand anything back further; the delegator does.
+  (`slice-tdd: blocked — <reason>`). Do not write a report or
+  hand anything back further; the delegator does.
 
 Never return with uncommitted changes. If a check fails on the way out, fix it before returning.
 
@@ -71,7 +71,7 @@ When it fires, in this order:
    unchanged. Commit: `slice-tdd: make room for <slice-slug>`.
 
 If the preparatory refactor grows beyond a few commits, stop: it is a slice of its own. Return
-`blocked: make room outgrew the slice — <what>` so the host can plan it ahead of this one.
+`blocked: make room outgrew the slice — <what>` so the loop can plan it ahead of this one.
 
 Record what was pinned and refactored under the state file's `MAKE ROOM`, set the phase to RED
 (IMPLEMENT in `yolo`), and commit the state file.
@@ -85,7 +85,9 @@ Record what was pinned and refactored under the state file's `MAKE ROOM`, set th
 1. **Write unit tests** against the agreed design and interface sketch: in `internal` mode one per
    entry in the behavior list, in `acceptance` mode one per behavior the implementation needs. Follow
    `design-principles`' test-quality doctrine, and add any acceptance proofs the user chose to
-   persist as suite tests. Everything below treats them alike. Each test:
+   persist as suite tests. Every test the Design section names — the behavior-sentence test and
+   each of `Criteria tests` — is among them, under that name. Everything below treats them alike.
+   Each test:
    - asserts the whole value its name claims, so a wrong value sharing a part still fails — except
      the steel thread's test, which pins the seam, not the content;
    - feeds inputs a wrong implementation would fail on: off-boundary values, non-defaults passed
@@ -171,12 +173,12 @@ Record what was pinned and refactored under the state file's `MAKE ROOM`, set th
   re-verify it fails for the right reason, commit it alone — `slice-tdd: amend — <reason>` (stage
   the test change by path; if implementation work is uncommitted, stash it first and pop it
   after). Never weaken a test inside an implementation commit. A gap outside the slice's scope is
-  not this slice's to fix — add it to the state file's `## Out of Scope` section, which becomes a plan
-  backlog entry; don't act on it here. An amendment that only makes sense under a different design
+  not this slice's to fix — add it to the state file's `## Out of Scope` section, which the hand-back
+  report carries forward; don't act on it here. Something that changes work the plan gives a later PR goes to `## Later-PR Discoveries` instead. An amendment that only makes sense under a different design
   is a `departure`, not an amendment. An earlier slice's test this slice's behavior breaks takes
   the same route — halt, update it per the Rules in Force header (never to agree with the new
-  output), commit it alone as `slice-tdd: update <test> for <slice-slug>` — except it must pass,
-  not fail, once updated.
+  output), commit it alone as `slice-tdd: update <test> for <slice-slug>`, and record it in
+  `## Earlier Tests Updated` — except it must pass, not fail, once updated.
 
 ---
 
@@ -191,7 +193,8 @@ Record what was pinned and refactored under the state file's `MAKE ROOM`, set th
   `Acceptance Tests` passes — never a `mutating` one; leave Status for SHIP. Never the full suite. An earlier slice's
   test this slice breaks is updated as GREEN's amendment protocol says, committed alone.
 - **Pressure log once, at exit**: *ugliest thing you wrote?* — "nothing" is not a legal answer —
-  with a `steer now` or `hold` disposition. Gaps outside the slice go to `## Out of Scope`.
+  with a `steer now` or `hold` disposition. Gaps outside the slice go to `## Out of Scope`;
+  anything that changes work the plan gives a later PR, to `## Later-PR Discoveries`.
 - Set the phase to TIDY and commit (`slice-tdd: implement <slice-slug>`).
 
 ---
