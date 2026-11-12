@@ -27,14 +27,18 @@ git remote -v
 ```
 
 The review lives at a fixed path, so any later command can rebuild it from the PR number alone:
-`<review> = ${TMPDIR:-/tmp}/pr-review-<repo-dir-name>-<n>`, the worktree, and `<review>.md`, the
-findings file. Write `<review>` out literally in every command; shell variables do not survive
-between calls.
+`<review> = ${PR_REVIEW_DIR:-${TMPDIR:-/tmp}}/pr-review-<n>`, the worktree, and
+`<review>/REVIEW.md`, the findings file. Resolve the prefix once with `echo`, then write `<review>`
+out literally in every command; shell variables do not survive between calls.
 
-Remove any leftover from an earlier review, then create the worktree:
+If `<review>/REVIEW.md` exists and its first line is `head: <headRefOid>` for the PR's current
+head, an earlier run already did steps 1–4: skip to step 5 and give the overview from the file's
+`## Overview` section.
+
+Otherwise remove any leftover from an earlier review, then create the worktree:
 
 ```bash
-git worktree remove --force <review>; rm -f <review>.md
+git worktree remove --force <review>
 git fetch <remote> <baseRefName> "pull/<n>/head"
 git worktree add --detach <review> <headRefOid>
 ```
@@ -94,7 +98,7 @@ Sort each surviving finding by checking its location at base,
 Also note any debt the PR **removes** from a touched unit, one line each. The user may want to
 credit it, and it counts toward whether the PR leaves the code better.
 
-Write `<review>.md`: first this header, verbatim, then the Added and Kept findings in step 6's
+Write `<review>/REVIEW.md`: first the line `head: <headRefOid>`, then this header, verbatim, then the Added and Kept findings in step 6's
 order, one checkbox each with its bucket, `file:line`, and its scenario or catalog name,
 severity and fix direction.
 
@@ -104,7 +108,8 @@ severity and fix direction.
 - Answer questions by re-reading the code in the worktree, never from this file's summary.
 - Do not draft feedback unless the user asks. The user writes it.
 - Tick a concern's box when the user moves on.
-- When the user ends the review: `git worktree remove <review>` and delete this file.
+- When the user ends the review: `git worktree remove --force <review>`. That deletes this file
+  too; it lives in the worktree, untracked.
 ```
 
 ## 5. Overview
@@ -114,9 +119,12 @@ give the count in each bucket (defects and design findings separately), the remo
 and the Nearby lines for the user to file elsewhere if they want. Do not list the Added and Kept
 findings yet; step 6 takes them one at a time.
 
+On a fresh review, append the overview to `<review>/REVIEW.md` under `## Overview`, so a resumed
+review can give it.
+
 ## 6. Walk through the concerns
 
-At the top of each concern, re-read `<review>.md`. It is on disk, so it survives compaction, and
+At the top of each concern, re-read `<review>/REVIEW.md`. It is on disk, so it survives compaction, and
 re-reading puts its rules back in front of you.
 
 Take the first unticked concern. Show the code at `file:line` from the worktree, then the finding:
@@ -128,4 +136,4 @@ The user decides what each concern is worth and writes any feedback themselves. 
 questions by reading the code, and say so when the finding does not survive a question. Go on to
 the next concern when the user says to.
 
-The review ends when the user says so. Then remove the worktree and the findings file.
+The review ends when the user says so. Then remove the worktree.
