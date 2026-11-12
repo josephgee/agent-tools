@@ -22,8 +22,10 @@ tests* is skipped):
 - **Duplication across RED's tests**: check their implementations against each other —
   behaviors written together tend to repeat each other's shapes — and check the diff against the
   code the Design's pointers name.
-- **Holistic overgrowth**: a test set implemented holistically can quietly grow one function that
-  does the work of three.
+- **Holistic overgrowth**: a test set implemented holistically quietly grows one function that
+  does the work of three. List every function the slice added or grew; under each, write its
+  steps one level below its name. A function whose steps don't fit under its name gets broken
+  up now, each cut held to the standard's *Signatures* and promise checks.
 
 ## Test Code
 

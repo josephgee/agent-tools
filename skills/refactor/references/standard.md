@@ -9,8 +9,10 @@ duplication > fewest elements. Never trade clarity for less duplication.
 
 - **Naming**: name the *meaning*, not the type (`remaining_attempts` not `retryInt`). Name the
   *behavior*, not the mechanism (`publish_validated` not `process_data`). Name the *condition*
-  for booleans (`has_exceeded_limit`, not `flag`). If you must read the body to understand the
-  name, rename it. An extracted function is named for what it achieves at its caller's level,
+  for booleans (`has_exceeded_limit`, not `flag`). Write each new name's promise to its caller in
+  one line, in words the reader already has; a line that needs a new noun or says how rather than
+  what means the boundary is wrong — re-cut, don't rename. A promise the code doesn't keep is a
+  bug for the log. An extracted function is named for what it achieves at its caller's level,
   never for the lines it happens to contain (`apply_member_discount`, not `loop_over_items`).
   If the work taught you something about a concept, check whether existing names still
   reflect that understanding.
@@ -18,6 +20,10 @@ duplication > fewest elements. Never trade clarity for less duplication.
   below its own name. Where policy sits beside low-level detail, extract the detail and name it.
   Extract to name a concept, not to shorten: a one-line helper that only restates its body is
   worse than the line.
+- **Signatures**: with the body closed, read each new signature and its call sites. They must
+  read at least as well as the body did. A long parameter list, an inline function type, or a
+  catch-all parameter (`otherDeps`) is complexity the cut moved out of the body — cut
+  elsewhere, or name the thing being passed.
 - **Ordering**: within the scope, a caller comes before the functions it calls, so the code
   reads top-down from the entry point — public surface first, each helper below its first caller,
   in the order the caller uses them. A variable is declared next to its first use. Where the

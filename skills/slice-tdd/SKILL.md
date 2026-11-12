@@ -291,7 +291,8 @@ at step 4's check. The round count carries over; a resume never resets the cap.
    highly; both are backlog entries however cheap. One asks to tighten an earlier slice's or the
    steel thread's test to assert exactly the current output — that test pins the seam, not the
    content. The other asks for behavior this slice does not have,
-   such as a missing error path. In `yolo`, dismiss a finding that asks for unit tests, citing the
+   such as a missing error path. A finding that calls an untested guard dead is fixed by pinning
+   the guard, never by deleting it. In `yolo`, dismiss a finding that asks for unit tests, citing the
    mode — unless it names logic the slice owns (a branch, a transformation): that is a `departure`,
    since the mode no longer fits, and goes to the user per BUILD step 3. Record the round in
    `Rounds`, and write fixes to the `## Review` section's `To fix` list, each with its tag, and

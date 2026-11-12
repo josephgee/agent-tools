@@ -211,8 +211,9 @@ Record what was pinned and refactored under the state file's `MAKE ROOM`, set th
    step 1 is guarded only by the targeted tests and `read-only` agent proofs, so rerun them after
    each step.
    Elsewhere: where the project has coverage tooling, run it over the slice's
-   tests: **any changed code path no test exercises is a finding** — dead, speculative, or missing
-   a test; decide which, and delete it or add the test. A test added here must trace to the
+   tests: **any changed code path no test exercises is a finding** — dead (no input reaches it),
+   speculative, or missing a test; decide which, and delete it or add the test. A guard against a
+   late or racing call is reachable: pin it. A test added here must trace to the
    behavior sentence, a criterion, or a target row; never a trivial test to silence the tool.
    Where there is no tooling, walk the diff's branches and say so — never claim the mechanical
    check ran when it didn't.

@@ -29,7 +29,8 @@ test that passed before it and survives one repair attempt is discarded per
 [discard.md](discard.md); retry it once in smaller steps, and if that fails too, give up on it.
 Never touch a test except to fix a finding about that test or to move an earlier slice's test
 with structure a fix reshapes, assertions unchanged; never weaken an assertion to make a
-fix pass.
+fix pass. A fix to a test or proof (assertion, recorder, harness) names in its commit message
+the failure it can no longer detect.
 
 ## Job: `review fixes`
 
