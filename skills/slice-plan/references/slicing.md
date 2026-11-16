@@ -64,22 +64,33 @@ splits differently — see [The thread splits under you](#the-thread-splits-unde
 ## The first slice: steel thread
 
 When a feature crosses ground that doesn't exist yet — a new endpoint, a new integration, a new
-surface — slice 01 is a **steel thread**: one complete path through every component the feature
-touches, doing the least possible at each. Request arrives, routes, hits the handler, touches
-storage, renders, returns. Every seam is real; everything behind the seams is trivial.
-
-The same first slice is called a **walking skeleton** (Cockburn), which names the other half of
-it: every architectural component is present, however vestigial. Thread emphasises the path,
-skeleton emphasises the parts. They are the same slice seen from two angles.
+surface — slice 01 is a **steel thread**: one complete path through the new mechanism, crossing seams the
+code already has, doing the least possible at each. Request arrives, routes, hits the handler,
+renders, returns. Every seam is real; everything behind the seams is trivial.
 
 It goes first because the integration is where the unknowns live. The auth middleware that eats
 your content-type header, the serializer the queue needs, the route the deploy doesn't pick up —
 these surface while there is nothing built on top to unwind. A feature sliced without a thread
 finds them in slice 04, with three slices of work resting on the wrong shape.
 
-**Keep it embarrassingly thin.** One route, one record, one hardcoded value. The thread's job is
-to prove the seams connect, and every bit of real behavior in it is behavior whose design you
-committed to before learning anything.
+**Thin means one new mechanism, not few items.** The only new design in the thread is the
+mechanism it exists to prove. Every seam it crosses on the way uses what the code already has. Any
+other design in it is committed to before you have learned anything. Draft it in three passes:
+
+- **No qualifiers in its behavior sentence.** "Redirects to the saved page without flashing the
+  default page" passes the no-"and" test, but its qualifier demands a loading state, a failure
+  state and a retry. Drop each qualifier and make it a later PR. Guarantees such as no flash,
+  failure handling, retries and latency are the first things to defer.
+- **Cross each seam the way the code already does.** List the seams the path crosses: where it
+  mounts, where its input comes from, how it decides, how it answers. At each one, reuse the
+  existing route, source or list, even when that covers more cases than you need. A seam that
+  can only be crossed with something new, such as a new source or new state, is where the thread
+  stops. Crossing it is a later PR.
+- **Make a cut only if it removes an unknown.** Hardcoding one page out of a list the code already
+  has looks thinner but removes no unknown. It only shrinks the scope.
+
+Then fill the thread's `New` field per [plan-format.md](../plan-format.md); anything it lists
+without a reason moves to a later PR.
 
 **When the ground already exists** — adding a feature to a mature system where the integration
 path is proven — slice 01 is simply the thinnest behavior. There is no thread to pull; the
@@ -109,15 +120,15 @@ thread. A set of components with no path through them is not.
 ### Merge safety
 
 A thread is a stubbed flow, and a stubbed flow can be unsafe to merge — it can expose a
-half-working path to real users. Choose one of two dispositions for it and record which in the
-plan:
+half-working path to real users. Ask who can reach the path on the day it merges; the answer picks
+the disposition, recorded in the plan:
 
-- **Live thread** — the narrowest genuinely working path. Trivial output is fine; an empty list
-  and a correct content type is a real answer. Preferred whenever the code reaches users on
-  merge.
-- **Inert thread** — the same structure, kept unreachable: entry point unregistered, route not
-  mounted, or gated behind an off-by-default flag. Choose this when no real path is thin enough
-  to be honest, and record in the plan exactly what makes it inert.
+- **Live thread** — reachable on merge, so it must be the narrowest genuinely working path.
+  Trivial output is fine; an empty list and a correct content type is a real answer.
+- **Inert thread** — unreachable until a later switch: entry point unregistered, route not
+  mounted, behind an off-by-default flag, or serving users who don't exist until something like
+  sign-up turns on. Record exactly what makes it inert. A degraded inert thread (a flash, an
+  unhandled failure) is safe to ship; don't fold a deferred guarantee back in "for safety".
 
 ### A thread's test must survive being thickened
 
@@ -147,8 +158,6 @@ thread, which is a known-good end-to-end state rather than a green field.
   If you can't describe what changes for a user now, it's in the wrong order.
 - **Kitchen sink.** An unrelated fix or cleanup riding along "while I'm in here." It belongs in
   its own slice or the backlog.
-- **Load-bearing skeleton.** A steel thread that grows into the full architecture before any
-  real behavior lands. The thread is scaffolding to be thickened, not a foundation to be poured.
 - **Slicing to suit a strategy.** Sizing a slice around what its executor would prefer to chew —
   a batch that wants more behaviors, a one-shot that wants the whole feature. The reviewer sets
   the size; the strategy takes what it is given, or the slice is re-sliced for everyone.
@@ -158,8 +167,9 @@ thread, which is a known-good end-to-end state rather than a green field.
 Feature: users can export a report as CSV.
 
 1. **Export endpoint returns an empty CSV** — the steel thread (`Kind: thread`, `Merge safety:
-   live`): route exists, correct content type and headers, no rows. Thinnest real vertical slice: it genuinely works, it just has nothing to say yet.
-2. **Export includes the report's rows** — real data, default column set, default ordering.
+   live`, `New: mechanism — export endpoint; beyond it: none`): route exists, correct content type and headers, no rows. Thinnest real vertical slice: it genuinely works, it just has nothing to say yet.
+2. **Export includes the report's rows** — real data, default column set, default ordering. Not
+   in the thread because the rows need a new query, which is design beyond the endpoint.
 3. **Export respects the caller's date range** — one filter, the one every caller uses.
 4. **Export rejects a range wider than the configured maximum** — first error path, one rule.
 5. **Export streams rather than buffering** — recorded as a `refactor` slice; behavior is
