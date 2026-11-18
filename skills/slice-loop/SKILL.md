@@ -97,9 +97,19 @@ files are all in `.git/info/exclude`, so ripgrep skips them silently.
 
 Re-read the Rules in Force header and both PRs sections first.
 
-**Ask the user which strategy this PR gets.** Check which of the skill-shaped ones this session
-actually has before recommending any, then offer one recommendation with a line of reason — the
-PR's shape is the evidence.
+**Ask the user which strategy this PR gets, and put the PR in front of them first** — they have
+not memorized the plan or the ledger. The question opens with a brief, a few lines, from the plan
+and ledger as they stand:
+
+- `PR NN of <total> — <pr-slug>`, and what shipped just before it (`none yet` for PR 01).
+- Its **Behavior**, **Kind** and **New** lines, quoted.
+- Its **Advances** criteria — each ID *with its text* from the plan; a bare ID is the thing they
+  would have to look up.
+- Any earlier **Attempts** on this PR, with how each closed — after an abandon, this is why you
+  are asking again.
+
+Then check which skill-shaped strategies this session actually has, and give one recommendation
+with a line of reason — the PR's shape is the evidence.
 
 | Strategy | Shape | Suits a PR that |
 |---|---|---|
@@ -298,7 +308,8 @@ Re-read the Rules in Force header and both PRs sections before any of this.
 
 Abandon when the strategy itself is wrong for the PR — whether you concluded that yourself or a
 guest reported `blocked` saying so, which is evidence and not the decision. **Propose it and wait
-for the user's confirmation**: the recipe throws away uncommitted work and runs `git clean`.
+for the user's confirmation**: the recipe throws away uncommitted work and runs `git clean`. Ask
+for the replacement strategy in the same message, with step 1's brief.
 
 Once confirmed, follow [references/abandon.md](references/abandon.md): restore the worktree from
 the previous PR's branch, commit the reversion the restore stages, and only then close the
