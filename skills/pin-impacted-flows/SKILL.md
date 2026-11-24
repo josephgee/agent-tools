@@ -1,10 +1,10 @@
 ---
-name: blast-radius
+name: pin-impacted-flows
 description: "Finds the flows a code change could break outside its own feature (other pages, roles and routes that use the same component, hook, context or shared function, and earlier fixes the change could undo), then pins each one with an acceptance proof of how it behaves today, proven to fail against a deliberate break. Use before or after changing shared code, when asked what a change could break, its blast radius, impacted flows, or regression risk, when re-checking a PR after review changes, or when a build loop asks for a regression net. Works on a diff, a branch, a PR, or a design's list of touched code. Not for pinning a unit's own logic with unit tests: that is test backfill."
 compatibility: "Requires git. Agent-run proofs need a way to drive the system the way a user meets it (a browser driver, an API client, a CLI); without one, every proof is run by the user, which is slower but valid."
 ---
 
-# Blast Radius
+# Pin Impacted Flows
 
 A change's own tests encode its author's beliefs about where the changed code runs. When the belief
 is wrong, those tests pass and another flow breaks in production. The standing example: a PR adds a
@@ -22,7 +22,7 @@ The caller names one; standalone, ask, recommending `lay`.
 - **`trace`**: read-only. Input is a diff (`git diff <base>...<branch>`, or a PR's), or a list of
   the code a design will touch. Output is the entry list (*Report*). Change nothing in the tree.
 - **`lay`**: trace if no entries were given, then write and prove a proof for each entry (*Laying*).
-  It asks the user things, so it runs where the user is live. Needs a clean tree.
+  Needs a clean tree, with nothing else running in it.
 
 Given an existing net (a list of entries with their proofs), both modes also say which existing
 entries the change reaches.
@@ -82,10 +82,27 @@ For each entry, on the branch where it will run:
 `mutating` proof is re-run only when a trace says the change reaches its dependency, since each
 run costs the user's time. The trace itself is never skipped.
 
+## In a subagent
+
+A caller may run this skill in a subagent to keep the trace's reading out of its own context. The
+caller names the repository's absolute path as your working directory. You cannot talk to the user
+there, so **ask nothing**:
+
+- Do everything that needs no one: the trace, writing the proofs, and proving every agent proof
+  red.
+- Leave every proof untracked and excluded (*Laying* step 3, the not-kept branch). Keeping one is
+  the user's call, made through the caller.
+- Return the report with a **Needs the user** section: each agent proof awaiting the keep decision,
+  and each human-only proof with its steps, the exact break to apply, and what failing looks like.
+  The tree is left clean, with every break restored.
+
+The caller then works through that list with the user, applying and restoring each break itself,
+and commits each proof the user keeps, deleting its exclude line.
+
 ## Report
 
 ```markdown
-## Blast radius — <what was traced: diff range, PR, or design>
+## Impacted flows — <what was traced: diff range, PR, or design>
 
 ### Entries
 - R<n> — <observer> <behaviour> as today, at <place>
@@ -99,6 +116,9 @@ run costs the user's time. The trace itself is never skipped.
 
 ### Found regressions
 <a flow already broken by the change, with the failing proof, or none>
+
+### Needs the user   (subagent only)
+<agent proofs awaiting the keep decision; human-only proofs: steps, the break to apply, the failure to expect>
 
 ### Out of scope
 <risks in a unit's own logic: unit-test backfill, not this net>

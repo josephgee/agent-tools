@@ -39,14 +39,14 @@ flowchart LR
 
 ## 2. Planning: `slice-plan`
 
-Once per feature, with no subagents. Without a spec, `slice-plan` defines the feature and criteria
+Once per feature; one subagent, for the regression-net trace. Without a spec, `slice-plan` defines the feature and criteria
 itself, from the conversation or from existing tickets, in place of adopting them. It builds
 nothing: it stops at an agreed plan.
 
 ```mermaid
 flowchart LR
   adopt["Adopt spec, or define from tickets or chat"] --> prs["PR sequence, with dependencies"]
-  prs --> net["Regression net: blast-radius trace"]
+  prs --> net["Regression net: pin-impacted-flows trace"]
   net --> split["Split check"]
   split -->|split agreed| children[("A child plan per feature")]:::file
   split --> plan[("slices-*.md, untracked")]:::file
@@ -64,7 +64,7 @@ Setup runs once first: clean tree, green baseline, base branch, ledger.
 
 ```mermaid
 flowchart LR
-  choose["Stop 3: Choose strategy, then cut branch"]:::you --> lay["Lay the PR's net: blast-radius"]
+  choose["Stop 3: Choose strategy, then cut branch"]:::you --> lay["Lay the PR's net: pin-impacted-flows"]
   lay --> tdd["slice-tdd: see section 4"]
   tdd -->|report: handed back, reviewed| squash["Squash to one commit, full suite in background"]
   squash --> review["Stop 7: Review the slice"]:::you

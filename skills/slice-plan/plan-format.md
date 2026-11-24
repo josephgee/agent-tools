@@ -66,7 +66,7 @@ Mandates from outside the team, each with its source. `None.` when there are non
 
 ## Regression Net
 
-What the feature must not break, from a `blast-radius` trace. `None.` when it finds nothing.
+What the feature must not break, from a `pin-impacted-flows` trace. `None.` when it finds nothing.
 
 - R1 — <observer> <behaviour> as today, at <place>
   - at risk: <the dependency or earlier fix the change could break>

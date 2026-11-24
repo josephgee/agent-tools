@@ -1,9 +1,9 @@
 ---
 name: slice-loop
 description: "Builds an agreed slice-plan plan one PR at a time: chooses the implementation strategy separately for each PR — a test-first guest skill, the agent directly, the user by hand — cuts a stacked branch per PR, hands it to that executor, reviews and squashes it at the boundary, runs the full suite in the background, and rolls back a strategy that proves wrong without losing the record of what was tried. Use when there is an agreed slices-*.md plan to build, or the user asks to build, execute or continue a sliced plan. Does not plan: with no agreed plan, use slice-plan first."
-compatibility: "Requires slice-plan — it reads its plan format and slicing doctrine, and builds only a plan it agreed. Requires design-review (and design-principles) and subagent delegation, for the boundary's design review of the PR diff; blast-radius, which lays and re-checks each PR's regression net; and git, whose branches and `git restore` make a strategy change reversible. Strategies: whatever the session has."
+compatibility: "Requires slice-plan — it reads its plan format and slicing doctrine, and builds only a plan it agreed. Requires design-review (and design-principles) and subagent delegation, for the boundary's design review of the PR diff; pin-impacted-flows, which lays and re-checks each PR's regression net; and git, whose branches and `git restore` make a strategy change reversible. Strategies: whatever the session has."
 metadata:
-  soft-deps: slice-plan design-principles design-review blast-radius
+  soft-deps: slice-plan design-principles design-review pin-impacted-flows
 ---
 
 # Slice Loop
@@ -281,8 +281,9 @@ Then start the next PR at step 1 — including the strategy question.
 
 A PR's **Net** entries (from the plan's Regression Net) are acceptance proofs of how other flows
 behave today. You lay them, whatever the strategy: the executor's own tests encode its beliefs
-about where the code runs, which is what the net checks. Run `blast-radius` in-session, since it
-asks the user things, from a clean tree with no background run going:
+about where the code runs, which is what the net checks. **Delegate `pin-impacted-flows` to a
+fresh subagent**, per that skill's *In a subagent*, with the absolute repo path resolved by you
+first, from a clean tree with no background run going:
 
 - **Before a PR's code** — `lay` mode, given the PR's Net entries from the plan.
 - **To re-check** (the boundary, a change before approval, a review comment) — `lay` mode over the
@@ -290,7 +291,7 @@ asks the user things, from a clean tree with no background run going:
   entry, and names the existing entries the change reaches: re-run those that are human-only or
   `mutating` with the user now.
 
-Copy its report into the ledger's Net section, and add each `read-only` agent proof to the
+Then work through its **Needs the user** list with the user, in-session. Copy its report into the ledger's Net section, and add each `read-only` agent proof to the
 Session's **Net runner**. Kept proofs are committed on the branch as `net: <entry ID>`. A new entry
 is also added to the plan's Regression Net and to this PR's Net line: the one plan write outside
 re-slicing. Tell the user.

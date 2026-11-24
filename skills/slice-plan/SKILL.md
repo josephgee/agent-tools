@@ -1,9 +1,9 @@
 ---
 name: slice-plan
 description: "Plans a feature as an ordered sequence of independently reviewable PRs — mostly vertical slices of deliverable behavior, the occasional refactor — with the dependencies between them, then stops at an agreed plan file without building anything. Use when asked to plan, scope, slice or break down a feature, bug fix or ticket before building it; to decide whether a feature should split into smaller features; or to turn a feature into independent tickets. Adopts a signed-off spec, or treats existing tickets as source material. Building the plan is a separate loop's job."
-compatibility: "Requires git — the plan file is kept untracked via .git/info/exclude. Requires the blast-radius skill, which draws the plan's regression net. Reads the codebase, and any ticket system the session has a tool for; writes to a ticket only on the user's yes for that edit."
+compatibility: "Requires git — the plan file is kept untracked via .git/info/exclude. Requires the pin-impacted-flows skill, which draws the plan's regression net. Reads the codebase, and any ticket system the session has a tool for; writes to a ticket only on the user's yes for that edit."
 metadata:
-  soft-deps: blast-radius
+  soft-deps: pin-impacted-flows
 ---
 
 # Slice Plan
@@ -85,7 +85,8 @@ Fill each PR's fields per [plan-format.md](plan-format.md).
 
 ### 4. Regression net
 
-Invoke the `blast-radius` skill in `trace` mode over the code the drafted PRs touch. A spec cannot
+Delegate the `pin-impacted-flows` skill to a subagent, in `trace` mode over the code the drafted
+PRs touch. A spec cannot
 draw this net: "who else renders this?" is a fact about the code. Write each entry to the plan's
 Regression Net, and put its ID on the **Net** line of the first PR that touches its consumer. A spec's `(regression)` criteria stay acceptance criteria;
 the net covers what only the code shows. If the spec says other roles see the surface, trace their

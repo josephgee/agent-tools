@@ -51,7 +51,7 @@ diagrams how a feature moves through `feature-spec`, `slice-plan`, `slice-loop` 
   the implementation, every test proven falsifiable by perturbing the code it claims to pin, and
   assertions on behavior rather than wiring. Surfaces bugs as expected-to-fail tests to fix at the
   end. The inverse of `tdd`, for code that already exists.
-- **[blast-radius](skills/blast-radius/SKILL.md)** — Finds the flows a change could break outside
+- **[pin-impacted-flows](skills/pin-impacted-flows/SKILL.md)** — Finds the flows a change could break outside
   its own feature — other pages, roles and routes on the same shared code, and earlier fixes it
   could undo — and pins each with an acceptance proof of today's behavior, proven red against a
   deliberate break. Human proof first, agent-run where that doesn't weaken it. Runs standalone, and

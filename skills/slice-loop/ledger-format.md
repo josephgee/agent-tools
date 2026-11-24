@@ -29,7 +29,7 @@ abandon. Never edited or summarized.
 - Build only an `agreed` plan. Write to it only to re-slice — its PRs section: PRs not yet started,
   or narrowing the current one; drops, reorders and widening go to the user first — or to add a
   net entry a re-trace found.
-- Lay a PR's net (`blast-radius`) before its code. Re-check it at every boundary and on every
+- Lay a PR's net (`pin-impacted-flows`) before its code. Re-check it at every boundary and on every
   change after one, review comments included. No executor edits a net proof.
 - One PR = one branch off the previous PR's branch (base branch for PR 01); never two.
 - Choose the strategy per PR, before its branch is cut; record it here before any code. State the
