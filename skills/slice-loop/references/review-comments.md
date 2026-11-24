@@ -19,13 +19,12 @@ Set `top=$(git rev-parse --show-toplevel)` in the same call as each command.
 4. **Make the change as new commits on the branch, not amended into the squash commit.** The PR is
    pushed and under review: reviewers read new commits, and amending forces a push the user did
    not choose. Commit tests and code together.
-5. **Re-trace, unconditionally**, over the PR's whole diff,
-   `git -C "$top" diff <previous-pr-branch>...HEAD`, following
-   `../slice-plan/references/regression-net.md`. Don't stop at the files the fix touched: a
-   dependency added inside a unit that was already touched is the case this exists for. Lay each
-   new entry as SKILL.md's *Laying the net* does, owned by this PR. If its spec is red on the
-   fixed code with no deliberate break, the fix broke that consumer: rework the fix.
-6. **Run the targeted tests and the whole net.** Any red here means the fix isn't done. If the
+5. **Re-check the net, unconditionally**, over the PR's whole diff,
+   `git -C "$top" diff <previous-pr-branch>...HEAD`, per SKILL.md's *Laying the net*. Not just
+   the files the fix touched: a dependency added inside a unit that was already touched is the case
+   this exists for. A found regression means the fix broke that flow: rework the fix.
+6. **Run the targeted tests and the net's `read-only` agent proofs.** Any red here means the fix
+   isn't done. If the
    change is structural (a signature, a moved responsibility, a new type or module), send the PR's
    diff through one design-review round, as the boundary's step 2 does.
 7. **Restack the later branches** in one command, from the last shipped or in-progress PR's

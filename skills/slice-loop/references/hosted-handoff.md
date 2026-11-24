@@ -82,7 +82,7 @@ block keeps paragraphs **1, 2, 3 and 5**, numbered as such:
 > - **Criteria it advances**: `<each criterion, ID and full text, with its examples>`
 > - **Constraints**: `<the plan's Constraints, verbatim — they bind this PR>`
 > - **Test runner**: `<command>`
-> - **Regression net**: `<each net spec path, and the Net runner command>`, or `none`
+> - **Regression net**: `<the Net runner command, and each proof path it runs>`, or `none`
 > - **Base branch**: `<previous PR's branch — what this PR is reviewed against>`
 > - **Plans directory**: `<plans-dir>`; **feature slug**: `<feature-slug>`; **PR number**: `<NN>`
 > - **Design**: `<path, or none>` — context, not a decision you are bound by
@@ -103,7 +103,7 @@ block keeps paragraphs **1, 2, 3 and 5**, numbered as such:
 > `scaffolding` PR, the whole obligation is that the existing tests over the restructured code stay
 > green — no new behavior, so no new test. Never hand back with a test red.
 >
-> **The regression net specs above are part of your targeted tests, and you never edit one,
+> **The regression net proofs above are part of your targeted tests, and you never edit one,
 > whatever your own rules say.** Each pins how another consumer of this code behaves today. A red
 > one means your change breaks that consumer: fix the code, or hand back `blocked`.
 >

@@ -46,7 +46,8 @@ nothing: it stops at an agreed plan.
 ```mermaid
 flowchart LR
   adopt["Adopt spec, or define from tickets or chat"] --> prs["PR sequence, with dependencies"]
-  prs --> split["Split check"]
+  prs --> net["Regression net: blast-radius trace"]
+  net --> split["Split check"]
   split -->|split agreed| children[("A child plan per feature")]:::file
   split --> plan[("slices-*.md, untracked")]:::file
   plan --> align["Stop 2: Alignment gate"]:::you
@@ -63,13 +64,15 @@ Setup runs once first: clean tree, green baseline, base branch, ledger.
 
 ```mermaid
 flowchart LR
-  choose["Stop 3: Choose strategy, then cut branch"]:::you --> tdd["slice-tdd: see section 4"]
+  choose["Stop 3: Choose strategy, then cut branch"]:::you --> lay["Lay the PR's net: blast-radius"]
+  lay --> tdd["slice-tdd: see section 4"]
   tdd -->|report: handed back, reviewed| squash["Squash to one commit, full suite in background"]
   squash --> review["Stop 7: Review the slice"]:::you
   review --> shipped["Shipped: tick criteria in the ledger"]
   shipped -->|next PR| choose
   shipped -->|last PR| complete["Feature complete: suite green, backlog drained"]
   complete --> push["Stop 8: Push, PRs"]:::you
+  push -->|review comments| fix["Fix on its branch, re-check net, restack"]
 
   classDef you fill:#ffc233,stroke:#c98600,color:#1d1500
 ```

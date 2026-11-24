@@ -29,9 +29,8 @@ abandon. Never edited or summarized.
 - Build only an `agreed` plan. Write to it only to re-slice — its PRs section: PRs not yet started,
   or narrowing the current one; drops, reorders and widening go to the user first — or to add a
   net entry a re-trace found.
-- Lay a PR's net before its code: each spec proven red against a deliberate break. Re-trace at
-  every boundary and on every change after one, review comments included. No executor edits a
-  net spec.
+- Lay a PR's net (`blast-radius`) before its code. Re-check it at every boundary and on every
+  change after one, review comments included. No executor edits a net proof.
 - One PR = one branch off the previous PR's branch (base branch for PR 01); never two.
 - Choose the strategy per PR, before its branch is cut; record it here before any code. State the
   executor's obligations at every handoff, in the form its shape takes.
@@ -62,7 +61,7 @@ in one write; a PR's entry appears when its strategy is chosen.
 - **Plan**: <plans-dir>/slices-<feature-slug>.md
 - **Base branch**: <branch PR 01 is cut from and reviewed against>
 - **Test runner**: `<command>`
-- **Net runner**: `<command running every laid net spec>`, or `none yet`
+- **Net runner**: `<command running every read-only agent proof in the net>`, or `none yet`
 - **Started**: YYYY-MM-DD
 - **Last updated**: YYYY-MM-DD
 
@@ -87,7 +86,9 @@ in one write; a PR's entry appears when its strategy is chosen.
 
 ## Net
 
-- R1 — PR 03: <spec path> — committed | untracked — red against: <the deliberate break>
+- R1 — PR 03: <observer> <behaviour> as today, at <place>
+  - agent: <command or path, read-only | mutating> | none; human: <steps → what they see>
+  - committed | untracked: <path> — red against: <the deliberate break>
 
 ## Criteria
 

@@ -1,9 +1,9 @@
 ---
 name: slice-loop
 description: "Builds an agreed slice-plan plan one PR at a time: chooses the implementation strategy separately for each PR — a test-first guest skill, the agent directly, the user by hand — cuts a stacked branch per PR, hands it to that executor, reviews and squashes it at the boundary, runs the full suite in the background, and rolls back a strategy that proves wrong without losing the record of what was tried. Use when there is an agreed slices-*.md plan to build, or the user asks to build, execute or continue a sliced plan. Does not plan: with no agreed plan, use slice-plan first."
-compatibility: "Requires slice-plan — this skill reads its plan format and its slicing doctrine, and builds only a plan it agreed. Requires the design-review skill (and design-principles, which it requires) and a way to delegate a task to an isolated subagent — the boundary delegates a design review of the PR diff. Requires git — reversibility across a strategy change is implemented with branches and `git restore`. Strategies are whatever the session has available; this skill requires none of them in particular."
+compatibility: "Requires slice-plan — it reads its plan format and slicing doctrine, and builds only a plan it agreed. Requires design-review (and design-principles) and subagent delegation, for the boundary's design review of the PR diff; blast-radius, which lays and re-checks each PR's regression net; and git, whose branches and `git restore` make a strategy change reversible. Strategies: whatever the session has."
 metadata:
-  soft-deps: slice-plan design-principles design-review
+  soft-deps: slice-plan design-principles design-review blast-radius
 ---
 
 # Slice Loop
@@ -208,11 +208,12 @@ boundary; `blocked` → [A guest that hands back blocked](#a-guest-that-hands-ba
 
 Re-read the Rules in Force header and both PRs sections. Then:
 
-1. Confirm the targeted tests and the whole net are green and the PR's behavior is observable —
-   for a `refactor` or `scaffolding` PR, that behavior is *unchanged*. **Then re-trace** over
-   `git -C "$top" diff <previous-pr-branch>...HEAD`, per `../slice-plan/references/regression-net.md`:
-   the design moved since planning. Lay each new entry per [Laying the net](#laying-the-net), owned
-   by this PR. One already red on the PR's code is a consumer this PR breaks: `blocked`. **Do not run the full suite here**; step 3 starts
+1. Confirm the targeted tests and the net's `read-only` agent proofs are green and the PR's
+   behavior is observable — for a `refactor` or `scaffolding` PR, that behavior is *unchanged*.
+   **Then re-check the net**, per [Laying the net](#laying-the-net), over
+   `git -C "$top" diff <previous-pr-branch>...HEAD`: the design moved since planning. A found
+   regression is a consumer this PR breaks — under `direct`, fix the code and re-check; under any
+   other strategy, it is `blocked`. **Do not run the full suite here**; step 3 starts
    it in the background. A red test here is not a boundary: treat it as `blocked`.
 2. **Skip this step only if the newest Attempts line carries the whole token `reviewed` and the
    ledger holds that PR's copied Review lists.** When skipping, carry its `Dismissed` and
@@ -278,26 +279,21 @@ Then start the next PR at step 1 — including the strategy question.
 
 ### Laying the net
 
-A PR's **Net** entries (from the plan's Regression Net) are specs that pin how other consumers of
-the code behave today. You write them, whatever the strategy: the executor's own tests encode its
-beliefs about the code, which is what the net checks. Read
-`../slice-plan/references/regression-net.md`, then for each entry, on the PR's branch, before any
-of its code:
+A PR's **Net** entries (from the plan's Regression Net) are acceptance proofs of how other flows
+behave today. You lay them, whatever the strategy: the executor's own tests encode its beliefs
+about where the code runs, which is what the net checks. Run `blast-radius` in-session, since it
+asks the user things, from a clean tree with no background run going:
 
-1. Write the spec at the proof level the entry names, and run it: green, since nothing has changed
-   yet.
-2. **Prove it red.** Break exactly the dependency at risk (remove the provider, revert the earlier
-   fix), run the spec, and check that it fails because of that break and not for some other
-   reason. Then `git -C "$top" restore` the break and run the spec green again. A spec that stays
-   green under the break is rewritten, not kept.
-3. **For an `e2e` spec, ask the user whether it joins the permanent suite.** There is no default.
-   A kept spec, and every `unit` spec, is committed on the branch (`net: <entry ID>`) and ships with
-   the PR. Otherwise, leave it where the runner finds it, append its path to
-   `"$(git rev-parse --git-path info/exclude)"`, and confirm with `git -C "$top" check-ignore -q`.
-4. Record it in the ledger's Net section, and add it to the Session's **Net runner**.
+- **Before a PR's code** — `lay` mode, given the PR's Net entries from the plan.
+- **To re-check** (the boundary, a change before approval, a review comment) — `lay` mode over the
+  diff it names, given the ledger's Net section as the existing net. It re-traces, lays any new
+  entry, and names the existing entries the change reaches: re-run those that are human-only or
+  `mutating` with the user now.
 
-An entry found by a re-trace is added to the plan's Regression Net and to this PR's Net line: the
-one plan write outside re-slicing. Tell the user.
+Copy its report into the ledger's Net section, and add each `read-only` agent proof to the
+Session's **Net runner**. Kept proofs are committed on the branch as `net: <entry ID>`. A new entry
+is also added to the plan's Regression Net and to this PR's Net line: the one plan write outside
+re-slicing. Tell the user.
 
 ### Re-slicing
 
@@ -389,7 +385,7 @@ entangled it — the abandoned attempts are the part worth reading. Then run Cle
    did not read from this ledger.
 4. **Settle the ledger, the net and the plan — once the user says every PR has merged.** Until
    then review comments may still come in (*Review comments on a shipped PR*), and they need the
-   ledger and the net. Delete each untracked net spec the ledger's Net section lists, with its
+   ledger and the net. Delete each untracked net proof the ledger's Net section lists, with its
    exclude line. Offer to delete the ledger, and only then delete its exclude
    line and the reports' pattern line from `"$(git rev-parse --git-path info/exclude)"`, leaving
    every other line alone. If the user keeps it as the record of which strategy suited which PR,

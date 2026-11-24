@@ -18,8 +18,8 @@ Whatever builds a PR owes exactly five things:
    restructured code stay green. **For a `yolo` PR** the passing test is replaced by its acceptance
    proofs passing — agent-run or user-confirmed — and those tick its criteria. Those two carve-outs
    are the only ones.
-   **The regression net is the exception: never edit a net spec.** The net specs the host names are
-   part of the targeted tests, and one that turns red means this PR breaks another consumer: fix the
+   **The regression net is the exception: never edit a net proof.** The net's agent proofs the
+   host names are part of the targeted tests, and one that turns red means this PR breaks another consumer: fix the
    code, or hand back `blocked`.
    **An earlier PR's test this PR breaks is the executor's to update** — routine, since each PR
    builds only what it needs. Change its **fixture** or call site wherever that absorbs it: an

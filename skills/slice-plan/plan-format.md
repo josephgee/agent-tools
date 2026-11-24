@@ -66,11 +66,11 @@ Mandates from outside the team, each with its source. `None.` when there are non
 
 ## Regression Net
 
-What the feature must not break, from the trace in `references/regression-net.md`. `None.` when
-the trace finds nothing.
+What the feature must not break, from a `blast-radius` trace. `None.` when it finds nothing.
 
-- R1 — <who observes what, where> as today — e2e
+- R1 — <observer> <behaviour> as today, at <place>
   - at risk: <the dependency or earlier fix the change could break>
+  - proof: agent | human-only
 
 ## PRs
 
@@ -118,7 +118,7 @@ the trace finds nothing.
 | Kind | Omitted for an ordinary slice. `thread` marks the steel thread, and a PR split off it at a seam — still slices; a loop re-slices after each ships. `refactor` or `scaffolding`, with a one-sentence reason, marks a PR that isn't a slice. |
 | Merge safety | On the `thread` PR always — `live`, or `inert: <what makes it unreachable>` — and on any other PR that ships something unreachable. |
 | New | On every `thread` PR: `mechanism — <what the thread exists to prove>`, a noun phrase with no qualifiers; then `beyond it:` each new type, piece of state or server field the thread adds, each with its reason, which names the word in the Behavior sentence that requires it, or `none`, which is the target (`slicing.md`, *The first slice*). |
-| Net | The Regression Net entries this PR owns: it is the first PR to touch their consumer, so each must exist, proven red, before its code. Omitted when it owns none. Each entry has exactly one owner; a re-slice moves it with the work. |
+| Net | The Regression Net entries this PR owns: it is the first PR to touch their consumer, so each must be laid, proven red, before its code. A `human-only` entry costs the user a run at each re-check, so the gate shows the count. Omitted when it owns none. Each entry has exactly one owner; a re-slice moves it with the work. |
 | Ticket | Tracker refs this PR serves. Many-to-many: one PR may serve several tickets, and several PRs may share one. |
 | Differs from ticket | Where this plan disagrees with a ticket it can't change: the ref, what the ticket says, what the plan says. The plan wins locally; these are listed at the gate. Removed if the user has the ticket edited. |
 
