@@ -26,29 +26,21 @@ ledger ever replaced wholesale**, if a resumed one's header is missing or has dr
 Copied verbatim at creation. Re-read at the start of every PR, at every boundary, and before every
 abandon. Never edited or summarized.
 
-- Build only an `agreed` plan. Write to it only to re-slice — its PRs section: PRs not yet started,
-  or narrowing the current one; drops, reorders and widening go to the user first — or to add a
-  net entry a re-trace found.
-- Lay a PR's net (`pin-impacted-flows`) before its code. Re-check it at every boundary and on every
-  change after one, review comments included. No executor edits a net proof.
-- One PR = one branch off the previous PR's branch (base branch for PR 01); never two.
-- Choose the strategy per PR, before its branch is cut; record it here before any code. State the
-  executor's obligations at every handoff, in the form its shape takes.
-- A guest has handed back only when its report exists with all six headings. Copy it here, then
-  delete it. Check branch, tree and tests on disk — never take them from the report.
-- No code on a PR until the previous PR's suite run reads `0`; only `slice-tdd` may start early, with
-  the pause paragraph. The run uses this tree: change nothing outside the plans dir while it goes;
-  stop it first.
-- No boundary over a red test. Review, commit fixes, squash, start the suite run, then present; a
-  change in review is amended in. Red after approval: reopen, fix, amend, rebase the next PR onto it.
-- To abandon, **propose it and get the user's confirmation first**, then run the abandon recipe
-  (`references/abandon.md`) as one uninterrupted step.
-- An attempt's line is closed in place, never removed and never duplicated.
-- **The plan, this ledger and reports are never committed** — all in `info/exclude`. Never `git add`
-  or `clean -x` them.
-- Branch names only, never a commit sha: the squash rewrites them.
-- A PR the user has taken by hand is theirs — write no code in it; close its attempt line and
-  confirm its work committed yourself.
+- Build only an `agreed` plan. Write to it only to re-slice (PRs not started, or narrowing the
+  current one; drops, reorders and widening go to the user first) or to add a net entry.
+- One PR = one branch off the previous PR's branch (base branch for PR 01). Branch names, never shas.
+- Choose the strategy per PR and record it here before its branch is cut. State the executor's
+  obligations at every handoff.
+- Lay a PR's net before its code; re-check it at every boundary and on every change after one. No
+  executor edits a net proof.
+- A guest has handed back only when its six-heading report exists: copy it here, delete it, then
+  check branch, tree and tests on disk. Close attempt lines in place; never remove or duplicate one.
+- No code on a PR until the previous suite run reads `0` (only `slice-tdd` starts early, paused).
+  While it runs, change nothing outside the plans dir.
+- No boundary over a red test. Review, commit fixes, squash, start the suite run, then present.
+- Abandon only on the user's confirmation, then run `references/abandon.md` as one step.
+- The plan, this ledger and reports are never committed. Never `git add` or `clean -x` them.
+- A PR the user took by hand is theirs: write no code in it.
 ```
 
 ## The rest of the file
@@ -73,7 +65,9 @@ in one write; a PR's entry appears when its strategy is chosen.
 - **Attempts**:
   - internal — shipped: reviewed
 - **Review**: Dismissed: <finding — reason>; Open at cap: none
-- **Discoveries**: <a later-PR discovery, and what was done about it>
+- **Criteria proof**: <each criterion ID: the test or proof that satisfies it>
+- **Carry-forward**: <backlog items, out-of-scope gaps, earlier PRs' tests updated and how>
+- **Later-PR discoveries**: <a later-PR discovery, and what was done about it>
 - **Learned**: <decision context, folded into the squash commit>
 - **Review changes**:
   - <comment, one line> → <what changed>; net: <new entries, or none>; suite: green
@@ -132,7 +126,7 @@ The blocked path's fresh attempt lines are writes too.
 | Attempts | One line per attempt, never removed, **closed in place** as its state changes: `<strategy> — <in progress \| handed back \| shipped \| blocked: <what stopped it> \| abandoned: <what entangled>>`, plus `<acceptance \| internal \| yolo> — paused: design done`, closed in place and followed by a fresh `in progress` line on resume. A `chosen` PR's first line
 already reads `in progress`: the PR's status, not the line, says whether its branch exists. `handed back` and `shipped` may carry `: <note>`, and the whole token `reviewed`, comma-separated after any note, when the guest reported its own review. |
 | Review changes | One line per hosted review comment fixed after `shipped`, per `references/review-comments.md`. |
-| Review, Discoveries, Learned | Copied from the guest's report, or written by the host for `direct`, `hand` and `navigator`. Omitted when empty. |
+| Review, Criteria proof, Carry-forward, Later-PR discoveries, Learned | Copied from the guest's report, or written by the host for `direct`, `hand` and `navigator`. Omitted when empty. |
 
 The Attempts list is the reversibility record. Everything else about a PR is recoverable from git;
 the fact that a strategy was tried and why it was abandoned is not.

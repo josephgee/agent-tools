@@ -8,8 +8,8 @@ broke in production. So every step below runs for every comment, however small t
 
 Set `top=$(git rev-parse --show-toplevel)` in the same call as each command.
 
-1. **Re-read the ledger's Rules in Force header, its PRs and Net sections, and the plan's PRs and
-   Regression Net sections.**
+1. **Re-read the re-read set (SKILL.md, *Files*), plus the ledger's Net section and the plan's
+   Regression Net.**
 2. **Free the tree.** `git -C "$top" status --short` must show nothing. If a background run is
    going, stop it (`background-suite.md`, *To stop a run without restarting*). If a later PR is
    `in progress` with uncommitted work, ask the user before touching it: commit it on its branch
@@ -29,7 +29,9 @@ Set `top=$(git rev-parse --show-toplevel)` in the same call as each command.
    diff through one design-review round, as the boundary's step 2 does.
 7. **Restack the later branches** in one command, from the last shipped or in-progress PR's
    branch: `git -C "$top" rebase --update-refs --onto <NN-branch> <NN-branch>-pre-review <last-branch>`.
-   On a conflict, stop and show the user. Once it succeeds, delete the marker branch.
+   `--update-refs` needs git 2.38 or later (`git --version`); on an older git, rebase each later
+   branch in turn, bottom up, onto the one below it. On a conflict, stop and show the user. Once
+   it succeeds, delete the marker branch.
 8. **Start the background suite run** on `<NN-branch>`, per `background-suite.md`, reusing the
    directory in this PR's **Suite** field. If later branches exist, start a second run on the last
    branch once the first reads `0`: it is the only check that the later PRs still hold.

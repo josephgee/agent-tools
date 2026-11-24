@@ -40,9 +40,10 @@ switch, `git restore` and squash. Guests commit with `git add -A`, so the exclud
 **Rules in Force**, the header at the top of the ledger, is copied verbatim at creation and never
 edited. This body is read into the conversation once, so a plan spanning many PRs dilutes it by
 position and a compaction can drop it; the ledger is on disk, and re-reading the header puts the
-rules back at the end of the context. **Re-read the header, the ledger's PRs section and the plan's
-PRs section at the start of every PR, at every boundary, and before every abandon** —
-unconditionally. If a resumed ledger's header is missing or differs from the fence in
+rules back at the end of the context. **Re-read the *re-read set* — the header, the ledger's PR headings
+plus the current PR's entry, and the plan's PRs section — at the start of every PR, at every
+boundary, and before every abandon**, unconditionally. Earlier PRs' entries only grow; read them
+in full at resume. If a resumed ledger's header is missing or differs from the fence in
 [ledger-format.md](ledger-format.md), replace **the `## Rules in Force` section alone**, verbatim,
 leaving every other section untouched — the Attempts history is the record no rollback recovers.
 
@@ -96,7 +97,7 @@ files are all in `.git/info/exclude`, so ripgrep skips them silently.
 
 ### 1. Choose the strategy
 
-Re-read the Rules in Force header and both PRs sections first.
+Re-read the re-read set first.
 
 **Ask the user which strategy this PR gets, and put the PR in front of them first** — they have
 not memorized the plan or the ledger. The question opens with a brief, a few lines, from the plan
@@ -147,13 +148,20 @@ status asserts the branch exists: `chosen` sends a resume to this step, `in prog
 
 ### 3. Hand off
 
-**If the PR's plan entry has a Net line, lay its net first**, per [Laying the net](#laying-the-net):
-before the first handoff, or, for a `slice-tdd` started early, before the resumed one after
-`paused: design done`. Either way the previous PR's run must read `0` first, since laying runs
-tests and breaks code on purpose.
+**Hand off only once the previous PR's suite run reads `0`**
+([references/background-suite.md](references/background-suite.md), *Waiting on it*). **The one
+exception is `slice-tdd`** (any mode), whose ACCEPT and design write no code: hand it off at once,
+with the *pause* paragraph from [references/hosted-handoff.md](references/hosted-handoff.md) added
+while the run is still going. It reports `paused: design done` after its design commit; wait for
+`0`, append a fresh `<strategy> — in progress` line, and invoke it again with no pause paragraph —
+its state file resumes it at BUILD.
 
-State to the executor the PR's behavior sentence, the criteria it advances, the branch, the net
-specs laid so far with their run command, and the
+**If the PR's plan entry has a Net line, lay its net before the handoff that starts code**, per
+[Laying the net](#laying-the-net) — for a paused `slice-tdd`, before the resumed one. Laying runs
+tests and breaks code on purpose, so it too waits for `0`.
+
+State to the executor the PR's behavior sentence, the criteria it advances, the branch, the net's
+proofs with their run command, and the
 obligations of [the executor contract](references/executor-contract.md) in the form its shape
 takes, per that file's *Which shape carries which obligation*. Then:
 
@@ -162,14 +170,6 @@ takes, per that file's *Which shape carries which obligation*. Then:
 | A skill (`slice-tdd`, `navigator`, …) | Invoke it with the block from [references/hosted-handoff.md](references/hosted-handoff.md), filled in. For `acceptance`, `internal` and `yolo`, invoke `slice-tdd` with the block's *mode paragraph* naming which. The block is the only form of the contract a guest reads. |
 | You, directly (`direct`) | Build the PR. The obligations are the whole spec. |
 | The user, by hand | Say what the PR is and that the branch is cut, then stop and wait. Do not write code for a PR the user has taken. |
-
-**Hand off only once the previous PR's suite run reads `0`**
-([references/background-suite.md](references/background-suite.md), *Waiting on it*). **The one
-exception is `slice-tdd`** (any mode), whose ACCEPT and design write no code: hand it off at once,
-with the *pause* paragraph from [references/hosted-handoff.md](references/hosted-handoff.md) added
-while the run is still going. It reports `paused: design done` after its design commit; wait for
-`0`, append a fresh `<strategy> — in progress` line, and invoke it again with no pause paragraph —
-its state file resumes it at BUILD.
 
 **What the host carries for `direct`, `hand` and `navigator`** — no report comes back from these:
 
@@ -206,7 +206,7 @@ boundary; `blocked` → [A guest that hands back blocked](#a-guest-that-hands-ba
 
 ### 4. The boundary
 
-Re-read the Rules in Force header and both PRs sections. Then:
+Re-read the re-read set. Then:
 
 1. Confirm the targeted tests and the net's `read-only` agent proofs are green and the PR's
    behavior is observable — for a `refactor` or `scaffolding` PR, that behavior is *unchanged*.
@@ -308,18 +308,16 @@ new PR takes the next free `NN`. Set the plan's **Last updated**.
 
 ### The background suite run
 
-The full suite runs once per PR, in the background, **in the working tree itself**, on the PR's
-squashed commit. Launch it at the boundary's step 3; `<dir>/status` is the result and stays until
-Cleanup: absent means running, `0` green, anything else red. **While it runs, nothing outside the
-plans directory changes** — stop it before any fix. You hold the next PR's code until it reads `0`.
-The recipe, waiting, resuming, and fixing a red run are in
-[references/background-suite.md](references/background-suite.md) — read it at every launch, every
-wait, and on any red.
+The full suite runs once per PR, in the background, in the working tree, launched at the
+boundary's step 3. You hold the next PR's code until it reads `0`. Read
+[references/background-suite.md](references/background-suite.md) once per launch, once per wait
+(not at every poll), and on any red: it has the recipe, the rule that nothing outside the plans
+directory changes while it runs, waiting, resuming, and fixing a red run.
 
 ### A guest that hands back blocked
 
 `blocked: <what stopped it>` means the executor stopped without delivering the PR. It is not a
-boundary and not yet an abandon. Re-read the Rules in Force header and both PRs sections, read the
+boundary and not yet an abandon. Re-read the re-read set, read the
 reason, and take exactly one of three:
 
 - **A precondition you own** — something the plan or the setup should have provided. Supply it on
@@ -343,7 +341,7 @@ the fix.
 
 ### Abandoning a strategy
 
-Re-read the Rules in Force header and both PRs sections before any of this.
+Re-read the re-read set before any of this.
 
 Abandon when the strategy itself is wrong for the PR — whether you concluded that yourself or a
 guest reported `blocked` saying so, which is evidence and not the decision. **Propose it and wait
