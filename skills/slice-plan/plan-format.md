@@ -25,8 +25,9 @@ sweep it into a PR, and a loop's rollback would erase edits made to it.
 - **`slice-plan`**, from creation until `Status` is `agreed`. After that, only `Ticket` and
   *Differs from ticket* lines, when tickets are published or a ticket is edited — or to set it back
   to `drafting`, or to retire it.
-- **A loop**, after `agreed`, and only to re-slice: the `## PRs` section — PRs it has not started,
-  or narrowing the current one — following `slicing.md`'s *Re-slicing*. Feature, criteria and
+- **A loop**, after `agreed`, to re-slice: the `## PRs` section — PRs it has not started,
+  or narrowing the current one — following `slicing.md`'s *Re-slicing*. It also adds Regression
+  Net entries that a re-trace finds, each on the owning PR's Net line. Feature, criteria and
   Constraints stay as agreed; changing them is a new planning session.
 
 Set **Last updated** on every write.
@@ -63,6 +64,14 @@ Mandates from outside the team, each with its source. `None.` when there are non
 
 - <mandate> — <who imposed it, and where it's recorded>
 
+## Regression Net
+
+What the feature must not break, from the trace in `references/regression-net.md`. `None.` when
+the trace finds nothing.
+
+- R1 — <who observes what, where> as today — e2e
+  - at risk: <the dependency or earlier fix the change could break>
+
 ## PRs
 
 ### 01 — <pr-slug>
@@ -72,6 +81,7 @@ Mandates from outside the team, each with its source. `None.` when there are non
 - **Kind**: thread
 - **Merge safety**: live
 - **New**: mechanism — <noun phrase, no qualifiers>; beyond it: none
+- **Net**: R1
 - **Ticket**: PROJ-12
 
 ### 02 — <pr-slug>
@@ -108,6 +118,7 @@ Mandates from outside the team, each with its source. `None.` when there are non
 | Kind | Omitted for an ordinary slice. `thread` marks the steel thread, and a PR split off it at a seam — still slices; a loop re-slices after each ships. `refactor` or `scaffolding`, with a one-sentence reason, marks a PR that isn't a slice. |
 | Merge safety | On the `thread` PR always — `live`, or `inert: <what makes it unreachable>` — and on any other PR that ships something unreachable. |
 | New | On every `thread` PR: `mechanism — <what the thread exists to prove>`, a noun phrase with no qualifiers; then `beyond it:` each new type, piece of state or server field the thread adds, each with its reason, which names the word in the Behavior sentence that requires it, or `none`, which is the target (`slicing.md`, *The first slice*). |
+| Net | The Regression Net entries this PR owns: it is the first PR to touch their consumer, so each must exist, proven red, before its code. Omitted when it owns none. Each entry has exactly one owner; a re-slice moves it with the work. |
 | Ticket | Tracker refs this PR serves. Many-to-many: one PR may serve several tickets, and several PRs may share one. |
 | Differs from ticket | Where this plan disagrees with a ticket it can't change: the ref, what the ticket says, what the plan says. The plan wins locally; these are listed at the gate. Removed if the user has the ticket edited. |
 

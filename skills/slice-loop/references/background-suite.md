@@ -51,7 +51,8 @@ EOF
 nohup bash "$dir/run.sh" "$dir" "$(git rev-parse --show-toplevel)" > "$dir/log" 2>&1 & echo $! > "$dir/pid"
 ```
 
-Substitute the Session's `<test runner>` literally — the quoted heredoc passes it through
+Substitute the Session's `<test runner>` literally, followed by ` && <net runner>` once the
+Session has a Net runner, so every run covers the net too. The quoted heredoc passes it through
 untouched, quotes included. It runs in `bash`, in its own subshell — `set -m` gives that subshell
 its own process group, which the trap kills — so the runner's exit status is the one recorded; where the runner is a pipeline, put `set -o pipefail;` in front. `nohup` keeps
 the run alive past this session. After every start, set **Suite** to `running: <dir>`.

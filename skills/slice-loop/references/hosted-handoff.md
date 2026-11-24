@@ -82,6 +82,7 @@ block keeps paragraphs **1, 2, 3 and 5**, numbered as such:
 > - **Criteria it advances**: `<each criterion, ID and full text, with its examples>`
 > - **Constraints**: `<the plan's Constraints, verbatim — they bind this PR>`
 > - **Test runner**: `<command>`
+> - **Regression net**: `<each net spec path, and the Net runner command>`, or `none`
 > - **Base branch**: `<previous PR's branch — what this PR is reviewed against>`
 > - **Plans directory**: `<plans-dir>`; **feature slug**: `<feature-slug>`; **PR number**: `<NN>`
 > - **Design**: `<path, or none>` — context, not a decision you are bound by
@@ -101,6 +102,10 @@ block keeps paragraphs **1, 2, 3 and 5**, numbered as such:
 > even where your own rules say to: the host runs it after you hand back. On a `refactor` or
 > `scaffolding` PR, the whole obligation is that the existing tests over the restructured code stay
 > green — no new behavior, so no new test. Never hand back with a test red.
+>
+> **The regression net specs above are part of your targeted tests, and you never edit one,
+> whatever your own rules say.** Each pins how another consumer of this code behaves today. A red
+> one means your change breaks that consumer: fix the code, or hand back `blocked`.
 >
 > **An earlier PR's test this PR breaks is yours to update, whatever your own rules say about
 > changing tests.** Change its fixture or call site wherever that absorbs it: an expectation edited

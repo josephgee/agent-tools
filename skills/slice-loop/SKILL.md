@@ -62,7 +62,8 @@ exactly — patterns quoted, judged by output, not exit status. Never an ignore-
 files are all in `.git/info/exclude`, so ripgrep skips them silently.
 
 - **A ledger** — read [references/resume.md](references/resume.md) and follow it before anything
-  else. With several, list them (feature, last updated) and ask which.
+  else. With several, list them (feature, last updated) and ask which. If the user is bringing
+  review comments on a shipped PR, see [Review comments](#review-comments-on-a-shipped-pr) instead.
 - **No ledger, a plan with `Status: agreed`** — offer to build it: run Setup. With several, ask
   which.
 - **Only `drafting` plans, or none** — there is nothing agreed to build. Send the user to
@@ -146,7 +147,13 @@ status asserts the branch exists: `chosen` sends a resume to this step, `in prog
 
 ### 3. Hand off
 
-State to the executor the PR's behavior sentence, the criteria it advances, the branch, and the
+**If the PR's plan entry has a Net line, lay its net first**, per [Laying the net](#laying-the-net):
+before the first handoff, or, for a `slice-tdd` started early, before the resumed one after
+`paused: design done`. Either way the previous PR's run must read `0` first, since laying runs
+tests and breaks code on purpose.
+
+State to the executor the PR's behavior sentence, the criteria it advances, the branch, the net
+specs laid so far with their run command, and the
 obligations of [the executor contract](references/executor-contract.md) in the form its shape
 takes, per that file's *Which shape carries which obligation*. Then:
 
@@ -201,8 +208,11 @@ boundary; `blocked` → [A guest that hands back blocked](#a-guest-that-hands-ba
 
 Re-read the Rules in Force header and both PRs sections. Then:
 
-1. Confirm the targeted tests are green and the PR's behavior is observable — for a `refactor` or
-   `scaffolding` PR, that behavior is *unchanged*. **Do not run the full suite here**; step 3 starts
+1. Confirm the targeted tests and the whole net are green and the PR's behavior is observable —
+   for a `refactor` or `scaffolding` PR, that behavior is *unchanged*. **Then re-trace** over
+   `git -C "$top" diff <previous-pr-branch>...HEAD`, per `../slice-plan/references/regression-net.md`:
+   the design moved since planning. Lay each new entry per [Laying the net](#laying-the-net), owned
+   by this PR. One already red on the PR's code is a consumer this PR breaks: `blocked`. **Do not run the full suite here**; step 3 starts
    it in the background. A red test here is not a boundary: treat it as `blocked`.
 2. **Skip this step only if the newest Attempts line carries the whole token `reviewed` and the
    ledger holds that PR's copied Review lists.** When skipping, carry its `Dismissed` and
@@ -245,7 +255,8 @@ Re-read the Rules in Force header and both PRs sections. Then:
    changes the design, rejects the slicing, reorders what's left, or calls the feature done early.
 
    **A change the user asks for here is an edit to this PR, on its branch — make it.** Stop the run,
-   make the change, rerun the tests it touches, amend it into the PR's one commit, and restart the
+   make the change, re-trace and run the net as step 1 does, rerun the tests it touches, amend it
+   into the PR's one commit, and restart the
    run, per *A change before approval* in
    [references/background-suite.md](references/background-suite.md). If the change is structural —
    a signature, a moved responsibility, a new type or module — send the new diff through one
@@ -265,9 +276,32 @@ Re-read the Rules in Force header and both PRs sections. Then:
 
 Then start the next PR at step 1 — including the strategy question.
 
+### Laying the net
+
+A PR's **Net** entries (from the plan's Regression Net) are specs that pin how other consumers of
+the code behave today. You write them, whatever the strategy: the executor's own tests encode its
+beliefs about the code, which is what the net checks. Read
+`../slice-plan/references/regression-net.md`, then for each entry, on the PR's branch, before any
+of its code:
+
+1. Write the spec at the proof level the entry names, and run it: green, since nothing has changed
+   yet.
+2. **Prove it red.** Break exactly the dependency at risk (remove the provider, revert the earlier
+   fix), run the spec, and check that it fails because of that break and not for some other
+   reason. Then `git -C "$top" restore` the break and run the spec green again. A spec that stays
+   green under the break is rewritten, not kept.
+3. **For an `e2e` spec, ask the user whether it joins the permanent suite.** There is no default.
+   A kept spec, and every `unit` spec, is committed on the branch (`net: <entry ID>`) and ships with
+   the PR. Otherwise, leave it where the runner finds it, append its path to
+   `"$(git rev-parse --git-path info/exclude)"`, and confirm with `git -C "$top" check-ignore -q`.
+4. Record it in the ledger's Net section, and add it to the Session's **Net runner**.
+
+An entry found by a re-trace is added to the plan's Regression Net and to this PR's Net line: the
+one plan write outside re-slicing. Tell the user.
+
 ### Re-slicing
 
-The one write this skill makes to the plan. Re-read `../slice-plan/references/slicing.md`,
+The one write this skill makes to the plan besides the net (*Laying the net*). Re-read `../slice-plan/references/slicing.md`,
 *Re-slicing*, and edit the plan's `## PRs` section only, and only PRs the ledger shows not started
 — or the current PR's own behavior sentence, narrowed to what is already delivered when the rest
 moves to a new PR immediately after it. Feature, criteria and Constraints stay as agreed; changing
@@ -302,6 +336,14 @@ reason, and take exactly one of three:
 
 Do not re-invoke the same guest on an unchanged PR; it stops in the same place.
 
+### Review comments on a shipped PR
+
+When the user brings review comments on a PR the ledger shows `shipped` (usually from the hosted
+PR, after they pushed), read [references/review-comments.md](references/review-comments.md) and
+follow it for every comment. The fix goes on that PR's branch as new commits, then the later
+branches are restacked. It never becomes a new PR, and never skips the re-trace, however small
+the fix.
+
 ### Abandoning a strategy
 
 Re-read the Rules in Force header and both PRs sections before any of this.
@@ -327,8 +369,9 @@ for the last run — every criterion is ticked (rerun any `read-only` `yolo` pro
 and the backlog is drained: each item fixed, dismissed with a reason, or carried somewhere the user
 names. **An item that needs a change to tracked code is a new PR**, appended to the plan per
 *Re-slicing* and run like any other — never an amendment to a PR already shipped; that PR's review
-is spent. (A red background run is the one exception, in
-[references/background-suite.md](references/background-suite.md).)
+is spent. (Two exceptions: a red background run, in
+[references/background-suite.md](references/background-suite.md), and a reviewer's comment on the
+hosted PR, in [references/review-comments.md](references/review-comments.md).)
 
 Report the PRs as delivered, the strategy each ended up using, and every abandoned attempt with what
 entangled it — the abandoned attempts are the part worth reading. Then run Cleanup.
@@ -344,7 +387,10 @@ entangled it — the abandoned attempts are the part worth reading. Then run Cle
 3. **Remove this feature's suite runs** — `rm -rf "<dir>"` for each `<dir>` a ledger **Suite** field
    names. Runs of other features share the parent `slice-suite` directory; touch nothing there you
    did not read from this ledger.
-4. **Settle the ledger and the plan.** Offer to delete the ledger, and only then delete its exclude
+4. **Settle the ledger, the net and the plan — once the user says every PR has merged.** Until
+   then review comments may still come in (*Review comments on a shipped PR*), and they need the
+   ledger and the net. Delete each untracked net spec the ledger's Net section lists, with its
+   exclude line. Offer to delete the ledger, and only then delete its exclude
    line and the reports' pattern line from `"$(git rev-parse --git-path info/exclude)"`, leaving
    every other line alone. If the user keeps it as the record of which strategy suited which PR,
    leave its exclude line in place. Then offer to retire the plan, per `plan-format.md`,

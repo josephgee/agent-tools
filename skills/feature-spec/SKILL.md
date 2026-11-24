@@ -96,8 +96,9 @@ Walk these branches in order, finishing each before the next:
 4. **Main path** — as concrete examples: this input, this situation → the observer sees this.
 5. **Edges** — empty, huge, duplicate, concurrent, malformed; missing permissions; first use.
 6. **Failures** — what the observer sees when it goes wrong, not that "an error is handled".
-7. **What must not change** — existing behavior near the change. Regression criteria, drawn from
-   what the code does today.
+7. **What must not change** — existing behavior near the change, and who else sees the surface
+   being changed (other roles, such as admins or support). Regression criteria, drawn from what
+   the code does today.
 8. **Scope** — rule on every entry in Scope Candidates: in (it becomes a criterion), out (with a
    reason), or deferred. Each leaves Scope Candidates when ruled.
 9. **Constraints** — anything mandated from outside: compatibility, regulation, ops, contracts.

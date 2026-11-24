@@ -34,7 +34,7 @@ a spec whose `Status` reads `signed off` is ready to plan; mention a `drafting` 
 
 - **A `drafting` plan** — the gate was never passed. Offer to resume it at the gate.
 - **An `agreed` plan** — say so, and offer the next steps under *After the gate*. Changing its
-  feature, criteria, constraints or PRs means setting it back to `drafting` and passing the gate
+  feature, criteria, constraints, net or PRs means setting it back to `drafting` and passing the gate
   again — if a `loop-<feature-slug>.md` ledger exists beside it, only on the user's yes: a build
   rests on it.
 - **Nothing**, or the user wants something new — run the planning session, offering any ready spec
@@ -81,7 +81,15 @@ memory. Read enough of the codebase to judge whether PR 01 must be a steel threa
 `Kind: thread` if so.
 Fill each PR's fields per [plan-format.md](plan-format.md).
 
-### 4. Split check
+### 4. Regression net
+
+Read [references/regression-net.md](references/regression-net.md) and run its trace over the code
+the drafted PRs touch. Write each entry to the plan's Regression Net, and put its ID on the
+**Net** line of the PR that owns it. A spec's `(regression)` criteria stay acceptance criteria;
+the net covers what only the code shows. If the spec says other roles see the surface, trace their
+pages first.
+
+### 5. Split check
 
 Run the check in [references/slicing.md](references/slicing.md), *When to split the feature*,
 against the drafted list. If it suggests a split, propose the grouping with its reason and let the
@@ -90,14 +98,14 @@ write the children instead of this plan, then take the one the user picks throug
 
 ### Write it down before the gate
 
-Steps 1–4 exist only in the conversation otherwise, and a compaction loses them. Choose the plans
+Steps 1–5 exist only in the conversation otherwise, and a compaction loses them. Choose the plans
 directory, create the plan file with `Status: drafting`, and exclude it from git — both per
 [plan-format.md](plan-format.md).
 
 ### Alignment gate
 
-Present the feature, criteria, constraints, PR sequence with its dependencies, every *Differs from
-ticket* line, and the proposed slug — permanent. If a spec was adopted and its `Status` does not
+Present the feature, criteria, constraints, the regression net with each entry's proof level and
+owner, the PR sequence with its dependencies, every *Differs from ticket* line, and the proposed slug — permanent. If a spec was adopted and its `Status` does not
 already read `adopted:` (an earlier child of the same split settled it), list its Deferred and
 Assumptions entries too: the plan does not carry them, so ask where each goes — into the
 Feature's out-of-scope sentence, onto a ticket (on a yes), or dropped. Ask: *"Are we

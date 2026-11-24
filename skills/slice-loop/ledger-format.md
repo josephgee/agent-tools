@@ -26,8 +26,12 @@ ledger ever replaced wholesale**, if a resumed one's header is missing or has dr
 Copied verbatim at creation. Re-read at the start of every PR, at every boundary, and before every
 abandon. Never edited or summarized.
 
-- Build only an `agreed` plan. Write to it only to re-slice: its PRs section — PRs not yet started,
-  or narrowing the current one. Drops, reorders and widening go to the user first.
+- Build only an `agreed` plan. Write to it only to re-slice — its PRs section: PRs not yet started,
+  or narrowing the current one; drops, reorders and widening go to the user first — or to add a
+  net entry a re-trace found.
+- Lay a PR's net before its code: each spec proven red against a deliberate break. Re-trace at
+  every boundary and on every change after one, review comments included. No executor edits a
+  net spec.
 - One PR = one branch off the previous PR's branch (base branch for PR 01); never two.
 - Choose the strategy per PR, before its branch is cut; record it here before any code. State the
   executor's obligations at every handoff, in the form its shape takes.
@@ -58,6 +62,7 @@ in one write; a PR's entry appears when its strategy is chosen.
 - **Plan**: <plans-dir>/slices-<feature-slug>.md
 - **Base branch**: <branch PR 01 is cut from and reviewed against>
 - **Test runner**: `<command>`
+- **Net runner**: `<command running every laid net spec>`, or `none yet`
 - **Started**: YYYY-MM-DD
 - **Last updated**: YYYY-MM-DD
 
@@ -71,12 +76,18 @@ in one write; a PR's entry appears when its strategy is chosen.
 - **Review**: Dismissed: <finding — reason>; Open at cap: none
 - **Discoveries**: <a later-PR discovery, and what was done about it>
 - **Learned**: <decision context, folded into the squash commit>
+- **Review changes**:
+  - <comment, one line> → <what changed>; net: <new entries, or none>; suite: green
 
 ### 02 — in progress
 - **Strategy**: hand
 - **Attempts**:
   - internal — abandoned: <what entangled, one line>
   - hand — in progress
+
+## Net
+
+- R1 — PR 03: <spec path> — committed | untracked — red against: <the deliberate break>
 
 ## Criteria
 
@@ -105,6 +116,8 @@ Set **Last updated** at each:
 - **A background run's result** — `Suite` set to `green: <dir>` or `red: …, <dir>`, and back to
   `running: <dir>` at every restart.
 - **An abandon** — the abandoned `Attempts` line and the new strategy.
+- **Laying the net** — each entry's Net line, and the Session's **Net runner**.
+- **A review comment's fix** — its `Review changes` line.
 
 The blocked path's fresh attempt lines are writes too.
 
@@ -117,6 +130,7 @@ The blocked path's fresh attempt lines are writes too.
 | Suite | `running: <dir>`, then `green: <dir>`, `red: <failing tests>, <dir>`, or `green: fixed — <what>, <dir>` after a reopen — the directory always kept, since Cleanup deletes it. Absent until the boundary. |
 | Attempts | One line per attempt, never removed, **closed in place** as its state changes: `<strategy> — <in progress \| handed back \| shipped \| blocked: <what stopped it> \| abandoned: <what entangled>>`, plus `<acceptance \| internal \| yolo> — paused: design done`, closed in place and followed by a fresh `in progress` line on resume. A `chosen` PR's first line
 already reads `in progress`: the PR's status, not the line, says whether its branch exists. `handed back` and `shipped` may carry `: <note>`, and the whole token `reviewed`, comma-separated after any note, when the guest reported its own review. |
+| Review changes | One line per hosted review comment fixed after `shipped`, per `references/review-comments.md`. |
 | Review, Discoveries, Learned | Copied from the guest's report, or written by the host for `direct`, `hand` and `navigator`. Omitted when empty. |
 
 The Attempts list is the reversibility record. Everything else about a PR is recoverable from git;
